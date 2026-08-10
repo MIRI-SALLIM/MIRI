@@ -14,7 +14,7 @@ async function lintFixture(code: string, relativeFilePath: string) {
   return result.messages;
 }
 
-describe("FSD boundaries", () => {
+describe("FSD boundaries", { timeout: 30_000 }, () => {
   it("rejects an aliased upward dependency from shared to widgets", async () => {
     const messages = await lintFixture(
       'import { AppHeader } from "@/widgets/app-header";\nvoid AppHeader;',

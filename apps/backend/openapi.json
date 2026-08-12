@@ -1,0 +1,1059 @@
+{
+  "components": {
+    "schemas": {
+      "ConfigResponse": {
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "description": "설정 데이터 객체",
+            "title": "Data",
+            "type": "object"
+          },
+          "status": {
+            "default": "success",
+            "description": "처리 상태",
+            "example": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ConfigResponse",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "code": {
+            "description": "오류 식별 코드",
+            "example": "QUESTION_SET_NOT_FOUND",
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "description": "오류 상세 메시지",
+            "example": "요청한 버전의 질문 세트를 찾을 수 없습니다.",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "database": {
+            "description": "데이터베이스 연결 상태",
+            "example": "connected",
+            "title": "Database",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상태 안내 메시지",
+            "example": "미리살림 백엔드 서버 및 데이터베이스가 정상 가동 중입니다.",
+            "title": "Message"
+          },
+          "status": {
+            "description": "서버 상태",
+            "example": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "database"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "InputValidationRequest": {
+        "properties": {
+          "debtTotal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "총 부채 잔액 (단위: 만원)",
+            "example": 5000.0,
+            "title": "Debttotal"
+          },
+          "monthlyNetIncome": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "월 실수령 순소득 (단위: 만원)",
+            "example": 350.0,
+            "title": "Monthlynetincome"
+          },
+          "savings": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "현재 모아둔 저축/예금액 (단위: 만원)",
+            "example": 3000.0,
+            "title": "Savings"
+          },
+          "totalExpense": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "월 총 지출 합계 (단위: 만원)",
+            "example": 250.0,
+            "title": "Totalexpense"
+          },
+          "variableExpenses": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "월 변동 생활비 (단위: 만원)",
+            "example": 100.0,
+            "title": "Variableexpenses"
+          }
+        },
+        "title": "InputValidationRequest",
+        "type": "object"
+      },
+      "InputValidationResponse": {
+        "properties": {
+          "status": {
+            "default": "success",
+            "description": "처리 상태",
+            "example": "success",
+            "title": "Status",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "검증 규칙에 따른 경고 및 확인 목록",
+            "items": {
+              "$ref": "#/components/schemas/ValidationWarningItem"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "title": "InputValidationResponse",
+        "type": "object"
+      },
+      "LightDiagnosisRequest": {
+        "properties": {
+          "incomeA": {
+            "description": "본인이 선택한 월 실수령 소득 구간 대표값 (단위: 만원/월)",
+            "example": 290.0,
+            "title": "Incomea",
+            "type": "number"
+          },
+          "incomeB": {
+            "default": 0.0,
+            "description": "상대방이 선택한 월 실수령 소득 구간 대표값 (단위: 만원/월, 미입력/외벌이 시 0)",
+            "example": 210.0,
+            "title": "Incomeb",
+            "type": "number"
+          },
+          "mgmtAxisAnswers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "items": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "관리축 성향 문항 점수 리스트 (1~5점, 1차원 또는 2차원 리스트 지원)",
+            "example": [
+              2,
+              5
+            ],
+            "title": "Mgmtaxisanswers"
+          },
+          "surplusA": {
+            "description": "본인이 선택한 월 잉여자금 구간 대표값 (단위: 만원/월)",
+            "example": 85.0,
+            "title": "Surplusa",
+            "type": "number"
+          },
+          "surplusB": {
+            "default": 0.0,
+            "description": "상대방이 선택한 월 잉여자금 구간 대표값 (단위: 만원/월, 미입력/외벌이 시 0)",
+            "example": 40.0,
+            "title": "Surplusb",
+            "type": "number"
+          },
+          "timeAxisAnswers": {
+            "description": "시간축 성향 문항 점수 리스트 (1~5점)",
+            "example": [
+              3,
+              4
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Timeaxisanswers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "incomeA",
+          "surplusA",
+          "timeAxisAnswers",
+          "mgmtAxisAnswers"
+        ],
+        "title": "LightDiagnosisRequest",
+        "type": "object"
+      },
+      "LightDiagnosisResponse": {
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/LightDiagnosisResultData",
+            "description": "라이트 진단 결과 데이터"
+          },
+          "status": {
+            "default": "success",
+            "description": "처리 상태",
+            "example": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "LightDiagnosisResponse",
+        "type": "object"
+      },
+      "LightDiagnosisResultData": {
+        "properties": {
+          "surplus": {
+            "$ref": "#/components/schemas/SurplusResult",
+            "description": "저축여력 연산 결과"
+          },
+          "typeClassification": {
+            "$ref": "#/components/schemas/TypeClassificationResult",
+            "description": "성향 유형 분류 결과"
+          }
+        },
+        "required": [
+          "surplus",
+          "typeClassification"
+        ],
+        "title": "LightDiagnosisResultData",
+        "type": "object"
+      },
+      "QuestionItem": {
+        "properties": {
+          "category": {
+            "description": "질문 카테고리 (소득 | 잉여자금 | 부채 | 시간축 성향 | 관리축 성향 | 가치관)",
+            "example": "소득",
+            "title": "Category",
+            "type": "string"
+          },
+          "id": {
+            "description": "질문 고유 식별자 ID",
+            "example": "q1",
+            "title": "Id",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QuestionOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "선택적 보기(옵션) 목록",
+            "title": "Options"
+          },
+          "order": {
+            "description": "질문 표시 순서",
+            "example": 1,
+            "title": "Order",
+            "type": "integer"
+          },
+          "scaleConfig": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScaleConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "척도 문항 설정 및 단계별 보기"
+          },
+          "subText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "질문 보조/안내 문구",
+            "example": "세후 실수령액(월급 기준)을 선택해 주세요.",
+            "title": "Subtext"
+          },
+          "target": {
+            "default": "self",
+            "description": "답변 대상자 (self: 본인, partner: 배우자/상대방)",
+            "example": "self",
+            "title": "Target",
+            "type": "string"
+          },
+          "text": {
+            "description": "질문 본문 문구",
+            "example": "본인의 월 실수령 소득 구간을 선택해 주세요.",
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "description": "문항 유형 (single_choice | scale | range_choice)",
+            "example": "range_choice",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "order",
+          "category",
+          "text",
+          "type"
+        ],
+        "title": "QuestionItem",
+        "type": "object"
+      },
+      "QuestionOption": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "선택지 부가 설명",
+            "example": "월 실수령 250만원 이상 ~ 330만원 미만",
+            "title": "Description"
+          },
+          "label": {
+            "description": "선택지 표시 라벨 문구",
+            "example": "250~330만",
+            "title": "Label",
+            "type": "string"
+          },
+          "rep": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "구간 대표값 (만원 단위)",
+            "example": 290.0,
+            "title": "Rep"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "선택지 고유 식별값",
+            "example": "250_330",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "QuestionOption",
+        "type": "object"
+      },
+      "QuestionSet": {
+        "properties": {
+          "description": {
+            "description": "질문 세트 설명",
+            "example": "3분 만에 알아보는 신혼부부 맞춤 재무 성향 및 저축여력 진단",
+            "title": "Description",
+            "type": "string"
+          },
+          "questions": {
+            "description": "질문 및 선택지 목록",
+            "items": {
+              "$ref": "#/components/schemas/QuestionItem"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "title": {
+            "description": "질문 세트 제목",
+            "example": "미리살림 라이트 진단 질문 세트",
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "description": "질문 세트 버전 식별자",
+            "example": "light-v1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "title",
+          "description",
+          "questions"
+        ],
+        "title": "QuestionSet",
+        "type": "object"
+      },
+      "ScaleConfig": {
+        "properties": {
+          "leftLabel": {
+            "description": "왼쪽(1점) 척도 기준 문구",
+            "example": "현재의 소비와 즐거움을 우선",
+            "title": "Leftlabel",
+            "type": "string"
+          },
+          "max": {
+            "default": 5,
+            "description": "척도 최대 점수",
+            "example": 5,
+            "title": "Max",
+            "type": "integer"
+          },
+          "min": {
+            "default": 1,
+            "description": "척도 최소 점수",
+            "example": 1,
+            "title": "Min",
+            "type": "integer"
+          },
+          "rightLabel": {
+            "description": "오른쪽(5점) 척도 기준 문구",
+            "example": "미래의 저축과 안정을 우선",
+            "title": "Rightlabel",
+            "type": "string"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1~5점 각 단계별 선택 문구",
+            "example": [
+              "매우 왼쪽 성향 (1점)",
+              "약간 왼쪽 성향 (2점)",
+              "중간 / 보통 (3점)",
+              "약간 오른쪽 성향 (4점)",
+              "매우 오른쪽 성향 (5점)"
+            ],
+            "title": "Steps"
+          }
+        },
+        "required": [
+          "leftLabel",
+          "rightLabel"
+        ],
+        "title": "ScaleConfig",
+        "type": "object"
+      },
+      "SurplusResult": {
+        "properties": {
+          "caution": {
+            "description": "추정치 주의사항 안내 문구",
+            "example": "※ 구간 선택 기반 추정치이며, 주거비 변동은 미반영된 금액입니다.",
+            "title": "Caution",
+            "type": "string"
+          },
+          "formattedSurplus": {
+            "description": "포맷팅된 저축여력 문구",
+            "example": "약 180만원대",
+            "title": "Formattedsurplus",
+            "type": "string"
+          },
+          "rawSurplus": {
+            "description": "저축여력 추정 원값 (단위: 만원)",
+            "example": 181.3,
+            "title": "Rawsurplus",
+            "type": "number"
+          },
+          "summary": {
+            "description": "저축여력 요약 설명 문구",
+            "example": "두 분의 합산 예상 월 저축 여력은 약 180만원대입니다.",
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rawSurplus",
+          "formattedSurplus",
+          "summary",
+          "caution"
+        ],
+        "title": "SurplusResult",
+        "type": "object"
+      },
+      "TypeClassificationResult": {
+        "properties": {
+          "mgmt": {
+            "description": "관리축 성향 코드 (joint | separate)",
+            "example": "joint",
+            "title": "Mgmt",
+            "type": "string"
+          },
+          "mgmtDescription": {
+            "description": "관리축 성향 상세 설명",
+            "example": "부부의 소득과 지출을 투명하게 공유하고 하나의 공동 통장으로 함께 관리하는 방식을 선호합니다.",
+            "title": "Mgmtdescription",
+            "type": "string"
+          },
+          "mgmtLabel": {
+            "description": "관리축 성향 한국어 명칭",
+            "example": "공동관리형 (통합 관리)",
+            "title": "Mgmtlabel",
+            "type": "string"
+          },
+          "recommendation": {
+            "description": "신혼부부 맞춤 재무 실천 조언",
+            "example": "공동의 저축 목표(예: 내 집 마련, 비상금)를 구체적인 금액과 기간으로 설정하고, 정기적으로 재무 현황을 점검해보세요.",
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "time": {
+            "description": "시간축 성향 코드 (saver | spender)",
+            "example": "saver",
+            "title": "Time",
+            "type": "string"
+          },
+          "timeDescription": {
+            "description": "시간축 성향 상세 설명",
+            "example": "현재의 소비보다는 미래의 안정과 목표 달성을 위해 저축과 자산 형성을 더 중요하게 생각합니다.",
+            "title": "Timedescription",
+            "type": "string"
+          },
+          "timeLabel": {
+            "description": "시간축 성향 한국어 명칭",
+            "example": "미래대비형 (저축 우선)",
+            "title": "Timelabel",
+            "type": "string"
+          },
+          "typeCode": {
+            "description": "복합 성향 유형 코드",
+            "example": "saver_joint",
+            "title": "Typecode",
+            "type": "string"
+          },
+          "typeDescription": {
+            "description": "복합 성향 유형 상세 해설",
+            "example": "두 분 모두 미래를 위한 저축을 중시하며, 자금을 함께 모아 공동의 목표를 달성하는 데 최적화된 궁합입니다.",
+            "title": "Typedescription",
+            "type": "string"
+          },
+          "typeName": {
+            "description": "복합 성향 유형 한국어 명칭",
+            "example": "함께 모으는 든든한 동반자형",
+            "title": "Typename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "time",
+          "timeLabel",
+          "timeDescription",
+          "mgmt",
+          "mgmtLabel",
+          "mgmtDescription",
+          "typeCode",
+          "typeName",
+          "typeDescription",
+          "recommendation"
+        ],
+        "title": "TypeClassificationResult",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationWarningItem": {
+        "properties": {
+          "id": {
+            "description": "검증 규칙 ID (예: V-01, V-02)",
+            "example": "V-01",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "description": "경고 수준 (confirm | warn)",
+            "example": "confirm",
+            "title": "Level",
+            "type": "string"
+          },
+          "message": {
+            "description": "안내/경고 메시지",
+            "example": "입력하신 월 소득 금액이 맞는지 다시 한번 확인해 주세요.",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "level",
+          "message"
+        ],
+        "title": "ValidationWarningItem",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "신혼부부를 위한 맞춤형 재무 진단, 설정 데이터 조회 및 라이트/딥 진단 연산 API 모듈입니다. 모든 질문, 선택지, 결과 해설을 한국어로 지원합니다.",
+    "title": "미리살림 백엔드 API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/calculate/light": {
+      "post": {
+        "operationId": "calculate_light_api_v1_calculate_light_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LightDiagnosisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LightDiagnosisResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "서버 내부 / 데이터베이스 오류"
+          }
+        },
+        "summary": "라이트 모드 저축여력 추정 및 4대 성향 유형 분류",
+        "tags": [
+          "라이트 진단"
+        ]
+      }
+    },
+    "/api/v1/config/{config_type}": {
+      "get": {
+        "operationId": "get_config_api_v1_config__config_type__get",
+        "parameters": [
+          {
+            "description": "조회할 설정 데이터 종류 (parameters | coefficients | ranges | benchmarks)",
+            "in": "path",
+            "name": "config_type",
+            "required": true,
+            "schema": {
+              "description": "조회할 설정 데이터 종류 (parameters | coefficients | ranges | benchmarks)",
+              "title": "Config Type",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "유효하지 않은 설정 데이터 종류"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "설정 데이터를 찾을 수 없음"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "서버 내부 / 데이터베이스 오류"
+          }
+        },
+        "summary": "설정 데이터 조회",
+        "tags": [
+          "설정 데이터"
+        ]
+      }
+    },
+    "/api/v1/deep/questions": {
+      "get": {
+        "operationId": "get_deep_questions_api_v1_deep_questions_get",
+        "parameters": [
+          {
+            "description": "딥 진단 질문 세트 버전 (기본값: deep-v1)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "default": "deep-v1",
+              "description": "딥 진단 질문 세트 버전 (기본값: deep-v1)",
+              "examples": [
+                "deep-v1"
+              ],
+              "title": "Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSet"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "질문 세트를 찾을 수 없음"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "딥 모드 가치관 질문 목록 조회",
+        "tags": [
+          "딥 진단"
+        ]
+      }
+    },
+    "/api/v1/light/questions": {
+      "get": {
+        "operationId": "get_light_questions_api_v1_light_questions_get",
+        "parameters": [
+          {
+            "description": "질문 세트 버전 식별자 (예: light-v1)",
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "description": "질문 세트 버전 식별자 (예: light-v1)",
+              "examples": [
+                "light-v1"
+              ],
+              "title": "Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSet"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "질문 세트를 찾을 수 없음"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "라이트 모드 질문 및 선택지 목록 조회",
+        "tags": [
+          "라이트 진단"
+        ]
+      }
+    },
+    "/api/v1/validate/input": {
+      "post": {
+        "operationId": "validate_user_input_api_v1_validate_input_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InputValidationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InputValidationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "서버 내부 오류"
+          }
+        },
+        "summary": "입력 데이터 이상치 및 재무 상태 유효성 검증",
+        "tags": [
+          "유효성 검증"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "서버 및 데이터베이스 연결 상태 확인",
+        "tags": [
+          "시스템"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "운영 서버 (Production)",
+      "url": "https://mirisalim-backend.onrender.com"
+    },
+    {
+      "description": "로컬 개발 서버 (Local)",
+      "url": "http://127.0.0.1:8000"
+    }
+  ]
+}

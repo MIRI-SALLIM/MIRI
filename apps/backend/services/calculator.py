@@ -1,13 +1,24 @@
 import math
-from typing import Dict, Any, List, Union
+from typing import Any
+
+VALUE_SCORE_MAP: dict[str, float] = {
+    "spender_strong": 1.0,
+    "spender_moderate": 2.0,
+    "saver_moderate": 4.0,
+    "saver_strong": 5.0,
+    "separate_full": 1.0,
+    "separate_shared": 2.0,
+    "joint_allowance": 4.0,
+    "joint_full": 5.0,
+}
 
 def calculate_light_surplus(
     income_a: float, 
     income_b: float, 
     surplus_a: float, 
     surplus_b: float, 
-    coefficients: Dict[str, Any]
-) -> Dict[str, Any]:
+    coefficients: dict[str, Any]
+) -> dict[str, Any]:
     """
     F-65 라이트 모드 저축여력 추정 산식
     - 입력: 본인/상대방 월 실수령 소득 및 잉여자금 구간 대표값 (만원/월)
@@ -34,23 +45,38 @@ def calculate_light_surplus(
         "caution": "※ 구간 선택 기반 추정치이며, 주거비 변동은 미반영된 금액입니다."
     }
 
-def classify_type(time_axis: Any, mgmt_axis: Any, cutoff: float = 3.0) -> Dict[str, Any]:
+def _to_score(val: Any) -> float:
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, str):
+        if val in VALUE_SCORE_MAP:
+            return VALUE_SCORE_MAP[val]
+        try:
+            return float(val)
+        except ValueError:
+            return 3.0
+    return 3.0
+
+def classify_type(time_axis: Any, mgmt_axis: Any, cutoff: float = 3.0) -> dict[str, Any]:
     """
     F-64 라이트 모드 유형 분류 산식
-    - 입력: 시간축 성향 점수 리스트, 관리축 성향 점수 리스트, 임계값(cutoff)
+    - 입력: 시간축 성향 점수 리스트/코드, 관리축 성향 점수 리스트/코드, 임계값(cutoff)
     - 산식: 각 축의 평균 점수를 cutoff(3.0)와 비교
     - 결과: 4가지 조합별 한국어 명칭, 축별 상세 설명, 맞춤 재무 조언 반환
     """
     def avg(xs: Any) -> float:
         if not xs:
-            return 0.0
-        flat = []
-        for item in xs:
-            if isinstance(item, (list, tuple)):
-                flat.extend(item)
-            elif isinstance(item, (int, float)):
-                flat.append(item)
-        return sum(flat) / len(flat) if flat else 0.0
+            return 3.0
+        flat: list[float] = []
+        if isinstance(xs, (list, tuple)):
+            for item in xs:
+                if isinstance(item, (list, tuple)):
+                    flat.extend([_to_score(x) for x in item])
+                else:
+                    flat.append(_to_score(item))
+        else:
+            flat.append(_to_score(xs))
+        return sum(flat) / len(flat) if flat else 3.0
 
     is_saver = avg(time_axis) >= cutoff
     is_joint = avg(mgmt_axis) >= cutoff

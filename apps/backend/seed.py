@@ -1,9 +1,12 @@
 import io
-import os
 import json
+import os
 import sys
-from pymongo import MongoClient
+from pathlib import Path
+from typing import Any
+
 from dotenv import load_dotenv
+from pymongo import MongoClient
 
 if sys.platform == "win32" and isinstance(sys.stdout, io.TextIOWrapper):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -11,26 +14,30 @@ if sys.platform == "win32" and isinstance(sys.stdout, io.TextIOWrapper):
 load_dotenv()
 
 MONGODB_URI = os.getenv("MONGODB_URI")
+MONGODB_DATABASE = os.getenv("MONGODB_DATABASE") or os.getenv("MONGODB_DB_NAME") or "mirisalim"
+
 if not MONGODB_URI:
     raise ValueError(".env 파일에서 MONGODB_URI를 읽을 수 없습니다.")
 
-client = MongoClient(MONGODB_URI)
-db = client.get_database("mirisalim")  # DB명: mirisalim
+client: MongoClient[dict[str, Any]] = MongoClient(MONGODB_URI)
+db = client.get_database(MONGODB_DATABASE)
 
-def seed_database():
+def seed_database() -> None:
+    config_dir = Path(__file__).resolve().parent / "config"
     files = {
-        "parameters": "config/parameters.json",
-        "coefficients": "config/coefficients.json",
-        "ranges": "config/ranges.json",
-        "benchmarks": "config/benchmarks.json"
+        "parameters": config_dir / "parameters.json",
+        "coefficients": config_dir / "coefficients.json",
+        "ranges": config_dir / "ranges.json",
+        "benchmarks": config_dir / "benchmarks.json",
+        "light_questions": config_dir / "light_questions.json",
+        "light_types": config_dir / "light_types.json",
     }
     
     for collection_name, file_path in files.items():
-        if os.path.exists(file_path):
+        if file_path.exists():
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             
-            # 기존 데이터 정리 후 신규 동기화
             collection = db[collection_name]
             collection.delete_many({})
             collection.insert_one({"_id": "current_config", "data": data})

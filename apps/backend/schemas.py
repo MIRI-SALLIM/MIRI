@@ -3,7 +3,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, Field
 
 # ==========================================
-# 공통 응답 스키마 (Unified Error Envelope)
+# 공통 오류 응답 스키마 (Unified Error Envelope)
 # ==========================================
 
 class ErrorDetail(BaseModel):
@@ -24,7 +24,7 @@ class ErrorDetail(BaseModel):
     )
 
 class ErrorResponse(BaseModel):
-    error: ErrorDetail = Field(..., description="에러 세부 정보 객체")
+    error: ErrorDetail = Field(..., description="오류 세부 정보 객체")
 
 class HealthResponse(BaseModel):
     status: str = Field(..., description="서버 상태", json_schema_extra={"example": "ok"})
@@ -76,7 +76,7 @@ class QuestionSet(BaseModel):
 
 
 # ==========================================
-# 라이트 모드 진단 요청 및 응답 스키마
+# 라이트 모드 진단 요청 및 결과 DTO
 # ==========================================
 
 class LightDiagnosisRequest(BaseModel):
@@ -102,13 +102,13 @@ class LightDiagnosisRequest(BaseModel):
     )
     timeAxisAnswers: list[int] | list[float] | list[str] = Field(
         ..., 
-        description="시간축 성향 문항 점수(1~5점) 또는 선택지 코드 리스트",
-        json_schema_extra={"example": [4]}
+        description="시간축 성향 문항 점수(1~5점) 또는 선택지 인덱스/코드 리스트",
+        json_schema_extra={"example": [2]}
     )
     mgmtAxisAnswers: list[int] | list[float] | list[str] | list[list[int]] | list[list[float]] = Field(
         ..., 
-        description="관리축 성향 문항 점수(1~5점) 또는 선택지 코드 리스트",
-        json_schema_extra={"example": [4]}
+        description="관리축 성향 문항 점수(1~5점) 또는 선택지 인덱스/코드 리스트",
+        json_schema_extra={"example": [2]}
     )
 
 class SurplusResult(BaseModel):
@@ -169,8 +169,25 @@ class InputValidationResponse(BaseModel):
 
 
 # ==========================================
-# Gate 1: 세션, 초대, 입력 및 결과 스키마
+# Gate 1: 세션, 초대, 입력(answers, guesses) 및 상태 스키마
 # ==========================================
+
+# 4개 선택지 인덱스: 0, 1, 2, 3 또는 null
+AnswerOptionIndex = Literal[0, 1, 2, 3]
+
+class LightInputAnswers(BaseModel):
+    monthly_income: AnswerOptionIndex | None = Field(default=None, description="소득 문항 선택지 인덱스 (0: 200만 미만, 1: 200~300만, 2: 300~450만, 3: 450만 이상)")
+    saving_ratio: AnswerOptionIndex | None = Field(default=None, description="잉여자금 문항 선택지 인덱스 (0: 거의 없음, 1: 20~60만, 2: 60~120만, 3: 120만 이상)")
+    spending_style: AnswerOptionIndex | None = Field(default=None, description="소비성향 문항 선택지 인덱스 (0: 소비 최우선, 1: 소비 약간, 2: 저축 약간, 3: 저축 최우선)")
+    debt_load: AnswerOptionIndex | None = Field(default=None, description="부채규모 문항 선택지 인덱스 (0: 없음, 1: 3천만 미만, 2: 3천만~1억, 3: 1억 이상)")
+    shared_expense: AnswerOptionIndex | None = Field(default=None, description="공동관리 문항 선택지 인덱스 (0: 완전 각자, 1: 각자+공용통장, 2: 공동+개인용돈, 3: 완전 통합)")
+
+class LightInputGuesses(BaseModel):
+    monthly_income: AnswerOptionIndex | None = Field(default=None, description="상대방 소득 예측 선택지 인덱스")
+    saving_ratio: AnswerOptionIndex | None = Field(default=None, description="상대방 잉여자금 예측 선택지 인덱스")
+    spending_style: AnswerOptionIndex | None = Field(default=None, description="상대방 소비성향 예측 선택지 인덱스")
+    debt_load: AnswerOptionIndex | None = Field(default=None, description="상대방 부채규모 예측 선택지 인덱스")
+    shared_expense: AnswerOptionIndex | None = Field(default=None, description="상대방 공동관리 예측 선택지 인덱스")
 
 class CreateSessionRequest(BaseModel):
     nickname: str = Field(..., min_length=1, max_length=20, description="작성자 닉네임", json_schema_extra={"example": "예랑이"})
@@ -200,24 +217,16 @@ class JoinInvitationRequest(BaseModel):
     nickname: str = Field(..., min_length=1, max_length=20, description="참여자 닉네임", json_schema_extra={"example": "예신이"})
 
 class UserInputData(BaseModel):
-    answers: dict[str, Any] = Field(
-        ..., 
-        description="질문 ID별 답변 선택값", 
-        json_schema_extra={"example": {"monthly_income": "200_300", "saving_ratio": "60_120", "spending_style": "saver_moderate", "debt_load": "none", "shared_expense": "joint_allowance"}}
-    )
-    predictions: dict[str, Any] | None = Field(
-        None, 
-        description="상대방 답변에 대한 예측값 (선택적)", 
-        json_schema_extra={"example": {"monthly_income": "200_300", "saving_ratio": "20_60", "spending_style": "spender_moderate", "debt_load": "none", "shared_expense": "joint_allowance"}}
-    )
+    answers: LightInputAnswers = Field(default_factory=LightInputAnswers, description="본인 질문별 답변 인덱스 (0|1|2|3|null)")
+    guesses: LightInputGuesses | None = Field(None, description="상대방 질문별 예측 인덱스 (0|1|2|3|null)")
 
 class SaveInputRequest(BaseModel):
-    answers: dict[str, Any] = Field(..., description="질문 ID별 답변 선택값")
-    predictions: dict[str, Any] | None = Field(None, description="상대방 답변 예측값")
+    answers: LightInputAnswers = Field(..., description="본인 질문별 답변 인덱스 (0|1|2|3|null)")
+    guesses: LightInputGuesses | None = Field(None, description="상대방 질문별 예측 인덱스 (0|1|2|3|null)")
 
 class SubmitInputRequest(BaseModel):
-    answers: dict[str, Any] = Field(..., description="질문 ID별 최종 답변 선택값")
-    predictions: dict[str, Any] | None = Field(None, description="상대방 답변 최종 예측값")
+    answers: LightInputAnswers = Field(..., description="본인 질문별 최종 답변 인덱스 (0|1|2|3|null)")
+    guesses: LightInputGuesses | None = Field(None, description="상대방 질문별 최종 예측 인덱스 (0|1|2|3|null)")
 
 class SessionStatusResponse(BaseModel):
     sessionId: str = Field(..., description="세션 ID", json_schema_extra={"example": "sess_8f3a9b2c"})
@@ -239,11 +248,6 @@ class NudgeResponse(BaseModel):
 class ResultWaitingResponse(BaseModel):
     status: Literal["waiting"] = Field("waiting", description="결과 대기 상태 식별자")
     partnerCompleted: Literal[False] = Field(False, description="상대방 완료 여부 (항상 False)")
-    message: str = Field(
-        "상대방이 아직 진단을 완료하지 않았습니다. 두 분 모두 제출하면 결과가 공개됩니다.", 
-        description="대기 안내 메시지",
-        json_schema_extra={"example": "상대방이 아직 진단을 완료하지 않았습니다. 두 분 모두 제출하면 결과가 공개됩니다."}
-    )
 
 class ResultReadyResponse(BaseModel):
     status: Literal["ready"] = Field("ready", description="결과 준비 완료 상태 식별자")

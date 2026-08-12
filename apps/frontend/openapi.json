@@ -85,26 +85,13 @@
         "properties": {
           "error": {
             "$ref": "#/components/schemas/ErrorDetail",
-            "description": "에러 세부 정보 객체"
+            "description": "오류 세부 정보 객체"
           }
         },
         "required": [
           "error"
         ],
         "title": "ErrorResponse",
-        "type": "object"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
-          }
-        },
-        "title": "HTTPValidationError",
         "type": "object"
       },
       "HealthResponse": {
@@ -341,9 +328,9 @@
                 "type": "array"
               }
             ],
-            "description": "관리축 성향 문항 점수(1~5점) 또는 선택지 코드 리스트",
+            "description": "관리축 성향 문항 점수(1~5점) 또는 선택지 인덱스/코드 리스트",
             "example": [
-              4
+              2
             ],
             "title": "Mgmtaxisanswers"
           },
@@ -381,9 +368,9 @@
                 "type": "array"
               }
             ],
-            "description": "시간축 성향 문항 점수(1~5점) 또는 선택지 코드 리스트",
+            "description": "시간축 성향 문항 점수(1~5점) 또는 선택지 인덱스/코드 리스트",
             "example": [
-              4
+              2
             ],
             "title": "Timeaxisanswers"
           }
@@ -433,6 +420,198 @@
           "typeClassification"
         ],
         "title": "LightDiagnosisResultData",
+        "type": "object"
+      },
+      "LightInputAnswers": {
+        "properties": {
+          "debt_load": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "부채규모 문항 선택지 인덱스 (0: 없음, 1: 3천만 미만, 2: 3천만~1억, 3: 1억 이상)",
+            "title": "Debt Load"
+          },
+          "monthly_income": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "소득 문항 선택지 인덱스 (0: 200만 미만, 1: 200~300만, 2: 300~450만, 3: 450만 이상)",
+            "title": "Monthly Income"
+          },
+          "saving_ratio": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "잉여자금 문항 선택지 인덱스 (0: 거의 없음, 1: 20~60만, 2: 60~120만, 3: 120만 이상)",
+            "title": "Saving Ratio"
+          },
+          "shared_expense": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "공동관리 문항 선택지 인덱스 (0: 완전 각자, 1: 각자+공용통장, 2: 공동+개인용돈, 3: 완전 통합)",
+            "title": "Shared Expense"
+          },
+          "spending_style": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "소비성향 문항 선택지 인덱스 (0: 소비 최우선, 1: 소비 약간, 2: 저축 약간, 3: 저축 최우선)",
+            "title": "Spending Style"
+          }
+        },
+        "title": "LightInputAnswers",
+        "type": "object"
+      },
+      "LightInputGuesses": {
+        "properties": {
+          "debt_load": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상대방 부채규모 예측 선택지 인덱스",
+            "title": "Debt Load"
+          },
+          "monthly_income": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상대방 소득 예측 선택지 인덱스",
+            "title": "Monthly Income"
+          },
+          "saving_ratio": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상대방 잉여자금 예측 선택지 인덱스",
+            "title": "Saving Ratio"
+          },
+          "shared_expense": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상대방 공동관리 예측 선택지 인덱스",
+            "title": "Shared Expense"
+          },
+          "spending_style": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상대방 소비성향 예측 선택지 인덱스",
+            "title": "Spending Style"
+          }
+        },
+        "title": "LightInputGuesses",
         "type": "object"
       },
       "NudgeResponse": {
@@ -669,13 +848,6 @@
       },
       "ResultWaitingResponse": {
         "properties": {
-          "message": {
-            "default": "상대방이 아직 진단을 완료하지 않았습니다. 두 분 모두 제출하면 결과가 공개됩니다.",
-            "description": "대기 안내 메시지",
-            "example": "상대방이 아직 진단을 완료하지 않았습니다. 두 분 모두 제출하면 결과가 공개됩니다.",
-            "title": "Message",
-            "type": "string"
-          },
           "partnerCompleted": {
             "const": false,
             "default": false,
@@ -697,23 +869,19 @@
       "SaveInputRequest": {
         "properties": {
           "answers": {
-            "additionalProperties": true,
-            "description": "질문 ID별 답변 선택값",
-            "title": "Answers",
-            "type": "object"
+            "$ref": "#/components/schemas/LightInputAnswers",
+            "description": "본인 질문별 답변 인덱스 (0|1|2|3|null)"
           },
-          "predictions": {
+          "guesses": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/LightInputGuesses"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "상대방 답변 예측값",
-            "title": "Predictions"
+            "description": "상대방 질문별 예측 인덱스 (0|1|2|3|null)"
           }
         },
         "required": [
@@ -926,23 +1094,19 @@
       "SubmitInputRequest": {
         "properties": {
           "answers": {
-            "additionalProperties": true,
-            "description": "질문 ID별 최종 답변 선택값",
-            "title": "Answers",
-            "type": "object"
+            "$ref": "#/components/schemas/LightInputAnswers",
+            "description": "본인 질문별 최종 답변 인덱스 (0|1|2|3|null)"
           },
-          "predictions": {
+          "guesses": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/LightInputGuesses"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "상대방 답변 최종 예측값",
-            "title": "Predictions"
+            "description": "상대방 질문별 최종 예측 인덱스 (0|1|2|3|null)"
           }
         },
         "required": [
@@ -1068,83 +1232,22 @@
       "UserInputData": {
         "properties": {
           "answers": {
-            "additionalProperties": true,
-            "description": "질문 ID별 답변 선택값",
-            "example": {
-              "debt_load": "none",
-              "monthly_income": "200_300",
-              "saving_ratio": "60_120",
-              "shared_expense": "joint_allowance",
-              "spending_style": "saver_moderate"
-            },
-            "title": "Answers",
-            "type": "object"
+            "$ref": "#/components/schemas/LightInputAnswers",
+            "description": "본인 질문별 답변 인덱스 (0|1|2|3|null)"
           },
-          "predictions": {
+          "guesses": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/LightInputGuesses"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "상대방 답변에 대한 예측값 (선택적)",
-            "example": {
-              "debt_load": "none",
-              "monthly_income": "200_300",
-              "saving_ratio": "20_60",
-              "shared_expense": "joint_allowance",
-              "spending_style": "spender_moderate"
-            },
-            "title": "Predictions"
+            "description": "상대방 질문별 예측 인덱스 (0|1|2|3|null)"
           }
         },
-        "required": [
-          "answers"
-        ],
         "title": "UserInputData",
-        "type": "object"
-      },
-      "ValidationError": {
-        "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError",
         "type": "object"
       },
       "ValidationWarningItem": {
@@ -1175,6 +1278,14 @@
         ],
         "title": "ValidationWarningItem",
         "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "cookieAuth": {
+        "description": "참여자 세션 인증을 위한 HttpOnly 쿠키",
+        "in": "cookie",
+        "name": "mrs_participant",
+        "type": "apiKey"
       }
     }
   },
@@ -1217,7 +1328,7 @@
                 }
               }
             },
-            "description": "요청 본문 유효성 검증 실패"
+            "description": "입력값 검증 실패 (Validation Error)"
           },
           "500": {
             "content": {
@@ -1287,11 +1398,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           },
           "500": {
             "content": {
@@ -1322,9 +1433,6 @@
             "schema": {
               "default": "deep-v1",
               "description": "딥 진단 질문 세트 버전 (기본값: deep-v1)",
-              "examples": [
-                "deep-v1"
-              ],
               "title": "Version",
               "type": "string"
             }
@@ -1359,7 +1467,7 @@
                 }
               }
             },
-            "description": "입력 파라미터 검증 실패"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "딥 모드 가치관 질문 목록 조회",
@@ -1419,11 +1527,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "초대 코드 유효성 확인 및 초대자 정보 조회",
@@ -1443,6 +1551,24 @@
             "schema": {
               "title": "Code",
               "type": "string"
+            }
+          },
+          {
+            "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -1501,11 +1627,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "초대 수락 및 세션 참여 (쿠키 발급)",
@@ -1519,15 +1645,13 @@
         "operationId": "get_light_questions_api_v1_light_questions_get",
         "parameters": [
           {
-            "description": "질문 세트 버전 식별자 (예: light-v1)",
+            "description": "질문 세트 버전 식별자 (기본값: light-v1)",
             "in": "query",
             "name": "version",
-            "required": true,
+            "required": false,
             "schema": {
-              "description": "질문 세트 버전 식별자 (예: light-v1)",
-              "examples": [
-                "light-v1"
-              ],
+              "default": "light-v1",
+              "description": "질문 세트 버전 식별자 (기본값: light-v1)",
               "title": "Version",
               "type": "string"
             }
@@ -1562,7 +1686,7 @@
                 }
               }
             },
-            "description": "입력 파라미터 검증 실패"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "라이트 모드 5대 질문 및 선택지 목록 조회",
@@ -1629,11 +1753,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "현재 참여자 쿠키 기준 활성 세션 조회",
@@ -1645,6 +1769,26 @@
     "/api/v1/sessions": {
       "post": {
         "operationId": "create_session_api_v1_sessions_post",
+        "parameters": [
+          {
+            "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1674,7 +1818,7 @@
                 }
               }
             },
-            "description": "입력값 검증 실패"
+            "description": "입력값 검증 실패 (Validation Error)"
           },
           "500": {
             "content": {
@@ -1760,11 +1904,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "세션 내 본인 임시 저장 답변 조회",
@@ -1782,6 +1926,24 @@
             "schema": {
               "title": "Session Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+              "title": "Idempotency-Key"
             }
           },
           {
@@ -1846,11 +2008,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "세션 내 본인 답변 임시 저장 (진행 중 자동 저장)",
@@ -1870,6 +2032,24 @@
             "schema": {
               "title": "Session Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+              "title": "Idempotency-Key"
             }
           },
           {
@@ -1938,7 +2118,7 @@
                 }
               }
             },
-            "description": "필수 답변 누락 등 검증 실패"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "세션 내 본인 답변 최종 제출",
@@ -1960,6 +2140,24 @@
               "description": "세션 ID",
               "title": "Session Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "중복 요청 방지를 위한 멱등성 키 (UUID)",
+              "title": "Idempotency-Key"
             }
           },
           {
@@ -2004,11 +2202,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           },
           "429": {
             "content": {
@@ -2110,11 +2308,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           },
           "500": {
             "content": {
@@ -2200,11 +2398,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "입력값 검증 실패 (Validation Error)"
           }
         },
         "summary": "세션 진행 및 양측 제출 현황 조회",
@@ -2245,7 +2443,7 @@
                 }
               }
             },
-            "description": "요청 본문 유효성 검증 실패"
+            "description": "입력값 검증 실패 (Validation Error)"
           },
           "500": {
             "content": {
@@ -2288,12 +2486,8 @@
   },
   "servers": [
     {
-      "description": "운영 서버 (Production)",
-      "url": "https://mirisalim-backend.onrender.com"
-    },
-    {
-      "description": "로컬 개발 서버 (Local)",
-      "url": "http://127.0.0.1:8000"
+      "description": "기본 서버 (Default)",
+      "url": "/"
     }
   ]
 }

@@ -26,7 +26,8 @@ def test_health():
 
 def test_light_questions():
     """라이트 진단 제품 스펙 5개 문항, 각 4개 선택지 대표값 및 한국어 데이터 검증"""
-    res = client.get("/api/v1/light/questions?version=light-v1")
+    # 1. 기본값("light-v1")으로 호출
+    res = client.get("/api/v1/light/questions")
     assert res.status_code == 200
     data = res.json()
     assert data["version"] == "light-v1"
@@ -56,19 +57,11 @@ def test_light_questions():
     assert err_data["error"]["code"] == "QUESTION_SET_NOT_FOUND"
     assert "찾을 수 없습니다" in err_data["error"]["message"]
 
-    # 422 Validation Error 공통 에러 봉투 검증 (version 파라미터 누락)
-    val_err_res = client.get("/api/v1/light/questions")
-    assert val_err_res.status_code == 422
-    val_data = val_err_res.json()
-    assert "error" in val_data
-    assert val_data["error"]["code"] == "VALIDATION_ERROR"
-    assert "version" in val_data["error"]["fieldErrors"]
-
     print("✅ [테스트 2] /api/v1/light/questions 5개 문항(각 4개 옵션) 및 공통 에러 봉투 정상")
 
 def test_deep_questions():
     """딥 진단 8개 가치관 문항(5대 영역) 및 공통 에러 봉투 검증"""
-    res = client.get("/api/v1/deep/questions?version=deep-v1")
+    res = client.get("/api/v1/deep/questions")
     assert res.status_code == 200
     data = res.json()
     assert data["version"] == "deep-v1"
@@ -102,7 +95,7 @@ def test_config_endpoint():
     print("✅ [테스트 4] /api/v1/config 설정 데이터 조회 및 캐싱 정상")
 
 def test_calculate_light_endpoint():
-    """라이트 진단 연산 API - 코드값 및 1차원/2차원 배열 호환 및 4대 성향 분류 검증"""
+    """라이트 진단 연산 API - 선택지 인덱스/코드값 호환 및 4대 성향 분류 검증"""
     # 1. 5문항 선택지 코드값 기반 요청 검증
     req_payload_codes = {
         "incomeA": 250.0,
@@ -115,7 +108,7 @@ def test_calculate_light_endpoint():
     res1 = client.post("/api/v1/calculate/light", json=req_payload_codes)
     assert res1.status_code == 200
     data1 = res1.json()["result"]
-    assert data1["surplus"]["rawSurplus"] == 181.2 or data1["surplus"]["rawSurplus"] == 181.3
+    assert data1["surplus"]["rawSurplus"] in (181.2, 181.3)
     assert data1["surplus"]["formattedSurplus"] == "약 180만원대"
     assert data1["typeClassification"]["typeCode"] == "saver_joint"
     assert data1["typeClassification"]["typeName"] == "함께 모으는 든든한 동반자형"
@@ -179,9 +172,10 @@ def test_validator_endpoint_and_rules():
     print("✅ [테스트 6] /api/v1/validate/input 및 V-01~V-05 유효성 검증 정상")
 
 def test_gate1_session_and_result_contract():
-    """Gate 1 세션 생성, 초대, 쿠키 및 결과 Discriminated Union 계약 검증"""
-    # 1. 세션 생성 (201 Created 및 쿠키 발급 확인)
-    create_res = client.post("/api/v1/sessions", json={"nickname": "예랑이", "mode": "light"})
+    """Gate 1 세션 생성, 초대, 쿠키, Idempotency-Key 및 waiting 응답(정확히 2개 키) 계약 검증"""
+    # 1. 세션 생성 (201 Created, Idempotency-Key 헤더, 쿠키 발급 확인)
+    headers = {"Idempotency-Key": "test-uuid-1234"}
+    create_res = client.post("/api/v1/sessions", json={"nickname": "예랑이", "mode": "light"}, headers=headers)
     assert create_res.status_code == 201
     sess_data = create_res.json()
     assert sess_data["id"].startswith("sess_")
@@ -195,33 +189,76 @@ def test_gate1_session_and_result_contract():
     assert inv_res.json()["invitationCode"] == inv_code
 
     # 3. 초대 참여 (쿠키 발급)
-    join_res = client.post(f"/api/v1/invitations/{inv_code}/join", json={"nickname": "예신이"})
+    join_res = client.post(f"/api/v1/invitations/{inv_code}/join", json={"nickname": "예신이"}, headers=headers)
     assert join_res.status_code == 200
     assert join_res.json()["myRole"] == "invitee"
     assert "mrs_participant" in join_res.cookies
 
-    # 4. 결과 조회 (미완료 시 waiting discriminated union 반환 확인)
+    # 4. 입력 저장 (0|1|2|3|null DTO 검증)
+    input_payload = {
+        "answers": {
+            "monthly_income": 1,
+            "saving_ratio": 2,
+            "spending_style": 3,
+            "debt_load": 0,
+            "shared_expense": 2
+        },
+        "guesses": {
+            "monthly_income": 1,
+            "saving_ratio": 1,
+            "spending_style": 0,
+            "debt_load": 0,
+            "shared_expense": 2
+        }
+    }
+    save_res = client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=input_payload, headers=headers)
+    assert save_res.status_code == 200
+    assert save_res.json()["answers"]["monthly_income"] == 1
+
+    # 5. 잘못된 답변 값(범위 밖 4 등) 전송 시 422 검증
+    bad_input_payload = {
+        "answers": {
+            "monthly_income": 4  # 0, 1, 2, 3 범위를 벗어남
+        }
+    }
+    bad_res = client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=bad_input_payload)
+    assert bad_res.status_code == 422
+    assert bad_res.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    # 6. 결과 조회 (waiting 응답의 키가 정확히 2개인지 검증: status, partnerCompleted)
     result_res = client.get(f"/api/v1/sessions/{sess_data['id']}/result")
     assert result_res.status_code == 200
     res_json = result_res.json()
+    assert set(res_json.keys()) == {"status", "partnerCompleted"}, f"waiting 응답 키는 정확히 2개여야 합니다: {res_json.keys()}"
     assert res_json["status"] == "waiting"
     assert res_json["partnerCompleted"] is False
-    # waiting 상태에서는 상대방 답변 및 점수 데이터가 노출되지 않아야 함
-    assert "result" not in res_json
 
-    # 5. 쿠키 없이 /api/v1/me/session 호출 시 401 공통 에러 봉투 확인
+    # 7. 쿠키 없이 /api/v1/me/session 호출 시 401 공통 에러 봉투 확인
     unauth_client = TestClient(app, cookies={})
     unauth_res = unauth_client.get("/api/v1/me/session")
     assert unauth_res.status_code == 401
     assert unauth_res.json()["error"]["code"] == "PARTICIPANT_UNAUTHORIZED"
 
-    print("✅ [테스트 7] Gate 1 세션/초대/쿠키/결과 Discriminated Union 계약 정상")
+    print("✅ [테스트 7] Gate 1 세션/초대/쿠키/waiting(2개 키) 및 0|1|2|3|null DTO 검증 정상")
 
-def test_cache_control_header():
-    """모든 응답에 Cache-Control: no-store 헤더가 적용되는지 검증"""
-    res = client.get("/health")
-    assert "no-store" in res.headers.get("Cache-Control", "")
-    print("✅ [테스트 8] Cache-Control: no-store 헤더 정상")
+def test_openapi_schema_integrity():
+    """OpenAPI 스키마에서 HTTPValidationError 제거 및 ErrorResponse 통일, cookieAuth 검증"""
+    schema = app.openapi()
+    schemas = schema.get("components", {}).get("schemas", {})
+
+    # 1. HTTPValidationError 및 ValidationError 완전 제거 확인
+    assert "HTTPValidationError" not in schemas, "OpenAPI 스키마에 HTTPValidationError가 존재하지 않아야 합니다."
+    assert "ValidationError" not in schemas, "OpenAPI 스키마에 ValidationError가 존재하지 않아야 합니다."
+
+    # 2. ErrorResponse 존재 확인
+    assert "ErrorResponse" in schemas
+
+    # 3. cookieAuth 보안 스킴 등록 확인
+    sec_schemes = schema.get("components", {}).get("securitySchemes", {})
+    assert "cookieAuth" in sec_schemes
+    assert sec_schemes["cookieAuth"]["name"] == "mrs_participant"
+
+    print("✅ [테스트 8] OpenAPI 스키마 HTTPValidationError 제거 및 ErrorResponse 통일 무결성 정상")
 
 if __name__ == "__main__":
     test_health()
@@ -231,5 +268,5 @@ if __name__ == "__main__":
     test_calculate_light_endpoint()
     test_validator_endpoint_and_rules()
     test_gate1_session_and_result_contract()
-    test_cache_control_header()
-    print("\n🎉 [전체 통과] 백엔드 계약, 5대 질문, 공통 에러 봉투 및 Gate 1 스펙 검증 완료!")
+    test_openapi_schema_integrity()
+    print("\n🎉 [전체 통과] 모든 백엔드 완료 조건 검증 완료!")

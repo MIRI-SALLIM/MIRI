@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import os
@@ -5,12 +6,24 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import Cookie, FastAPI, HTTPException, Query, Request, Response, status
+from fastapi import (
+    Cookie,
+    FastAPI,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from fastapi import Path as FastPath
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyCookie
 from pymongo import AsyncMongoClient
+from pymongo.errors import PyMongoError
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -22,6 +35,8 @@ from schemas import (
     JoinInvitationRequest,
     LightDiagnosisRequest,
     LightDiagnosisResponse,
+    LightInputAnswers,
+    LightInputGuesses,
     NudgeResponse,
     QuestionSet,
     ResultWaitingResponse,
@@ -62,10 +77,12 @@ app = FastAPI(
     description="신혼부부를 위한 맞춤형 재무 진단, 세션 관리 및 라이트/딥 진단 연산 API 모듈입니다. 모든 질문, 선택지, 결과 해설을 한국어로 지원합니다.",
     version="1.0.0",
     servers=[
-        {"url": "https://mirisalim-backend.onrender.com", "description": "운영 서버 (Production)"},
-        {"url": "http://127.0.0.1:8000", "description": "로컬 개발 서버 (Local)"}
+        {"url": "/", "description": "기본 서버 (Default)"}
     ]
 )
+
+# 쿠키 보안 스킴 정의
+cookie_sec = APIKeyCookie(name=PARTICIPANT_COOKIE_NAME, auto_error=False, description="참여자 인증 쿠키")
 
 # CORS 설정
 default_origins = [
@@ -180,10 +197,6 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
 
 
-import asyncio
-
-from pymongo.errors import PyMongoError
-
 # ==========================================
 # 비동기 MongoDB 클라이언트 및 인메모리 캐시
 # ==========================================
@@ -277,7 +290,7 @@ async def health() -> dict[str, Any]:
     tags=["라이트 진단"]
 )
 def get_light_questions(
-    version: str = Query(..., examples=["light-v1"], description="질문 세트 버전 식별자 (예: light-v1)")
+    version: str = Query("light-v1", description="질문 세트 버전 식별자 (기본값: light-v1)")
 ) -> dict[str, Any]:
     if version != "light-v1":
         raise HTTPException(
@@ -306,7 +319,7 @@ def get_light_questions(
     tags=["딥 진단"]
 )
 def get_deep_questions(
-    version: str = Query("deep-v1", examples=["deep-v1"], description="딥 진단 질문 세트 버전 (기본값: deep-v1)")
+    version: str = Query("deep-v1", description="딥 진단 질문 세트 버전 (기본값: deep-v1)")
 ) -> dict[str, Any]:
     if version != "deep-v1":
         raise HTTPException(
@@ -467,7 +480,8 @@ def validate_user_input(req: InputValidationRequest) -> dict[str, Any]:
 )
 async def create_session(
     req: CreateSessionRequest, 
-    response: Response
+    response: Response,
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
     session_id = f"sess_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d%H%M%S')}_{os.urandom(3).hex()}"
     invitation_code = f"INV-{os.urandom(2).hex().upper()}"
@@ -508,7 +522,7 @@ async def create_session(
     tags=["세션"]
 )
 async def get_my_session(
-    mrs_participant: str | None = Cookie(None, description="참여자 인증 쿠키")
+    mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME, description="참여자 인증 쿠키")
 ) -> dict[str, Any]:
     if not mrs_participant:
         raise HTTPException(
@@ -572,14 +586,16 @@ async def get_invitation(
     responses={
         404: {"model": ErrorResponse, "description": "존재하지 않는 초대 코드"},
         409: {"model": ErrorResponse, "description": "이미 상대방이 참여 완료된 세션"},
-        410: {"model": ErrorResponse, "description": "만료된 초대 코드"}
+        410: {"model": ErrorResponse, "description": "만료된 초대 코드"},
+        422: {"model": ErrorResponse, "description": "입력값 검증 실패"}
     },
     tags=["초대"]
 )
 async def join_invitation(
     code: str,
     req: JoinInvitationRequest,
-    response: Response
+    response: Response,
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
     if not code.startswith("INV-"):
         raise HTTPException(
@@ -625,23 +641,23 @@ async def join_invitation(
 )
 async def get_my_input(
     session_id: str = FastPath(..., description="세션 ID"),
-    mrs_participant: str | None = Cookie(None)
+    mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> dict[str, Any]:
     return {
-        "answers": {
-            "monthly_income": "200_300",
-            "saving_ratio": "60_120",
-            "spending_style": "saver_moderate",
-            "debt_load": "none",
-            "shared_expense": "joint_allowance"
-        },
-        "predictions": {
-            "monthly_income": "200_300",
-            "saving_ratio": "20_60",
-            "spending_style": "spender_moderate",
-            "debt_load": "none",
-            "shared_expense": "joint_allowance"
-        }
+        "answers": LightInputAnswers(
+            monthly_income=1,
+            saving_ratio=2,
+            spending_style=2,
+            debt_load=0,
+            shared_expense=2
+        ).model_dump(),
+        "guesses": LightInputGuesses(
+            monthly_income=1,
+            saving_ratio=1,
+            spending_style=1,
+            debt_load=0,
+            shared_expense=2
+        ).model_dump()
     }
 
 
@@ -651,18 +667,20 @@ async def get_my_input(
     response_model=UserInputData,
     responses={
         401: {"model": ErrorResponse, "description": "참여자 인증 실패"},
-        409: {"model": ErrorResponse, "description": "이미 제출 완료되어 수정 불가"}
+        409: {"model": ErrorResponse, "description": "이미 제출 완료되어 수정 불가"},
+        422: {"model": ErrorResponse, "description": "입력값 검증 실패"}
     },
     tags=["입력"]
 )
 async def save_my_input(
     session_id: str,
     req: SaveInputRequest,
-    mrs_participant: str | None = Cookie(None)
+    mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
     return {
-        "answers": req.answers,
-        "predictions": req.predictions
+        "answers": req.answers.model_dump(),
+        "guesses": req.guesses.model_dump() if req.guesses else None
     }
 
 
@@ -680,7 +698,8 @@ async def save_my_input(
 async def submit_my_input(
     session_id: str,
     req: SubmitInputRequest,
-    mrs_participant: str | None = Cookie(None)
+    mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
     return {
         "sessionId": session_id,
@@ -704,7 +723,7 @@ async def submit_my_input(
 )
 async def get_session_status(
     session_id: str = FastPath(..., description="세션 ID"),
-    mrs_participant: str | None = Cookie(None)
+    mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> dict[str, Any]:
     return {
         "sessionId": session_id,
@@ -728,7 +747,8 @@ async def get_session_status(
 )
 async def nudge_partner(
     session_id: str = FastPath(..., description="세션 ID"),
-    mrs_participant: str | None = Cookie(None)
+    mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
     return {
         "status": "success",
@@ -749,13 +769,66 @@ async def nudge_partner(
 )
 async def get_session_result(
     session_id: str = FastPath(..., description="세션 ID"),
-    mrs_participant: str | None = Cookie(None)
+    mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> Any:
-    # 한 명이라도 미제출한 경우: waiting 응답 반환 (민감정보 차단)
-    # 양측 모두 제출한 경우: ready 응답 반환
-    # 기본 응답은 Discriminated Union 스펙에 따른 waiting 상태
+    # 한 명이라도 미제출한 경우: waiting 응답 반환 (정확히 status, partnerCompleted 2개 필드만 포함)
     return ResultWaitingResponse(
         status="waiting",
-        partnerCompleted=False,
-        message="상대방이 아직 진단을 완료하지 않았습니다. 두 분 모두 제출하면 결과가 공개됩니다."
+        partnerCompleted=False
     )
+
+
+# ==========================================
+# 커스텀 OpenAPI 스키마 생성기
+# (HTTPValidationError 제거, ErrorResponse 통일, cookieAuth 추가)
+# ==========================================
+
+def custom_openapi() -> dict[str, Any]:
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        servers=app.servers
+    )
+
+    # 1. components.securitySchemes 등록
+    components = openapi_schema.setdefault("components", {})
+    sec_schemes = components.setdefault("securitySchemes", {})
+    sec_schemes["cookieAuth"] = {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": PARTICIPANT_COOKIE_NAME,
+        "description": "참여자 세션 인증을 위한 HttpOnly 쿠키"
+    }
+
+    # 2. 모든 422 상태 응답을 ErrorResponse로 교체
+    error_response_ref = {"$ref": "#/components/schemas/ErrorResponse"}
+    paths = openapi_schema.get("paths", {})
+    for path_item in paths.values():
+        if isinstance(path_item, dict):
+            for method_item in path_item.values():
+                if isinstance(method_item, dict):
+                    responses = method_item.get("responses", {})
+                    if "422" in responses:
+                        responses["422"] = {
+                            "description": "입력값 검증 실패 (Validation Error)",
+                            "content": {
+                                "application/json": {
+                                    "schema": error_response_ref
+                                }
+                            }
+                        }
+
+    # 3. 불필요한 기본 HTTPValidationError 및 ValidationError 스키마 컴포넌트 제거
+    schemas = components.get("schemas", {})
+    schemas.pop("HTTPValidationError", None)
+    schemas.pop("ValidationError", None)
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi  # type: ignore[method-assign]

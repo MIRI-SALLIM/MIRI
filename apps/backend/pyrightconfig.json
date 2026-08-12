@@ -3,9 +3,11 @@
     "."
   ],
   "extraPaths": [
-    "./.venv/Lib/site-packages"
+    ".",
+    "../../.venv/Lib/site-packages"
   ],
-  "venvPath": ".",
+  "venvPath": "../..",
   "venv": ".venv",
   "pythonPlatform": "Windows"
 }
+

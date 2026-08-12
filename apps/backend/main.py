@@ -11,8 +11,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymongo import AsyncMongoClient
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -37,6 +35,7 @@ from schemas import (
 )
 from services.calculator import calculate_light_surplus, classify_type
 from services.validator import validate_input
+from starlette.middleware.base import BaseHTTPMiddleware
 
 load_dotenv()
 

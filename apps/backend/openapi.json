@@ -223,36 +223,29 @@
       },
       "InvitationResponse": {
         "properties": {
-          "invitationCode": {
-            "description": "초대 코드",
-            "example": "INV-7890",
-            "title": "Invitationcode",
+          "duration": {
+            "description": "예상 소요 시간",
+            "example": "3분",
+            "title": "Duration",
             "type": "string"
           },
-          "inviterNickname": {
-            "description": "초대자 닉네임",
-            "example": "예랑이",
-            "title": "Inviternickname",
+          "expiresAt": {
+            "description": "초대장 만료 일시 (ISO 8601)",
+            "example": "2026-08-19T12:00:00Z",
+            "title": "Expiresat",
             "type": "string"
           },
           "mode": {
-            "default": "light",
-            "description": "진단 모드",
+            "description": "진단 모드 (light | deep)",
             "example": "light",
             "title": "Mode",
-            "type": "string"
-          },
-          "status": {
-            "default": "active",
-            "description": "초대장 상태 (active | joined | expired)",
-            "example": "active",
-            "title": "Status",
             "type": "string"
           }
         },
         "required": [
-          "invitationCode",
-          "inviterNickname"
+          "mode",
+          "duration",
+          "expiresAt"
         ],
         "title": "InvitationResponse",
         "type": "object"
@@ -272,6 +265,66 @@
           "nickname"
         ],
         "title": "JoinInvitationRequest",
+        "type": "object"
+      },
+      "LightComparisonResultData": {
+        "properties": {
+          "discussionTopics": {
+            "description": "대화해 볼 중립적인 주제 목록",
+            "example": [
+              "월 고정비와 자유 사용 경비의 기준 나누기",
+              "비상금 관리 방식 정하기"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Discussiontopics",
+            "type": "array"
+          },
+          "mutualHitCount": {
+            "description": "양측 상호 예측 적중 개수",
+            "example": 3,
+            "title": "Mutualhitcount",
+            "type": "integer"
+          },
+          "myType": {
+            "$ref": "#/components/schemas/TypeClassificationResult",
+            "description": "본인의 성향 유형 분류 결과"
+          },
+          "partnerType": {
+            "$ref": "#/components/schemas/TypeClassificationResult",
+            "description": "상대방의 성향 유형 분류 결과"
+          },
+          "questionCount": {
+            "description": "전체 질문 수",
+            "example": 5,
+            "title": "Questioncount",
+            "type": "integer"
+          },
+          "questions": {
+            "description": "공개 가능한 질문별 양측 비교 및 적중 목록",
+            "items": {
+              "$ref": "#/components/schemas/QuestionComparisonItem"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "tagline": {
+            "description": "중립적인 결과 태그라인",
+            "example": "서로의 생각을 이해하고 맞춰가는 첫걸음",
+            "title": "Tagline",
+            "type": "string"
+          }
+        },
+        "required": [
+          "questionCount",
+          "mutualHitCount",
+          "tagline",
+          "myType",
+          "partnerType",
+          "questions"
+        ],
+        "title": "LightComparisonResultData",
         "type": "object"
       },
       "LightDiagnosisRequest": {
@@ -422,198 +475,6 @@
         "title": "LightDiagnosisResultData",
         "type": "object"
       },
-      "LightInputAnswers": {
-        "properties": {
-          "debt_load": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "부채규모 문항 선택지 인덱스 (0: 없음, 1: 3천만 미만, 2: 3천만~1억, 3: 1억 이상)",
-            "title": "Debt Load"
-          },
-          "monthly_income": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "소득 문항 선택지 인덱스 (0: 200만 미만, 1: 200~300만, 2: 300~450만, 3: 450만 이상)",
-            "title": "Monthly Income"
-          },
-          "saving_ratio": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "잉여자금 문항 선택지 인덱스 (0: 거의 없음, 1: 20~60만, 2: 60~120만, 3: 120만 이상)",
-            "title": "Saving Ratio"
-          },
-          "shared_expense": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "공동관리 문항 선택지 인덱스 (0: 완전 각자, 1: 각자+공용통장, 2: 공동+개인용돈, 3: 완전 통합)",
-            "title": "Shared Expense"
-          },
-          "spending_style": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "소비성향 문항 선택지 인덱스 (0: 소비 최우선, 1: 소비 약간, 2: 저축 약간, 3: 저축 최우선)",
-            "title": "Spending Style"
-          }
-        },
-        "title": "LightInputAnswers",
-        "type": "object"
-      },
-      "LightInputGuesses": {
-        "properties": {
-          "debt_load": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "상대방 부채규모 예측 선택지 인덱스",
-            "title": "Debt Load"
-          },
-          "monthly_income": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "상대방 소득 예측 선택지 인덱스",
-            "title": "Monthly Income"
-          },
-          "saving_ratio": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "상대방 잉여자금 예측 선택지 인덱스",
-            "title": "Saving Ratio"
-          },
-          "shared_expense": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "상대방 공동관리 예측 선택지 인덱스",
-            "title": "Shared Expense"
-          },
-          "spending_style": {
-            "anyOf": [
-              {
-                "enum": [
-                  0,
-                  1,
-                  2,
-                  3
-                ],
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "상대방 소비성향 예측 선택지 인덱스",
-            "title": "Spending Style"
-          }
-        },
-        "title": "LightInputGuesses",
-        "type": "object"
-      },
       "NudgeResponse": {
         "properties": {
           "message": {
@@ -632,6 +493,131 @@
           }
         },
         "title": "NudgeResponse",
+        "type": "object"
+      },
+      "QuestionComparisonItem": {
+        "properties": {
+          "isHit": {
+            "description": "현재 사용자 관점의 상대방 예측 적중 여부 (myGuess == partnerAnswer)",
+            "example": true,
+            "title": "Ishit",
+            "type": "boolean"
+          },
+          "isMatch": {
+            "description": "질문별 본인과 상대방의 답변 일치 여부 (myAnswer == partnerAnswer)",
+            "example": true,
+            "title": "Ismatch",
+            "type": "boolean"
+          },
+          "myAnswer": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "본인 공개 답변 인덱스 (0|1|2|3|null)",
+            "example": 2,
+            "title": "Myanswer"
+          },
+          "myAnswerLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "본인 답변 선택지 라벨",
+            "example": "저축 약간 우선",
+            "title": "Myanswerlabel"
+          },
+          "myGuess": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "내가 예측한 상대방 답변 인덱스 (0|1|2|3|null)",
+            "example": 2,
+            "title": "Myguess"
+          },
+          "partnerAnswer": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상대방 공개 답변 인덱스 (0|1|2|3|null)",
+            "example": 2,
+            "title": "Partneranswer"
+          },
+          "partnerAnswerLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "상대방 답변 선택지 라벨",
+            "example": "저축 약간 우선",
+            "title": "Partneranswerlabel"
+          },
+          "questionId": {
+            "description": "공개 가능한 질문 고유 식별자 ID",
+            "enum": [
+              "spending_style",
+              "shared_expense"
+            ],
+            "example": "spending_style",
+            "title": "Questionid",
+            "type": "string"
+          },
+          "questionText": {
+            "description": "질문 본문 문구",
+            "example": "소비 및 저축 성향",
+            "title": "Questiontext",
+            "type": "string"
+          }
+        },
+        "required": [
+          "questionId",
+          "questionText",
+          "myAnswer",
+          "partnerAnswer",
+          "isHit",
+          "isMatch"
+        ],
+        "title": "QuestionComparisonItem",
         "type": "object"
       },
       "QuestionItem": {
@@ -823,24 +809,24 @@
         "properties": {
           "partnerCompleted": {
             "const": true,
-            "default": true,
             "description": "상대방 완료 여부 (항상 True)",
             "title": "Partnercompleted",
             "type": "boolean"
           },
           "result": {
-            "$ref": "#/components/schemas/LightDiagnosisResultData",
-            "description": "합산 및 비교 진단 결과 데이터"
+            "$ref": "#/components/schemas/LightComparisonResultData",
+            "description": "양측 비교 결과 데이터 (금액 정보 제외)"
           },
           "status": {
             "const": "ready",
-            "default": "ready",
             "description": "결과 준비 완료 상태 식별자",
             "title": "Status",
             "type": "string"
           }
         },
         "required": [
+          "status",
+          "partnerCompleted",
           "result"
         ],
         "title": "ResultReadyResponse",
@@ -850,38 +836,86 @@
         "properties": {
           "partnerCompleted": {
             "const": false,
-            "default": false,
             "description": "상대방 완료 여부 (항상 False)",
             "title": "Partnercompleted",
             "type": "boolean"
           },
           "status": {
             "const": "waiting",
-            "default": "waiting",
             "description": "결과 대기 상태 식별자",
             "title": "Status",
             "type": "string"
           }
         },
+        "required": [
+          "status",
+          "partnerCompleted"
+        ],
         "title": "ResultWaitingResponse",
         "type": "object"
       },
       "SaveInputRequest": {
         "properties": {
           "answers": {
-            "$ref": "#/components/schemas/LightInputAnswers",
-            "description": "본인 질문별 답변 인덱스 (0|1|2|3|null)"
+            "description": "본인 질문별 답변 인덱스 리스트 (0|1|2|3|null)",
+            "example": [
+              0,
+              1,
+              null,
+              3
+            ],
+            "items": {
+              "anyOf": [
+                {
+                  "enum": [
+                    0,
+                    1,
+                    2,
+                    3
+                  ],
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Answers",
+            "type": "array"
           },
           "guesses": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/LightInputGuesses"
+                "items": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ],
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "상대방 질문별 예측 인덱스 (0|1|2|3|null)"
+            "description": "상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
+            "example": [
+              1,
+              1,
+              2,
+              null
+            ],
+            "title": "Guesses"
           }
         },
         "required": [
@@ -1037,21 +1071,7 @@
       },
       "SessionStatusResponse": {
         "properties": {
-          "isCompleted": {
-            "default": false,
-            "description": "양측 제출 완료 여부",
-            "example": false,
-            "title": "Iscompleted",
-            "type": "boolean"
-          },
-          "mySubmitted": {
-            "default": false,
-            "description": "내 제출 완료 여부",
-            "example": true,
-            "title": "Mysubmitted",
-            "type": "boolean"
-          },
-          "partnerNickname": {
+          "expiresAt": {
             "anyOf": [
               {
                 "type": "string"
@@ -1060,33 +1080,48 @@
                 "type": "null"
               }
             ],
-            "description": "상대방 닉네임",
-            "example": "예신이",
-            "title": "Partnernickname"
+            "description": "세션 만료 일시 (ISO 8601)",
+            "example": "2026-08-19T12:00:00Z",
+            "title": "Expiresat"
           },
-          "partnerSubmitted": {
-            "default": false,
-            "description": "상대방 제출 완료 여부",
-            "example": false,
-            "title": "Partnersubmitted",
+          "meCompleted": {
+            "description": "내 제출 완료 여부",
+            "example": true,
+            "title": "Mecompleted",
             "type": "boolean"
           },
-          "sessionId": {
-            "description": "세션 ID",
-            "example": "sess_8f3a9b2c",
-            "title": "Sessionid",
-            "type": "string"
+          "partnerCompleted": {
+            "description": "상대방 제출 완료 여부",
+            "example": false,
+            "title": "Partnercompleted",
+            "type": "boolean"
           },
-          "status": {
-            "default": "in_progress",
-            "description": "세션 진행 상태 (in_progress | completed | expired)",
-            "example": "in_progress",
-            "title": "Status",
-            "type": "string"
+          "partnerJoined": {
+            "description": "상대방 세션 참여 여부",
+            "example": true,
+            "title": "Partnerjoined",
+            "type": "boolean"
+          },
+          "partnerNudgedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "최근 넛지 알림 전송 일시 (ISO 8601)",
+            "example": "2026-08-12T12:30:00Z",
+            "title": "Partnernudgedat"
           }
         },
         "required": [
-          "sessionId"
+          "meCompleted",
+          "partnerJoined",
+          "partnerCompleted",
+          "partnerNudgedAt",
+          "expiresAt"
         ],
         "title": "SessionStatusResponse",
         "type": "object"
@@ -1094,19 +1129,65 @@
       "SubmitInputRequest": {
         "properties": {
           "answers": {
-            "$ref": "#/components/schemas/LightInputAnswers",
-            "description": "본인 질문별 최종 답변 인덱스 (0|1|2|3|null)"
+            "description": "본인 질문별 최종 답변 인덱스 리스트 (0|1|2|3|null)",
+            "example": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "items": {
+              "anyOf": [
+                {
+                  "enum": [
+                    0,
+                    1,
+                    2,
+                    3
+                  ],
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Answers",
+            "type": "array"
           },
           "guesses": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/LightInputGuesses"
+                "items": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ],
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "상대방 질문별 최종 예측 인덱스 (0|1|2|3|null)"
+            "description": "상대방 질문별 최종 예측 인덱스 리스트 (0|1|2|3|null)",
+            "example": [
+              1,
+              1,
+              2,
+              0
+            ],
+            "title": "Guesses"
           }
         },
         "required": [
@@ -1232,19 +1313,65 @@
       "UserInputData": {
         "properties": {
           "answers": {
-            "$ref": "#/components/schemas/LightInputAnswers",
-            "description": "본인 질문별 답변 인덱스 (0|1|2|3|null)"
+            "description": "본인 질문별 답변 인덱스 리스트 (0|1|2|3|null)",
+            "example": [
+              0,
+              1,
+              null,
+              3
+            ],
+            "items": {
+              "anyOf": [
+                {
+                  "enum": [
+                    0,
+                    1,
+                    2,
+                    3
+                  ],
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Answers",
+            "type": "array"
           },
           "guesses": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/LightInputGuesses"
+                "items": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ],
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "상대방 질문별 예측 인덱스 (0|1|2|3|null)"
+            "description": "상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
+            "example": [
+              1,
+              1,
+              2,
+              null
+            ],
+            "title": "Guesses"
           }
         },
         "title": "UserInputData",
@@ -1511,17 +1638,7 @@
                 }
               }
             },
-            "description": "유효하지 않은 초대 코드"
-          },
-          "410": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "만료된 초대 코드"
+            "description": "유효하지 않거나 만료된 초대 링크"
           },
           "422": {
             "content": {
@@ -1534,7 +1651,7 @@
             "description": "입력값 검증 실패 (Validation Error)"
           }
         },
-        "summary": "초대 코드 유효성 확인 및 초대자 정보 조회",
+        "summary": "초대 코드 유효성 확인 및 공개 초대 미리보기 조회",
         "tags": [
           "초대"
         ]
@@ -1601,7 +1718,7 @@
                 }
               }
             },
-            "description": "존재하지 않는 초대 코드"
+            "description": "존재하지 않거나 만료된 초대 코드"
           },
           "409": {
             "content": {
@@ -1612,16 +1729,6 @@
               }
             },
             "description": "이미 상대방이 참여 완료된 세션"
-          },
-          "410": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "만료된 초대 코드"
           },
           "422": {
             "content": {
@@ -1760,6 +1867,11 @@
             "description": "입력값 검증 실패 (Validation Error)"
           }
         },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "summary": "현재 참여자 쿠키 기준 활성 세션 조회",
         "tags": [
           "세션"
@@ -1911,6 +2023,11 @@
             "description": "입력값 검증 실패 (Validation Error)"
           }
         },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "summary": "세션 내 본인 임시 저장 답변 조회",
         "tags": [
           "입력"
@@ -2015,6 +2132,11 @@
             "description": "입력값 검증 실패 (Validation Error)"
           }
         },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "summary": "세션 내 본인 답변 임시 저장 (진행 중 자동 저장)",
         "tags": [
           "입력"
@@ -2121,6 +2243,11 @@
             "description": "입력값 검증 실패 (Validation Error)"
           }
         },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "summary": "세션 내 본인 답변 최종 제출",
         "tags": [
           "입력"
@@ -2219,6 +2346,11 @@
             "description": "단시간 내 과도한 알림 요청 제한"
           }
         },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "summary": "미제출 상대방에게 넛지(재촉 알림) 요청",
         "tags": [
           "세션"
@@ -2325,6 +2457,11 @@
             "description": "결과 연산 실패"
           }
         },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "summary": "세션 진단 결과 조회 (Discriminated Union: waiting vs ready)",
         "tags": [
           "결과"
@@ -2405,6 +2542,11 @@
             "description": "입력값 검증 실패 (Validation Error)"
           }
         },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "summary": "세션 진행 및 양측 제출 현황 조회",
         "tags": [
           "세션"

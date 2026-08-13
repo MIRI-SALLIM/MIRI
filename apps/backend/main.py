@@ -131,7 +131,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         if field_name not in field_errors:
             field_errors[field_name] = []
         field_errors[field_name].append(msg)
-    
+
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
@@ -170,7 +170,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         error_code = "TOO_MANY_REQUESTS"
     elif exc.status_code == 503:
         error_code = "SERVICE_UNAVAILABLE"
-    
+
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -388,14 +388,14 @@ def get_config(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "INVALID_CONFIG_TYPE", "message": f"유효하지 않은 설정 타입입니다. ({', '.join(valid_types)} 중 선택)"}
         )
-    
+
     data = get_cached_config(config_type)
     if data is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "CONFIG_NOT_FOUND", "message": f"'{config_type}' 설정 데이터를 찾을 수 없습니다."}
         )
-    
+
     return {"status": "success", "data": data}
 
 
@@ -478,7 +478,7 @@ def validate_user_input(req: InputValidationRequest) -> dict[str, Any]:
     tags=["세션"]
 )
 async def create_session(
-    req: CreateSessionRequest, 
+    req: CreateSessionRequest,
     response: Response,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
@@ -832,4 +832,4 @@ def custom_openapi() -> dict[str, Any]:
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
-app.openapi = custom_openapi  # type: ignore[method-assign]
+app.openapi = custom_openapi  # type: ignore[method-assign]

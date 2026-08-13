@@ -8,17 +8,17 @@ from pydantic import BaseModel, Field, model_validator
 
 class ErrorDetail(BaseModel):
     code: str = Field(
-        ..., 
-        description="오류 식별 코드", 
+        ...,
+        description="오류 식별 코드",
         json_schema_extra={"example": "QUESTION_SET_NOT_FOUND"}
     )
     message: str = Field(
-        ..., 
-        description="오류 상세 메시지", 
+        ...,
+        description="오류 상세 메시지",
         json_schema_extra={"example": "요청한 버전의 질문 세트를 찾을 수 없습니다."}
     )
     fieldErrors: dict[str, list[str]] = Field(
-        default_factory=dict, 
+        default_factory=dict,
         description="필드별 유효성 검증 오류 맵 (선택적)",
         json_schema_extra={"example": {}}
     )
@@ -30,8 +30,8 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="서버 상태", json_schema_extra={"example": "ok"})
     database: str = Field(..., description="데이터베이스 연결 상태", json_schema_extra={"example": "connected"})
     message: str | None = Field(
-        None, 
-        description="상태 안내 메시지", 
+        None,
+        description="상태 안내 메시지",
         json_schema_extra={"example": "미리살림 백엔드 서버 및 데이터베이스가 정상 가동 중입니다."}
     )
 
@@ -52,7 +52,7 @@ class ScaleConfig(BaseModel):
     leftLabel: str = Field(..., description="왼쪽(1점) 척도 기준 문구", json_schema_extra={"example": "현재의 소비와 즐거움을 우선"})
     rightLabel: str = Field(..., description="오른쪽(5점) 척도 기준 문구", json_schema_extra={"example": "미래의 저축과 안정을 우선"})
     steps: list[str] | None = Field(
-        None, 
+        None,
         description="1~5점 각 단계별 선택 문구",
         json_schema_extra={"example": ["1점: 매우 소비 우선", "2점: 소비 약간 우선", "3점: 균형", "4점: 저축 약간 우선", "5점: 매우 저축 우선"]}
     )
@@ -81,32 +81,32 @@ class QuestionSet(BaseModel):
 
 class LightDiagnosisRequest(BaseModel):
     incomeA: float = Field(
-        ..., 
+        ...,
         description="본인이 선택한 월 실수령 소득 구간 대표값 (단위: 만원/월)",
         json_schema_extra={"example": 250.0}
     )
     incomeB: float = Field(
-        0.0, 
+        0.0,
         description="상대방이 선택한 월 실수령 소득 구간 대표값 (단위: 만원/월, 미입력/외벌이 시 0)",
         json_schema_extra={"example": 250.0}
     )
     surplusA: float = Field(
-        ..., 
+        ...,
         description="본인이 선택한 월 잉여자금 구간 대표값 (단위: 만원/월)",
         json_schema_extra={"example": 85.0}
     )
     surplusB: float = Field(
-        0.0, 
+        0.0,
         description="상대방이 선택한 월 잉여자금 구간 대표값 (단위: 만원/월, 미입력/외벌이 시 0)",
         json_schema_extra={"example": 40.0}
     )
     timeAxisAnswers: list[int] | list[float] | list[str] = Field(
-        ..., 
+        ...,
         description="시간축 성향 문항 점수(1~5점) 또는 선택지 인덱스/코드 리스트",
         json_schema_extra={"example": [2]}
     )
     mgmtAxisAnswers: list[int] | list[float] | list[str] | list[list[int]] | list[list[float]] = Field(
-        ..., 
+        ...,
         description="관리축 성향 문항 점수(1~5점) 또는 선택지 인덱스/코드 리스트",
         json_schema_extra={"example": [2]}
     )
@@ -207,36 +207,36 @@ class JoinInvitationRequest(BaseModel):
 
 class UserInputData(BaseModel):
     answers: list[AnswerOptionIndex | None] = Field(
-        default_factory=list, 
+        default_factory=list,
         description="본인 질문별 답변 인덱스 리스트 (0|1|2|3|null)",
         json_schema_extra={"example": [0, 1, None, 3]}
     )
     guesses: list[AnswerOptionIndex | None] | None = Field(
-        None, 
+        None,
         description="상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
         json_schema_extra={"example": [1, 1, 2, None]}
     )
 
 class SaveInputRequest(BaseModel):
     answers: list[AnswerOptionIndex | None] = Field(
-        ..., 
+        ...,
         description="본인 질문별 답변 인덱스 리스트 (0|1|2|3|null)",
         json_schema_extra={"example": [0, 1, None, 3]}
     )
     guesses: list[AnswerOptionIndex | None] | None = Field(
-        None, 
+        None,
         description="상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
         json_schema_extra={"example": [1, 1, 2, None]}
     )
 
 class SubmitInputRequest(BaseModel):
     answers: list[AnswerOptionIndex | None] = Field(
-        ..., 
+        ...,
         description="본인 질문별 최종 답변 인덱스 리스트 (0|1|2|3|null)",
         json_schema_extra={"example": [0, 1, 2, 3]}
     )
     guesses: list[AnswerOptionIndex | None] | None = Field(
-        None, 
+        None,
         description="상대방 질문별 최종 예측 인덱스 리스트 (0|1|2|3|null)",
         json_schema_extra={"example": [1, 1, 2, 0]}
     )
@@ -275,12 +275,12 @@ class LightComparisonResultData(BaseModel):
     myType: TypeClassificationResult = Field(..., description="본인의 성향 유형 분류 결과")
     partnerType: TypeClassificationResult = Field(..., description="상대방의 성향 유형 분류 결과")
     discussionTopics: list[str] = Field(
-        default_factory=list, 
+        default_factory=list,
         description="대화해 볼 중립적인 주제 목록",
         json_schema_extra={"example": ["월 고정비와 자유 사용 경비의 기준 나누기", "비상금 관리 방식 정하기"]}
     )
     questions: list[QuestionComparisonItem] = Field(
-        ..., 
+        ...,
         description="공개 가능한 질문별 양측 비교 및 적중 목록"
     )
 

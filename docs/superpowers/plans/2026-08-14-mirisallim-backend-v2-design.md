@@ -2,7 +2,7 @@
 
 **작성일:** 2026-08-14
 
-**상태:** 사용자 검토 대기
+**상태:** 사용자 승인 완료
 
 **범위:** Backend B1–B6, 공개 API 계약, Light/Deep 경계, Railway 배포 전제
 
@@ -239,7 +239,25 @@ DB 장애 상세나 연결 문자열을 응답에 노출하지 않는다. MongoD
 
 알 수 없는 질문 버전은 HTTP 404 `QUESTION_SET_NOT_FOUND`를 반환한다.
 
-### 7.3 질문 API
+### 7.3 질문 카드와 데이터 경계
+
+현재 프론트엔드에는 실제 Light 질문 카드가 없으며 App shell과 공용 UI만 존재한다. 질문 카드는 프론트 F4에서 `LightQuestionCard`로 구현한다.
+
+카드는 계산 로직을 갖지 않는다. 질문 API가 제공하는 다음 공개 데이터만 렌더링한다.
+
+- 질문: `id`, `order`, `category`, `text`, `subText`, `type`
+- 선택지: `index` (`0..3`), `label`, `description`
+
+설정 파일의 선택지 `value`, `rep`는 서버 전용이다. 특히 대표 금액 `rep`를 프론트 DTO와 OpenAPI에 포함하지 않는다. 프론트는 선택지 배열의 명시적 `index`만 `answers[i]`, `guesses[i]`에 저장하고 자체 금액 계산이나 성향 계산을 하지 않는다.
+
+한 화면의 질문 카드는 같은 네 선택지를 두 번 사용한다.
+
+1. Green 영역: `내 답`을 `answers[question.order - 1]`에 기록한다.
+2. Purple 영역: `상대 예측`을 `guesses[question.order - 1]`에 기록한다.
+
+카드는 질문 개수를 하드코딩하지 않는다. 진행률, 마지막 단계, 저장 배열 길이는 질문 API의 `questions.length`에서 파생한다. 새로고침 복구 시 세션의 `questionSetVersion`으로 같은 질문 세트를 다시 받고 자신의 저장 입력만 hydrate한다.
+
+### 7.4 질문 API
 
 ```text
 GET /api/v1/light/questions?version=light-v1
@@ -247,7 +265,7 @@ GET /api/v1/light/questions?version=light-v1
 
 응답은 질문 렌더링에 필요한 공개 데이터만 포함한다. 질문 수는 항상 응답 배열 길이에서 파생한다.
 
-### 7.4 OpenAPI
+### 7.5 OpenAPI
 
 FastAPI OpenAPI는 프론트엔드와의 유일한 서버 DTO 계약이다. export 스크립트는 정렬된 키, UTF-8, 들여쓰기 2칸, trailing newline을 사용해 다음 두 파일을 동일하게 생성한다.
 
@@ -310,7 +328,7 @@ Body: 없음
 GET /api/v1/me/session
 ```
 
-유효한 참여자 쿠키의 세션 ID, 역할, 질문 버전, 상태, 만료 시각만 반환한다. 참가자 이름과 상대 입력은 존재하지 않는다.
+유효한 참여자 쿠키의 세션 ID, 초대 코드, 역할, 질문 버전, 상태, 만료 시각만 반환한다. 초대 코드는 새로고침 뒤 공유 화면을 복구하는 데 사용한다. 참가자 이름과 상대 입력은 존재하지 않는다.
 
 ## 9. B4: 입력 저장과 제출 불변성
 

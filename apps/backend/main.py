@@ -24,6 +24,8 @@ from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyCookie
 from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -48,7 +50,6 @@ from schemas import (
 )
 from services.calculator import calculate_light_surplus, classify_type
 from services.validator import validate_input
-from starlette.middleware.base import BaseHTTPMiddleware
 
 load_dotenv()
 

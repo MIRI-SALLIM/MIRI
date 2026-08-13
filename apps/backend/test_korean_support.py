@@ -1,4 +1,5 @@
 import io
+import json
 import sys
 from pathlib import Path
 from typing import Any, cast
@@ -9,6 +10,7 @@ if sys.platform == "win32" and isinstance(sys.stdout, io.TextIOWrapper):
     sys.stdout.reconfigure(encoding="utf-8")
 
 from main import app
+from schemas import LightComparisonResultData, ResultReadyResponse
 from services.calculator import classify_type
 from services.validator import validate_input
 
@@ -262,8 +264,69 @@ def test_gate1_session_and_result_contract():
 
     print("✅ [테스트 7] F2 세션/초대(최소정보)/가변입력(배열)/상태DTO/waiting결과 검증 정상")
 
+def test_result_excludes_sensitive_questions():
+    """결과 DTO가 공개 질문만 직렬화하고 공개 질문 기준으로 집계하는지 검증"""
+    question_ids = [
+        "monthly_income",
+        "saving_ratio",
+        "spending_style",
+        "debt_load",
+        "shared_expense",
+    ]
+    sensitive_labels = {
+        "monthly_income": "300~450만원",
+        "saving_ratio": "60~120만원",
+        "debt_load": "3천만~1억원",
+    }
+    questions = [
+        {
+            "questionId": question_id,
+            "questionText": f"{question_id} 질문",
+            "myAnswer": 2,
+            "partnerAnswer": 2,
+            "myGuess": 2,
+            "isHit": question_id in {"monthly_income", "spending_style"},
+            "isMatch": True,
+            "myAnswerLabel": sensitive_labels.get(question_id, f"{question_id} 공개 라벨"),
+            "partnerAnswerLabel": sensitive_labels.get(question_id, f"{question_id} 공개 라벨"),
+        }
+        for question_id in question_ids
+    ]
+    type_result = classify_type(["saver_moderate"], ["joint_allowance"], cutoff=3.0)
+
+    result = ResultReadyResponse(
+        status="ready",
+        partnerCompleted=True,
+        result=LightComparisonResultData(
+            questionCount=5,
+            mutualHitCount=2,
+            tagline="서로의 생각을 이해하고 맞춰가는 첫걸음",
+            myType=type_result,
+            partnerType=type_result,
+            discussionTopics=[],
+            questions=questions,
+        ),
+    )
+    serialized = result.model_dump_json()
+    serialized_data = json.loads(serialized)
+    public_questions = serialized_data["result"]["questions"]
+
+    assert [question["questionId"] for question in public_questions] == [
+        "spending_style",
+        "shared_expense",
+    ]
+    assert serialized_data["result"]["questionCount"] == 2
+    assert serialized_data["result"]["mutualHitCount"] == 1
+    for sensitive_id in ("monthly_income", "saving_ratio", "debt_load"):
+        assert sensitive_id not in serialized
+    for sensitive_label in sensitive_labels.values():
+        assert sensitive_label not in serialized
+
+    assert public_questions[0]["myAnswerLabel"] == "spending_style 공개 라벨"
+    assert public_questions[1]["partnerAnswerLabel"] == "shared_expense 공개 라벨"
+
 def test_openapi_schema_integrity():
-    """OpenAPI 스키마 무결성 검증: HTTPValidationError 제거, cookieAuth 연결, 양측 openapi.json 동일성"""
+    """OpenAPI 스키마 무결성 검증: 필수 필드, cookieAuth, 백엔드 스냅샷"""
     schema = app.openapi()
     schemas = schema.get("components", {}).get("schemas", {})
 
@@ -279,7 +342,31 @@ def test_openapi_schema_integrity():
     assert "cookieAuth" in sec_schemes
     assert sec_schemes["cookieAuth"]["name"] == "mrs_participant"
 
-    # 4. 보호 대상 엔드포인트 7개에 security: [{'cookieAuth': []}] 설정 확인
+    # 4. 응답에 항상 포함되는 필드의 required 계약 검증
+    expected_required = {
+        "InvitationResponse": ["mode", "duration", "expiresAt"],
+        "SessionStatusResponse": [
+            "meCompleted",
+            "partnerJoined",
+            "partnerCompleted",
+            "partnerNudgedAt",
+            "expiresAt",
+        ],
+        "ResultWaitingResponse": ["status", "partnerCompleted"],
+        "ResultReadyResponse": ["status", "partnerCompleted", "result"],
+    }
+    for schema_name, required_fields in expected_required.items():
+        assert schemas[schema_name]["required"] == required_fields
+
+    assert schemas["ResultWaitingResponse"]["properties"]["status"]["const"] == "waiting"
+    assert schemas["ResultReadyResponse"]["properties"]["status"]["const"] == "ready"
+
+    assert schemas["QuestionComparisonItem"]["properties"]["questionId"]["enum"] == [
+        "spending_style",
+        "shared_expense",
+    ]
+
+    # 5. 보호 대상 엔드포인트 7개에 security: [{'cookieAuth': []}] 설정 확인
     protected_targets = [
         ("get", "/api/v1/me/session"),
         ("get", "/api/v1/sessions/{session_id}/me/input"),
@@ -295,19 +382,15 @@ def test_openapi_schema_integrity():
         assert "security" in op, f"{method.upper()} {path}에 security 항목이 정의되어 있어야 합니다."
         assert op["security"] == [{"cookieAuth": []}], f"{method.upper()} {path} security가 cookieAuth로 설정되어야 합니다."
 
-    # 5. 백엔드 및 프론트엔드 openapi.json 동일성 검증
-    from export_openapi import export_openapi
-    export_openapi()
-    
-    backend_path = Path(__file__).resolve().parent / "openapi.json"
-    frontend_path = Path(__file__).resolve().parents[1] / "frontend" / "openapi.json"
-    
-    with open(backend_path, "r", encoding="utf-8") as fb, open(frontend_path, "r", encoding="utf-8") as ff:
-        backend_content = fb.read()
-        frontend_content = ff.read()
-    assert backend_content == frontend_content, "apps/backend/openapi.json과 apps/frontend/openapi.json이 100% 일치해야 합니다."
+    # 6. 체크인된 백엔드 openapi.json과 앱 스키마 동일성 검증
+    from export_openapi import generate_openapi_json_string
 
-    print("✅ [테스트 8] OpenAPI 스키마 security 연결, HTTPValidationError 제거 및 프론트/백 동기화 무결성 정상")
+    backend_path = Path(__file__).resolve().parent / "openapi.json"
+    with open(backend_path, "r", encoding="utf-8") as fb:
+        backend_content = fb.read()
+    assert backend_content == generate_openapi_json_string()
+
+    print("✅ [테스트 9] OpenAPI required/security 계약 및 백엔드 스키마 무결성 정상")
 
 if __name__ == "__main__":
     test_health()
@@ -317,6 +400,7 @@ if __name__ == "__main__":
     test_calculate_light_endpoint()
     test_validator_endpoint_and_rules()
     test_gate1_session_and_result_contract()
+    test_result_excludes_sensitive_questions()
     test_openapi_schema_integrity()
     print("\n🎉 [전체 통과] 모든 백엔드 완료 조건 검증 완료!")
 

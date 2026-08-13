@@ -224,7 +224,6 @@
       "InvitationResponse": {
         "properties": {
           "duration": {
-            "default": "3분",
             "description": "예상 소요 시간",
             "example": "3분",
             "title": "Duration",
@@ -237,7 +236,6 @@
             "type": "string"
           },
           "mode": {
-            "default": "light",
             "description": "진단 모드 (light | deep)",
             "example": "light",
             "title": "Mode",
@@ -245,6 +243,8 @@
           }
         },
         "required": [
+          "mode",
+          "duration",
           "expiresAt"
         ],
         "title": "InvitationResponse",
@@ -302,7 +302,7 @@
             "type": "integer"
           },
           "questions": {
-            "description": "질문별 양측 비교 및 적중 목록",
+            "description": "공개 가능한 질문별 양측 비교 및 적중 목록",
             "items": {
               "$ref": "#/components/schemas/QuestionComparisonItem"
             },
@@ -593,7 +593,11 @@
             "title": "Partneranswerlabel"
           },
           "questionId": {
-            "description": "질문 고유 식별자 ID",
+            "description": "공개 가능한 질문 고유 식별자 ID",
+            "enum": [
+              "spending_style",
+              "shared_expense"
+            ],
             "example": "spending_style",
             "title": "Questionid",
             "type": "string"
@@ -805,7 +809,6 @@
         "properties": {
           "partnerCompleted": {
             "const": true,
-            "default": true,
             "description": "상대방 완료 여부 (항상 True)",
             "title": "Partnercompleted",
             "type": "boolean"
@@ -816,13 +819,14 @@
           },
           "status": {
             "const": "ready",
-            "default": "ready",
             "description": "결과 준비 완료 상태 식별자",
             "title": "Status",
             "type": "string"
           }
         },
         "required": [
+          "status",
+          "partnerCompleted",
           "result"
         ],
         "title": "ResultReadyResponse",
@@ -832,19 +836,21 @@
         "properties": {
           "partnerCompleted": {
             "const": false,
-            "default": false,
             "description": "상대방 완료 여부 (항상 False)",
             "title": "Partnercompleted",
             "type": "boolean"
           },
           "status": {
             "const": "waiting",
-            "default": "waiting",
             "description": "결과 대기 상태 식별자",
             "title": "Status",
             "type": "string"
           }
         },
+        "required": [
+          "status",
+          "partnerCompleted"
+        ],
         "title": "ResultWaitingResponse",
         "type": "object"
       },
@@ -1079,21 +1085,18 @@
             "title": "Expiresat"
           },
           "meCompleted": {
-            "default": false,
             "description": "내 제출 완료 여부",
             "example": true,
             "title": "Mecompleted",
             "type": "boolean"
           },
           "partnerCompleted": {
-            "default": false,
             "description": "상대방 제출 완료 여부",
             "example": false,
             "title": "Partnercompleted",
             "type": "boolean"
           },
           "partnerJoined": {
-            "default": false,
             "description": "상대방 세션 참여 여부",
             "example": true,
             "title": "Partnerjoined",
@@ -1113,6 +1116,13 @@
             "title": "Partnernudgedat"
           }
         },
+        "required": [
+          "meCompleted",
+          "partnerJoined",
+          "partnerCompleted",
+          "partnerNudgedAt",
+          "expiresAt"
+        ],
         "title": "SessionStatusResponse",
         "type": "object"
       },

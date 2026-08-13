@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # ==========================================
 # 공통 오류 응답 스키마 (Unified Error Envelope)
@@ -174,6 +174,10 @@ class InputValidationResponse(BaseModel):
 
 # 4개 선택지 인덱스: 0, 1, 2, 3 또는 null
 AnswerOptionIndex = Literal[0, 1, 2, 3]
+PublicQuestionId = Literal["spending_style", "shared_expense"]
+PUBLIC_QUESTION_IDS: frozenset[PublicQuestionId] = frozenset(
+    ("spending_style", "shared_expense")
+)
 
 class CreateSessionRequest(BaseModel):
     nickname: str = Field(..., min_length=1, max_length=20, description="작성자 닉네임", json_schema_extra={"example": "예랑이"})
@@ -194,8 +198,8 @@ class SessionResponse(BaseModel):
     createdAt: str = Field(..., description="세션 생성 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-12T12:00:00Z"})
 
 class InvitationResponse(BaseModel):
-    mode: str = Field("light", description="진단 모드 (light | deep)", json_schema_extra={"example": "light"})
-    duration: str = Field("3분", description="예상 소요 시간", json_schema_extra={"example": "3분"})
+    mode: str = Field(..., description="진단 모드 (light | deep)", json_schema_extra={"example": "light"})
+    duration: str = Field(..., description="예상 소요 시간", json_schema_extra={"example": "3분"})
     expiresAt: str = Field(..., description="초대장 만료 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-19T12:00:00Z"})
 
 class JoinInvitationRequest(BaseModel):
@@ -238,11 +242,11 @@ class SubmitInputRequest(BaseModel):
     )
 
 class SessionStatusResponse(BaseModel):
-    meCompleted: bool = Field(False, description="내 제출 완료 여부", json_schema_extra={"example": True})
-    partnerJoined: bool = Field(False, description="상대방 세션 참여 여부", json_schema_extra={"example": True})
-    partnerCompleted: bool = Field(False, description="상대방 제출 완료 여부", json_schema_extra={"example": False})
-    partnerNudgedAt: str | None = Field(None, description="최근 넛지 알림 전송 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-12T12:30:00Z"})
-    expiresAt: str | None = Field(None, description="세션 만료 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-19T12:00:00Z"})
+    meCompleted: bool = Field(..., description="내 제출 완료 여부", json_schema_extra={"example": True})
+    partnerJoined: bool = Field(..., description="상대방 세션 참여 여부", json_schema_extra={"example": True})
+    partnerCompleted: bool = Field(..., description="상대방 제출 완료 여부", json_schema_extra={"example": False})
+    partnerNudgedAt: str | None = Field(..., description="최근 넛지 알림 전송 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-12T12:30:00Z"})
+    expiresAt: str | None = Field(..., description="세션 만료 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-19T12:00:00Z"})
 
 class NudgeResponse(BaseModel):
     status: str = Field("success", description="처리 상태", json_schema_extra={"example": "success"})
@@ -254,7 +258,7 @@ class NudgeResponse(BaseModel):
 # ==========================================
 
 class QuestionComparisonItem(BaseModel):
-    questionId: str = Field(..., description="질문 고유 식별자 ID", json_schema_extra={"example": "spending_style"})
+    questionId: PublicQuestionId = Field(..., description="공개 가능한 질문 고유 식별자 ID", json_schema_extra={"example": "spending_style"})
     questionText: str = Field(..., description="질문 본문 문구", json_schema_extra={"example": "소비 및 저축 성향"})
     myAnswer: AnswerOptionIndex | None = Field(..., description="본인 공개 답변 인덱스 (0|1|2|3|null)", json_schema_extra={"example": 2})
     partnerAnswer: AnswerOptionIndex | None = Field(..., description="상대방 공개 답변 인덱스 (0|1|2|3|null)", json_schema_extra={"example": 2})
@@ -277,16 +281,53 @@ class LightComparisonResultData(BaseModel):
     )
     questions: list[QuestionComparisonItem] = Field(
         ..., 
-        description="질문별 양측 비교 및 적중 목록"
+        description="공개 가능한 질문별 양측 비교 및 적중 목록"
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def retain_public_questions(cls, data: Any) -> Any:
+        """민감 질문을 제거하고 공개 질문 기준 집계를 다시 계산합니다."""
+        if not isinstance(data, dict):
+            return data
+
+        questions = data.get("questions")
+        if not isinstance(questions, list):
+            return data
+
+        public_questions: list[Any] = []
+        mutual_hit_count = 0
+        for question in questions:
+            question_id: object
+            is_hit: bool
+            if isinstance(question, QuestionComparisonItem):
+                question_id = question.questionId
+                is_hit = question.isHit
+            elif isinstance(question, dict):
+                question_id = question.get("questionId")
+                is_hit = question.get("isHit") is True
+            else:
+                continue
+
+            if question_id not in PUBLIC_QUESTION_IDS:
+                continue
+
+            public_questions.append(question)
+            mutual_hit_count += int(is_hit)
+
+        public_data = dict(data)
+        public_data["questions"] = public_questions
+        public_data["questionCount"] = len(public_questions)
+        public_data["mutualHitCount"] = mutual_hit_count
+        return public_data
+
 class ResultWaitingResponse(BaseModel):
-    status: Literal["waiting"] = Field("waiting", description="결과 대기 상태 식별자")
-    partnerCompleted: Literal[False] = Field(False, description="상대방 완료 여부 (항상 False)")
+    status: Literal["waiting"] = Field(..., description="결과 대기 상태 식별자")
+    partnerCompleted: Literal[False] = Field(..., description="상대방 완료 여부 (항상 False)")
 
 class ResultReadyResponse(BaseModel):
-    status: Literal["ready"] = Field("ready", description="결과 준비 완료 상태 식별자")
-    partnerCompleted: Literal[True] = Field(True, description="상대방 완료 여부 (항상 True)")
+    status: Literal["ready"] = Field(..., description="결과 준비 완료 상태 식별자")
+    partnerCompleted: Literal[True] = Field(..., description="상대방 완료 여부 (항상 True)")
     result: LightComparisonResultData = Field(..., description="양측 비교 결과 데이터 (금액 정보 제외)")
 
 SessionResultResponse = Annotated[

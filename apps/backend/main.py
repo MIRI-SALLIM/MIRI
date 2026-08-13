@@ -49,6 +49,14 @@ from schemas import (
     UserInputData,
 )
 from services.calculator import calculate_light_surplus, classify_type
+from services.session_repository import (
+    SessionRepository,
+    as_iso,
+    as_utc,
+    digest_participant_token,
+    question_count_for,
+    utc_now,
+)
 from services.validator import validate_input
 
 load_dotenv()
@@ -201,10 +209,13 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 # ==========================================
 
 _async_client: AsyncMongoClient[Any] | None = None
+_session_repository: SessionRepository | None = None
 
 async def get_async_client() -> AsyncMongoClient[Any] | None:
     """현재 실행 중인 이벤트 루프에 바인딩된 AsyncMongoClient를 반환합니다."""
     global _async_client
+    if ENVIRONMENT.lower() == "test":
+        return None
     if not MONGODB_URI:
         return None
     try:
@@ -224,6 +235,163 @@ async def get_database() -> Any | None:
     if client is not None:
         return client[MONGODB_DATABASE]
     return None
+
+
+async def get_session_repository() -> SessionRepository:
+    global _session_repository
+    if _session_repository is not None:
+        return _session_repository
+
+    if ENVIRONMENT.lower() == "test":
+        _session_repository = SessionRepository(use_memory=True)
+        return _session_repository
+
+    database = await get_database()
+    if database is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "DATABASE_UNAVAILABLE",
+                "message": "세션 데이터베이스에 연결할 수 없습니다.",
+            },
+        )
+
+    _session_repository = SessionRepository(database)
+    try:
+        await _session_repository.ensure_indexes()
+    except PyMongoError as exc:
+        _session_repository = None
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "DATABASE_UNAVAILABLE",
+                "message": "세션 데이터베이스에 연결할 수 없습니다.",
+            },
+        ) from exc
+    return _session_repository
+
+
+def _parse_participant_cookie(cookie: str | None) -> tuple[str, str] | None:
+    if not cookie or ":" not in cookie:
+        return None
+    session_id, token = cookie.split(":", 1)
+    if not session_id or not token:
+        return None
+    return session_id, token
+
+
+def _public_participant(participant: dict[str, Any]) -> SessionParticipant:
+    return SessionParticipant(
+        role=str(participant.get("role", "creator")),
+        nickname=str(participant.get("nickname", "")),
+        hasSubmitted=participant.get("completedAt") is not None,
+    )
+
+
+def _public_session(document: dict[str, Any], role: str) -> dict[str, Any]:
+    return {
+        "id": document["id"],
+        "mode": document.get("mode", "light"),
+        "invitationCode": document["invitationCode"],
+        "status": document.get("status", "in_progress"),
+        "myRole": role,
+        "participants": [
+            _public_participant(participant)
+            for participant in document.get("participants", [])
+        ],
+        "createdAt": as_iso(document.get("createdAt")),
+    }
+
+
+def _get_participant(document: dict[str, Any], token_hash: str) -> dict[str, Any] | None:
+    return next(
+        (
+            participant
+            for participant in document.get("participants", [])
+            if participant.get("tokenHash") == token_hash
+        ),
+        None,
+    )
+
+
+def _get_partner(document: dict[str, Any], token_hash: str) -> dict[str, Any] | None:
+    return next(
+        (
+            participant
+            for participant in document.get("participants", [])
+            if participant.get("tokenHash") != token_hash
+        ),
+        None,
+    )
+
+
+def _raise_if_expired(document: dict[str, Any]) -> None:
+    expires_at = document.get("expiresAt")
+    if isinstance(expires_at, datetime.datetime) and as_utc(expires_at) <= utc_now():
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail={
+                "code": "SESSION_EXPIRED",
+                "message": "세션이 만료되었습니다.",
+            },
+        )
+
+
+async def _authenticated_session(
+    session_id: str,
+    cookie: str | None,
+    *,
+    participant_only: bool = False,
+) -> tuple[SessionRepository, dict[str, Any], str, str]:
+    parsed = _parse_participant_cookie(cookie)
+    if parsed is None or parsed[0] != session_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "PARTICIPANT_UNAUTHORIZED",
+                "message": "참여자 인증 정보가 유효하지 않습니다.",
+            },
+        )
+
+    repository = await get_session_repository()
+    token_hash = digest_participant_token(parsed[1], PARTICIPANT_TOKEN_PEPPER)
+    document = await repository.get_by_id_and_token(
+        session_id,
+        token_hash,
+        participant_only=participant_only,
+    )
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "PARTICIPANT_UNAUTHORIZED",
+                "message": "참여자 인증 정보가 유효하지 않습니다.",
+            },
+        )
+    _raise_if_expired(document)
+    return repository, document, token_hash, parsed[1]
+
+
+def _session_status(document: dict[str, Any], token_hash: str) -> dict[str, Any]:
+    me = _get_participant(document, token_hash)
+    partner = _get_partner(document, token_hash)
+    return {
+        "meCompleted": bool(me and me.get("completedAt") is not None),
+        "partnerJoined": partner is not None,
+        "partnerCompleted": bool(partner and partner.get("completedAt") is not None),
+        "partnerNudgedAt": as_iso(me.get("lastNudgedAt")) if me else None,
+        "expiresAt": as_iso(document.get("expiresAt")),
+    }
+
+
+def _session_question_count(document: dict[str, Any]) -> int:
+    """Use the question-set-sized arrays pinned on the session document."""
+    participants = document.get("participants", [])
+    for participant in participants:
+        answers = participant.get("answers")
+        if isinstance(answers, list):
+            return len(answers)
+    return 0
 
 _config_cache: dict[str, Any] = {}
 
@@ -482,14 +650,25 @@ async def create_session(
     response: Response,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
-    session_id = f"sess_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d%H%M%S')}_{os.urandom(3).hex()}"
-    invitation_code = f"INV-{os.urandom(2).hex().upper()}"
-    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    repository = await get_session_repository()
+    now = utc_now()
+    question_config = get_cached_config("light_questions")
+    question_count = question_count_for(question_config)
+    document, token = await repository.create(
+        nickname=req.nickname,
+        mode=req.mode,
+        question_set_version="light-v1" if req.mode == "light" else f"{req.mode}-v1",
+        question_count=question_count,
+        idempotency_key=idempotency_key,
+        pepper=PARTICIPANT_TOKEN_PEPPER,
+        now=now,
+        ttl_days=SESSION_TTL_DAYS,
+    )
 
     # 쿠키 발급
     response.set_cookie(
         key=PARTICIPANT_COOKIE_NAME,
-        value=f"{session_id}:creator",
+        value=f"{document['id']}:{token}",
         httponly=True,
         secure=IS_PRODUCTION,
         samesite="lax",
@@ -497,17 +676,7 @@ async def create_session(
         path="/"
     )
 
-    return {
-        "id": session_id,
-        "mode": req.mode,
-        "invitationCode": invitation_code,
-        "status": "in_progress",
-        "myRole": "creator",
-        "participants": [
-            SessionParticipant(role="creator", nickname=req.nickname, hasSubmitted=False)
-        ],
-        "createdAt": now_iso
-    }
+    return _public_session(document, "creator")
 
 
 @app.get(
@@ -524,27 +693,24 @@ async def create_session(
 async def get_my_session(
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME, description="참여자 인증 쿠키")
 ) -> dict[str, Any]:
-    if not mrs_participant:
+    parsed = _parse_participant_cookie(mrs_participant)
+    if parsed is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "PARTICIPANT_UNAUTHORIZED", "message": "참여자 인증 정보가 유효하지 않습니다."}
         )
-
-    parts = mrs_participant.split(":")
-    session_id = parts[0]
-    role = parts[1] if len(parts) > 1 else "creator"
-
-    return {
-        "id": session_id,
-        "mode": "light",
-        "invitationCode": "INV-7890",
-        "status": "in_progress",
-        "myRole": role,
-        "participants": [
-            SessionParticipant(role="creator", nickname="작성자", hasSubmitted=False)
-        ],
-        "createdAt": datetime.datetime.now(datetime.timezone.utc).isoformat()
-    }
+    repository = await get_session_repository()
+    token_hash = digest_participant_token(parsed[1], PARTICIPANT_TOKEN_PEPPER)
+    document = await repository.get_by_id_and_token(parsed[0], token_hash)
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "PARTICIPANT_UNAUTHORIZED", "message": "참여자 인증 정보가 유효하지 않습니다."}
+        )
+    _raise_if_expired(document)
+    participant = _get_participant(document, token_hash)
+    role = str(participant.get("role", "creator")) if participant else "creator"
+    return _public_session(document, role)
 
 
 @app.get(
@@ -559,18 +725,26 @@ async def get_my_session(
 async def get_invitation(
     code: str = FastPath(..., description="초대 코드 (예: INV-7890)")
 ) -> dict[str, Any]:
+    repository = await get_session_repository()
+    document = await repository.get_by_code(code)
     # 유효하지 않은 코드, 만료된 코드, 이미 참여된 코드 모두 중립적인 404 반환
-    if not code.startswith("INV-") or code in ("EXPIRED", "INVALID", "JOINED"):
+    if (
+        document is None
+        or not code.startswith("INV-")
+        or len(document.get("participants", [])) >= 2
+        or (
+            isinstance(document.get("expiresAt"), datetime.datetime)
+            and as_utc(document["expiresAt"]) <= utc_now()
+        )
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "INVITATION_NOT_FOUND", "message": "유효하지 않거나 만료된 초대 링크입니다."}
         )
-
-    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=SESSION_TTL_DAYS)).isoformat()
     return {
-        "mode": "light",
-        "duration": "3분",
-        "expiresAt": expires_at
+        "mode": document.get("mode", "light"),
+        "duration": "3분" if document.get("mode", "light") == "light" else "15분",
+        "expiresAt": as_iso(document.get("expiresAt")),
     }
 
 
@@ -591,17 +765,37 @@ async def join_invitation(
     response: Response,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
-    if not code.startswith("INV-") or code in ("EXPIRED", "INVALID"):
+    repository = await get_session_repository()
+    document = await repository.get_by_code(code)
+    if not code.startswith("INV-") or document is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "INVITATION_NOT_FOUND", "message": "유효하지 않거나 만료된 초대 링크입니다."}
         )
+    _raise_if_expired(document)
+    if len(document.get("participants", [])) >= 2:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "SESSION_ALREADY_JOINED", "message": "이미 상대방이 참여한 세션입니다."}
+        )
 
-    session_id = f"sess_joined_{code.replace('INV-', '')}"
+    question_count = _session_question_count(document)
+    joined_document, token = await repository.join(
+        invitation_code=code,
+        nickname=req.nickname,
+        question_count=question_count,
+        pepper=PARTICIPANT_TOKEN_PEPPER,
+        now=utc_now(),
+    )
+    if joined_document is None or token is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "SESSION_ALREADY_JOINED", "message": "이미 상대방이 참여한 세션입니다."}
+        )
 
     response.set_cookie(
         key=PARTICIPANT_COOKIE_NAME,
-        value=f"{session_id}:invitee",
+        value=f"{joined_document['id']}:{token}",
         httponly=True,
         secure=IS_PRODUCTION,
         samesite="lax",
@@ -609,18 +803,7 @@ async def join_invitation(
         path="/"
     )
 
-    return {
-        "id": session_id,
-        "mode": "light",
-        "invitationCode": code,
-        "status": "in_progress",
-        "myRole": "invitee",
-        "participants": [
-            SessionParticipant(role="creator", nickname="초대자", hasSubmitted=False),
-            SessionParticipant(role="invitee", nickname=req.nickname, hasSubmitted=False)
-        ],
-        "createdAt": datetime.datetime.now(datetime.timezone.utc).isoformat()
-    }
+    return _public_session(joined_document, "invitee")
 
 
 @app.get(
@@ -638,9 +821,20 @@ async def get_my_input(
     session_id: str = FastPath(..., description="세션 ID"),
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> dict[str, Any]:
+    _repository, document, token_hash, _token = await _authenticated_session(
+        session_id,
+        mrs_participant,
+        participant_only=True,
+    )
+    participant = _get_participant(document, token_hash)
+    if participant is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "INPUT_NOT_FOUND", "message": "저장된 입력을 찾을 수 없습니다."},
+        )
     return {
-        "answers": [1, 2, 2, 0, 2],
-        "guesses": [1, 1, 1, 0, 2]
+        "answers": participant.get("answers", []),
+        "guesses": participant.get("guesses", []),
     }
 
 
@@ -662,9 +856,54 @@ async def save_my_input(
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
+    repository, document, token_hash, _token = await _authenticated_session(
+        session_id,
+        mrs_participant,
+        participant_only=True,
+    )
+    question_count = _session_question_count(document)
+    if len(req.answers) != question_count or (
+        req.guesses is not None and len(req.guesses) != question_count
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "QUESTION_COUNT_MISMATCH",
+                "message": f"답변 배열은 {question_count}개여야 합니다.",
+            },
+        )
+    answers = [int(value) if value is not None else None for value in req.answers]
+    guesses = (
+        [int(value) if value is not None else None for value in req.guesses]
+        if req.guesses is not None
+        else None
+    )
+    result, updated_document = await repository.update_input(
+        session_id=session_id,
+        token_hash=token_hash,
+        answers=answers,
+        guesses=guesses,
+        now=utc_now(),
+    )
+    if result == "expired":
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail={"code": "SESSION_EXPIRED", "message": "?몄뀡??留뚮즺?섏뿀?듬땲??"},
+        )
+    if result == "submitted":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "SESSION_ALREADY_SUBMITTED", "message": "이미 제출된 세션은 수정할 수 없습니다."},
+        )
+    if updated_document is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "PARTICIPANT_UNAUTHORIZED", "message": "참여자 인증 정보가 유효하지 않습니다."},
+        )
+    updated_participant = _get_participant(updated_document, token_hash)
     return {
-        "answers": req.answers,
-        "guesses": req.guesses
+        "answers": updated_participant.get("answers", []) if updated_participant else [],
+        "guesses": updated_participant.get("guesses", []) if updated_participant else [],
     }
 
 
@@ -686,14 +925,48 @@ async def submit_my_input(
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
-    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=SESSION_TTL_DAYS)).isoformat()
-    return {
-        "meCompleted": True,
-        "partnerJoined": False,
-        "partnerCompleted": False,
-        "partnerNudgedAt": None,
-        "expiresAt": expires_at
-    }
+    repository, document, token_hash, _token = await _authenticated_session(
+        session_id,
+        mrs_participant,
+        participant_only=True,
+    )
+    question_count = _session_question_count(document)
+    if len(req.answers) != question_count or (
+        req.guesses is not None and len(req.guesses) != question_count
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "QUESTION_COUNT_MISMATCH",
+                "message": f"답변 배열은 {question_count}개여야 합니다.",
+            },
+        )
+    answers = [int(value) if value is not None else None for value in req.answers]
+    guesses = (
+        [int(value) if value is not None else None for value in req.guesses]
+        if req.guesses is not None
+        else None
+    )
+    result, submitted_document = await repository.submit(
+        session_id=session_id,
+        token_hash=token_hash,
+        answers=answers,
+        guesses=guesses,
+        now=utc_now(),
+    )
+    if result == "expired":
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail={"code": "SESSION_EXPIRED", "message": "?몄뀡??留뚮즉?섏뿀?듬땲??"},
+        )
+    if submitted_document is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "PARTICIPANT_UNAUTHORIZED", "message": "참여자 인증 정보가 유효하지 않습니다."},
+        )
+    if result == "already_submitted":
+        return _session_status(submitted_document, token_hash)
+    return _session_status(submitted_document, token_hash)
 
 
 @app.get(
@@ -711,14 +984,11 @@ async def get_session_status(
     session_id: str = FastPath(..., description="세션 ID"),
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> dict[str, Any]:
-    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=SESSION_TTL_DAYS)).isoformat()
-    return {
-        "meCompleted": True,
-        "partnerJoined": False,
-        "partnerCompleted": False,
-        "partnerNudgedAt": None,
-        "expiresAt": expires_at
-    }
+    _repository, document, token_hash, _token = await _authenticated_session(
+        session_id,
+        mrs_participant,
+    )
+    return _session_status(document, token_hash)
 
 
 @app.post(
@@ -737,6 +1007,25 @@ async def nudge_partner(
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
+    repository, _document, token_hash, _token = await _authenticated_session(
+        session_id,
+        mrs_participant,
+    )
+    result, _updated_document = await repository.nudge(
+        session_id=session_id,
+        token_hash=token_hash,
+        now=utc_now(),
+    )
+    if result == "partner_not_joined":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "PARTNER_NOT_JOINED", "message": "상대방이 아직 참여하지 않았습니다."},
+        )
+    if result == "rate_limited":
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": "NUDGE_RATE_LIMITED", "message": "넛지는 24시간에 한 번만 보낼 수 있습니다."},
+        )
     return {
         "status": "success",
         "message": "상대방에게 참여 알림을 전송했습니다."
@@ -759,6 +1048,10 @@ async def get_session_result(
     session_id: str = FastPath(..., description="세션 ID"),
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> Any:
+    _repository, _document, _token_hash, _token = await _authenticated_session(
+        session_id,
+        mrs_participant,
+    )
     # 한 명이라도 미제출한 경우: waiting 응답 반환 (정확히 status, partnerCompleted 2개 필드만 포함)
     return ResultWaitingResponse(
         status="waiting",

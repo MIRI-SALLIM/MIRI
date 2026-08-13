@@ -242,14 +242,16 @@ def test_gate1_session_and_result_contract():
     assert status_data["partnerCompleted"] is False
 
     # 7. 최종 제출
-    submit_payload = {
+    submit_input_payload = {
         "answers": [0, 1, 2, 3, 0],
         "guesses": [1, 1, 2, 0, 1]
     }
-    submit_res = creator_client.post(f"/api/v1/sessions/{sess_data['id']}/me/submit", json=submit_payload, headers=headers)
+    creator_client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=submit_input_payload, headers=headers)
+    submit_res = creator_client.post(f"/api/v1/sessions/{sess_data['id']}/me/submit", headers=headers)
     assert submit_res.status_code == 200
     submit_data = submit_res.json()
-    assert set(submit_data.keys()) == expected_status_keys
+    assert submit_data["status"] == "submitted"
+    assert "completedAt" in submit_data
 
     # 8. 결과 조회 (waiting 응답의 키가 정확히 2개인지 검증: status, partnerCompleted)
     result_res = creator_client.get(f"/api/v1/sessions/{sess_data['id']}/result")
@@ -381,13 +383,24 @@ def test_gate2_session_persistence_private_input_and_submit_lock():
     assert creator.get(f"/api/v1/sessions/{session_id}/me/input").json()["answers"] == creator_answers
     assert partner.get(f"/api/v1/sessions/{session_id}/me/input").json()["answers"] == partner_answers
 
-    submitted = creator.post(
-        f"/api/v1/sessions/{session_id}/me/submit",
-        json={"answers": creator_answers, "guesses": [1, 0, 2, 3, None]},
+    # 완전한 입력으로 업데이트 후 제출
+    creator_complete_answers = [0, 1, 2, 3, 2]
+    creator_complete_guesses = [1, 0, 2, 3, 1]
+    partner_complete_answers = [3, 2, 1, 0, 0]
+    partner_complete_guesses = [0, 1, 2, 3, 2]
+    creator.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": creator_complete_answers, "guesses": creator_complete_guesses},
     )
+    partner.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": partner_complete_answers, "guesses": partner_complete_guesses},
+    )
+
+    submitted = creator.post(f"/api/v1/sessions/{session_id}/me/submit")
     assert submitted.status_code == 200
-    assert submitted.json()["meCompleted"] is True
-    assert submitted.json()["partnerCompleted"] is False
+    assert submitted.json()["status"] == "submitted"
+    assert "completedAt" in submitted.json()
 
     locked = creator.patch(
         f"/api/v1/sessions/{session_id}/me/input",
@@ -396,12 +409,10 @@ def test_gate2_session_persistence_private_input_and_submit_lock():
     assert locked.status_code == 409
     assert locked.json()["error"]["code"] == "SESSION_ALREADY_SUBMITTED"
 
-    partner_submitted = partner.post(
-        f"/api/v1/sessions/{session_id}/me/submit",
-        json={"answers": partner_answers, "guesses": [0, 1, None, 3, 2]},
-    )
+    partner_submitted = partner.post(f"/api/v1/sessions/{session_id}/me/submit")
     assert partner_submitted.status_code == 200
-    assert partner_submitted.json()["meCompleted"] is True
+    assert partner_submitted.json()["status"] == "submitted"
+    assert "completedAt" in partner_submitted.json()
 
     repository = main_module._session_repository
     assert repository is not None
@@ -449,6 +460,7 @@ def test_openapi_schema_integrity():
     # 4. 응답에 항상 포함되는 필드의 required 계약 검증
     expected_required = {
         "InvitationResponse": ["mode", "duration", "expiresAt"],
+        "SubmitResponse": ["status", "completedAt"],
         "SessionStatusResponse": [
             "meCompleted",
             "partnerJoined",

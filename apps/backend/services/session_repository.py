@@ -9,6 +9,12 @@ from typing import Any
 
 from pymongo import ReturnDocument
 
+from schemas import LightComparisonResultData
+from services.light_result import (
+    calculate_light_canonical_result,
+    project_result_for_viewer,
+)
+
 INVITATION_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 
@@ -333,8 +339,6 @@ class SessionRepository:
         *,
         session_id: str,
         token_hash: str,
-        answers: list[int | None],
-        guesses: list[int | None] | None,
         now: datetime,
     ) -> tuple[str, dict[str, Any] | None]:
         document = await self.get_by_id_and_token(session_id, token_hash, now=now)
@@ -353,11 +357,13 @@ class SessionRepository:
         if participant.get("completedAt") is not None:
             return "already_submitted", document
 
+        answers = participant.get("answers", [])
+        guesses = participant.get("guesses", [])
+        if not answers or not guesses or any(a is None for a in answers) or any(g is None for g in guesses):
+            return "incomplete", document
+
         completed_at = now
-        new_guesses = guesses if guesses is not None else [None] * len(answers)
         if self._collection is None:
-            participant["answers"] = list(answers)
-            participant["guesses"] = list(new_guesses)
             participant["completedAt"] = completed_at
             self._memory[session_id] = deepcopy(document)
         else:
@@ -374,8 +380,6 @@ class SessionRepository:
                 },
                 {
                     "$set": {
-                        "participants.$.answers": answers,
-                        "participants.$.guesses": new_guesses,
                         "participants.$.completedAt": completed_at,
                     }
                 },
@@ -460,7 +464,7 @@ class SessionRepository:
                     f"participants.{partner_index}.completedAt": None,
                     "$or": [
                         {nudge_path: None},
-                        {nudge_path: {"$lt": now - timedelta(hours=24)}},
+                        {nudge_path: {"$lte": now - timedelta(hours=24)}},
                     ],
                 },
                 {"$set": {nudge_path: now}},
@@ -512,3 +516,69 @@ class SessionRepository:
         ):
             return "rate_limited", document
         return "not_found", None
+
+    async def get_or_create_result(
+        self,
+        *,
+        session_id: str,
+        token_hash: str,
+        now: datetime,
+    ) -> tuple[str, dict[str, Any] | None, LightComparisonResultData | None]:
+        document = await self.get_by_id_and_token(session_id, token_hash, now=now)
+        if document is None:
+            return "not_found", None, None
+
+        participants = document.get("participants", [])
+        me = next((p for p in participants if p.get("tokenHash") == token_hash), None)
+        if me is None:
+            return "not_found", None, None
+
+        partner = next((p for p in participants if p.get("tokenHash") != token_hash), None)
+        partner_completed = partner is not None and partner.get("completedAt") is not None
+        me_completed = me.get("completedAt") is not None
+
+        # 둘 중 하나라도 미제출이면 waiting
+        if not me_completed or not partner_completed or partner is None:
+            return "waiting", {"status": "waiting", "partnerCompleted": partner_completed}, None
+
+        creator = next((p for p in participants if p.get("role") == "creator"), participants[0])
+        invitee = next((p for p in participants if p.get("role") == "invitee"), participants[1])
+
+        # 이미 캐시된 결과가 있는지 확인
+        canonical = document.get("cachedResult")
+        if canonical is None:
+            # 최초 계산
+            question_count = document.get("questionCount", 5)
+            canonical = calculate_light_canonical_result(creator, invitee, question_count=question_count)
+            if self._collection is None:
+                document["cachedResult"] = canonical
+                document["status"] = "ready"
+                self._memory[session_id] = deepcopy(document)
+            else:
+                updated = await self._collection.find_one_and_update(
+                    {
+                        "id": session_id,
+                        "expiresAt": {"$gt": now},
+                        "cachedResult": None,
+                    },
+                    {
+                        "$set": {
+                            "cachedResult": canonical,
+                            "status": "ready",
+                        }
+                    },
+                    return_document=ReturnDocument.AFTER,
+                )
+                if updated is not None:
+                    document = updated
+                    canonical = document.get("cachedResult", canonical)
+                else:
+                    # 경쟁에서 다른 프로세스가 먼저 쓴 경우 재조회
+                    document = await self.get_by_id_and_token(session_id, token_hash, now=now)
+                    if document and document.get("cachedResult"):
+                        canonical = document["cachedResult"]
+
+        # 요청자 관점으로 프로젝션
+        viewer_role = me.get("role", "creator")
+        projected = project_result_for_viewer(canonical, viewer_role=viewer_role)
+        return "ready", document, projected

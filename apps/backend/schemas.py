@@ -221,13 +221,17 @@ class SaveInputRequest(BaseModel):
     answers: list[AnswerOptionIndex | None] = Field(
         ...,
         description="본인 질문별 답변 인덱스 리스트 (0|1|2|3|null)",
-        json_schema_extra={"example": [0, 1, None, 3]}
+        json_schema_extra={"example": [0, 1, None, 3, 2]}
     )
-    guesses: list[AnswerOptionIndex | None] | None = Field(
-        None,
+    guesses: list[AnswerOptionIndex | None] = Field(
+        ...,
         description="상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
-        json_schema_extra={"example": [1, 1, 2, None]}
+        json_schema_extra={"example": [1, 1, 2, None, 0]}
     )
+
+class SubmitResponse(BaseModel):
+    status: Literal["submitted"] = Field(..., description="제출 완료 상태 식별자", json_schema_extra={"example": "submitted"})
+    completedAt: str = Field(..., description="제출 완료 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-14T12:00:00Z"})
 
 class SubmitInputRequest(BaseModel):
     answers: list[AnswerOptionIndex | None] = Field(

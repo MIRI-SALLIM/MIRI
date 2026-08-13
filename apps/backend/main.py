@@ -39,13 +39,14 @@ from schemas import (
     LightDiagnosisResponse,
     NudgeResponse,
     QuestionSet,
+    ResultReadyResponse,
     ResultWaitingResponse,
     SaveInputRequest,
     SessionParticipant,
     SessionResponse,
     SessionResultResponse,
     SessionStatusResponse,
-    SubmitInputRequest,
+    SubmitResponse,
     UserInputData,
 )
 from services.calculator import calculate_light_surplus, classify_type
@@ -915,63 +916,53 @@ async def save_my_input(
 @app.post(
     "/api/v1/sessions/{session_id}/me/submit",
     summary="세션 내 본인 답변 최종 제출",
-    response_model=SessionStatusResponse,
+    response_model=SubmitResponse,
     responses={
         401: {"model": ErrorResponse, "description": "참여자 인증 실패"},
+        404: {"model": ErrorResponse, "description": "세션을 찾을 수 없음"},
         409: {"model": ErrorResponse, "description": "이미 제출 완료된 상태"},
-        422: {"model": ErrorResponse, "description": "필수 답변 누락 등 검증 실패"}
+        410: {"model": ErrorResponse, "description": "만료된 세션"},
+        422: {"model": ErrorResponse, "description": "미완성 답변/예측 등 검증 실패"}
     },
     openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["입력"]
 )
 async def submit_my_input(
-    session_id: str,
-    req: SubmitInputRequest,
+    session_id: str = FastPath(..., description="세션 ID"),
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
-    repository, document, token_hash, _token = await _authenticated_session(
+    repository, _document, token_hash, _token = await _authenticated_session(
         session_id,
         mrs_participant,
         participant_only=True,
     )
-    question_count = _session_question_count(document)
-    if len(req.answers) != question_count or (
-        req.guesses is not None and len(req.guesses) != question_count
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "code": "QUESTION_COUNT_MISMATCH",
-                "message": f"답변 배열은 {question_count}개여야 합니다.",
-            },
-        )
-    answers = [int(value) if value is not None else None for value in req.answers]
-    guesses = (
-        [int(value) if value is not None else None for value in req.guesses]
-        if req.guesses is not None
-        else None
-    )
     result, submitted_document = await repository.submit(
         session_id=session_id,
         token_hash=token_hash,
-        answers=answers,
-        guesses=guesses,
         now=utc_now(),
     )
     if result == "expired":
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail={"code": "SESSION_EXPIRED", "message": "?몄뀡??留뚮즉?섏뿀?듬땲??"},
+            detail={"code": "SESSION_EXPIRED", "message": "세션이 만료되었습니다."},
         )
-    if submitted_document is None:
+    if result == "incomplete":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INPUT_INCOMPLETE", "message": "모든 질문에 대한 답변과 상대방 예측을 완료해야 제출할 수 있습니다."},
+        )
+    if submitted_document is None or result == "not_found":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "PARTICIPANT_UNAUTHORIZED", "message": "참여자 인증 정보가 유효하지 않습니다."},
         )
-    if result == "already_submitted":
-        return _session_status(submitted_document, token_hash)
-    return _session_status(submitted_document, token_hash)
+    participant = _get_participant(submitted_document, token_hash)
+    completed_at = participant.get("completedAt") if participant else None
+    return {
+        "status": "submitted",
+        "completedAt": as_iso(completed_at) or as_iso(utc_now()),
+    }
 
 
 @app.get(
@@ -1060,14 +1051,34 @@ async def get_session_result(
     session_id: str = FastPath(..., description="세션 ID"),
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> Any:
-    _repository, _document, _token_hash, _token = await _authenticated_session(
+    repository, _document, token_hash, _token = await _authenticated_session(
         session_id,
         mrs_participant,
     )
-    # 한 명이라도 미제출한 경우: waiting 응답 반환 (정확히 status, partnerCompleted 2개 필드만 포함)
-    return ResultWaitingResponse(
-        status="waiting",
-        partnerCompleted=False
+    result_status, _doc, projected = await repository.get_or_create_result(
+        session_id=session_id,
+        token_hash=token_hash,
+        now=utc_now(),
+    )
+    if result_status == "not_found":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "SESSION_NOT_FOUND", "message": "세션을 찾을 수 없습니다."},
+        )
+    if result_status == "waiting":
+        return ResultWaitingResponse(
+            status="waiting",
+            partnerCompleted=False,
+        )
+    if result_status == "ready" and projected is not None:
+        return ResultReadyResponse(
+            status="ready",
+            partnerCompleted=True,
+            result=projected,
+        )
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail={"code": "RESULT_CALCULATION_FAILED", "message": "결과 생성 중 오류가 발생했습니다."},
     )
 
 

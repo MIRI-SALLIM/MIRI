@@ -70,10 +70,14 @@ def test_nudge_requires_an_available_target():
 def test_nudge_is_unavailable_after_partner_submission():
     creator, guest, session_id = _create_pair()
     try:
-        submitted = guest.post(
-            f"/api/v1/sessions/{session_id}/me/submit",
-            json={"answers": [0, 1, None, 3, 2]},
+        guest.patch(
+            f"/api/v1/sessions/{session_id}/me/input",
+            json={
+                "answers": [0, 1, 2, 3, 2],
+                "guesses": [1, 2, 3, 0, 1],
+            },
         )
+        submitted = guest.post(f"/api/v1/sessions/{session_id}/me/submit")
         assert submitted.status_code == 200
 
         response = creator.post(f"/api/v1/sessions/{session_id}/nudge")

@@ -431,8 +431,16 @@ class SessionRepository:
         )
         if participant_index is None:
             return "not_found", None
-        if len(participants) < 2:
-            return "partner_not_joined", document
+        partner_index = next(
+            (
+                index
+                for index, item in enumerate(participants)
+                if index != participant_index
+            ),
+            None,
+        )
+        if partner_index is None or participants[partner_index].get("completedAt") is not None:
+            return "target_unavailable", document
         previous = participants[participant_index].get("lastNudgedAt")
         if (
             isinstance(previous, datetime)
@@ -449,7 +457,7 @@ class SessionRepository:
                     "id": session_id,
                     "expiresAt": {"$gt": now},
                     f"participants.{participant_index}.tokenHash": token_hash,
-                    "participants.1": {"$exists": True},
+                    f"participants.{partner_index}.completedAt": None,
                     "$or": [
                         {nudge_path: None},
                         {nudge_path: {"$lt": now - timedelta(hours=24)}},
@@ -459,5 +467,48 @@ class SessionRepository:
                 return_document=ReturnDocument.AFTER,
             )
             if document is None:
-                return "rate_limited", await self.get_by_id_and_token(session_id, token_hash)
+                return await self._classify_failed_nudge(session_id, token_hash, now)
         return "ok", document
+
+    async def _classify_failed_nudge(
+        self,
+        session_id: str,
+        token_hash: str,
+        now: datetime,
+    ) -> tuple[str, dict[str, Any] | None]:
+        document = await self.get_by_id_and_token(session_id, token_hash)
+        if document is None:
+            return "not_found", None
+        expires_at = document.get("expiresAt")
+        if isinstance(expires_at, datetime) and as_utc(expires_at) <= as_utc(now):
+            return "expired", document
+
+        participants = document.get("participants", [])
+        participant_index = next(
+            (
+                index
+                for index, item in enumerate(participants)
+                if item.get("tokenHash") == token_hash
+            ),
+            None,
+        )
+        if participant_index is None:
+            return "not_found", None
+        partner = next(
+            (
+                item
+                for index, item in enumerate(participants)
+                if index != participant_index
+            ),
+            None,
+        )
+        if partner is None or partner.get("completedAt") is not None:
+            return "target_unavailable", document
+
+        previous = participants[participant_index].get("lastNudgedAt")
+        if (
+            isinstance(previous, datetime)
+            and as_utc(previous) + timedelta(hours=24) > as_utc(now)
+        ):
+            return "rate_limited", document
+        return "not_found", None

@@ -2325,6 +2325,26 @@
             },
             "description": "참여자 인증 실패"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "상대방에게 nudge를 보낼 수 없는 상태"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "만료된 세션"
+          },
           "422": {
             "content": {
               "application/json": {

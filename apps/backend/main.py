@@ -379,7 +379,7 @@ def _session_status(document: dict[str, Any], token_hash: str) -> dict[str, Any]
         "meCompleted": bool(me and me.get("completedAt") is not None),
         "partnerJoined": partner is not None,
         "partnerCompleted": bool(partner and partner.get("completedAt") is not None),
-        "partnerNudgedAt": as_iso(me.get("lastNudgedAt")) if me else None,
+        "partnerNudgedAt": as_iso(partner.get("lastNudgedAt")) if partner else None,
         "expiresAt": as_iso(document.get("expiresAt")),
     }
 
@@ -772,7 +772,12 @@ async def join_invitation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "INVITATION_NOT_FOUND", "message": "유효하지 않거나 만료된 초대 링크입니다."}
         )
-    _raise_if_expired(document)
+    expires_at = document.get("expiresAt")
+    if isinstance(expires_at, datetime.datetime) and as_utc(expires_at) <= utc_now():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "INVITATION_NOT_FOUND", "message": "초대 링크를 사용할 수 없습니다."},
+        )
     if len(document.get("participants", [])) >= 2:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -997,6 +1002,8 @@ async def get_session_status(
     response_model=NudgeResponse,
     responses={
         401: {"model": ErrorResponse, "description": "참여자 인증 실패"},
+        409: {"model": ErrorResponse, "description": "상대방에게 nudge를 보낼 수 없는 상태"},
+        410: {"model": ErrorResponse, "description": "만료된 세션"},
         429: {"model": ErrorResponse, "description": "단시간 내 과도한 알림 요청 제한"}
     },
     openapi_extra={"security": [{"cookieAuth": []}]},
@@ -1016,10 +1023,15 @@ async def nudge_partner(
         token_hash=token_hash,
         now=utc_now(),
     )
-    if result == "partner_not_joined":
+    if result in {"partner_not_joined", "target_unavailable"}:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "PARTNER_NOT_JOINED", "message": "상대방이 아직 참여하지 않았습니다."},
+            detail={"code": "NUDGE_TARGET_UNAVAILABLE", "message": "상대방에게 지금 nudge를 보낼 수 없습니다."},
+        )
+    if result == "expired":
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail={"code": "SESSION_EXPIRED", "message": "세션이 만료되었습니다."},
         )
     if result == "rate_limited":
         raise HTTPException(

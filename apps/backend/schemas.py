@@ -169,25 +169,11 @@ class InputValidationResponse(BaseModel):
 
 
 # ==========================================
-# Gate 1: 세션, 초대, 입력(answers, guesses) 및 상태 스키마
+# Gate 1: 세션, 초대, 가변 입력(answers, guesses) 및 상태 스키마
 # ==========================================
 
 # 4개 선택지 인덱스: 0, 1, 2, 3 또는 null
 AnswerOptionIndex = Literal[0, 1, 2, 3]
-
-class LightInputAnswers(BaseModel):
-    monthly_income: AnswerOptionIndex | None = Field(default=None, description="소득 문항 선택지 인덱스 (0: 200만 미만, 1: 200~300만, 2: 300~450만, 3: 450만 이상)")
-    saving_ratio: AnswerOptionIndex | None = Field(default=None, description="잉여자금 문항 선택지 인덱스 (0: 거의 없음, 1: 20~60만, 2: 60~120만, 3: 120만 이상)")
-    spending_style: AnswerOptionIndex | None = Field(default=None, description="소비성향 문항 선택지 인덱스 (0: 소비 최우선, 1: 소비 약간, 2: 저축 약간, 3: 저축 최우선)")
-    debt_load: AnswerOptionIndex | None = Field(default=None, description="부채규모 문항 선택지 인덱스 (0: 없음, 1: 3천만 미만, 2: 3천만~1억, 3: 1억 이상)")
-    shared_expense: AnswerOptionIndex | None = Field(default=None, description="공동관리 문항 선택지 인덱스 (0: 완전 각자, 1: 각자+공용통장, 2: 공동+개인용돈, 3: 완전 통합)")
-
-class LightInputGuesses(BaseModel):
-    monthly_income: AnswerOptionIndex | None = Field(default=None, description="상대방 소득 예측 선택지 인덱스")
-    saving_ratio: AnswerOptionIndex | None = Field(default=None, description="상대방 잉여자금 예측 선택지 인덱스")
-    spending_style: AnswerOptionIndex | None = Field(default=None, description="상대방 소비성향 예측 선택지 인덱스")
-    debt_load: AnswerOptionIndex | None = Field(default=None, description="상대방 부채규모 예측 선택지 인덱스")
-    shared_expense: AnswerOptionIndex | None = Field(default=None, description="상대방 공동관리 예측 선택지 인덱스")
 
 class CreateSessionRequest(BaseModel):
     nickname: str = Field(..., min_length=1, max_length=20, description="작성자 닉네임", json_schema_extra={"example": "예랑이"})
@@ -208,33 +194,55 @@ class SessionResponse(BaseModel):
     createdAt: str = Field(..., description="세션 생성 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-12T12:00:00Z"})
 
 class InvitationResponse(BaseModel):
-    invitationCode: str = Field(..., description="초대 코드", json_schema_extra={"example": "INV-7890"})
-    inviterNickname: str = Field(..., description="초대자 닉네임", json_schema_extra={"example": "예랑이"})
-    mode: str = Field("light", description="진단 모드", json_schema_extra={"example": "light"})
-    status: str = Field("active", description="초대장 상태 (active | joined | expired)", json_schema_extra={"example": "active"})
+    mode: str = Field("light", description="진단 모드 (light | deep)", json_schema_extra={"example": "light"})
+    duration: str = Field("3분", description="예상 소요 시간", json_schema_extra={"example": "3분"})
+    expiresAt: str = Field(..., description="초대장 만료 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-19T12:00:00Z"})
 
 class JoinInvitationRequest(BaseModel):
     nickname: str = Field(..., min_length=1, max_length=20, description="참여자 닉네임", json_schema_extra={"example": "예신이"})
 
 class UserInputData(BaseModel):
-    answers: LightInputAnswers = Field(default_factory=LightInputAnswers, description="본인 질문별 답변 인덱스 (0|1|2|3|null)")
-    guesses: LightInputGuesses | None = Field(None, description="상대방 질문별 예측 인덱스 (0|1|2|3|null)")
+    answers: list[AnswerOptionIndex | None] = Field(
+        default_factory=list, 
+        description="본인 질문별 답변 인덱스 리스트 (0|1|2|3|null)",
+        json_schema_extra={"example": [0, 1, None, 3]}
+    )
+    guesses: list[AnswerOptionIndex | None] | None = Field(
+        None, 
+        description="상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
+        json_schema_extra={"example": [1, 1, 2, None]}
+    )
 
 class SaveInputRequest(BaseModel):
-    answers: LightInputAnswers = Field(..., description="본인 질문별 답변 인덱스 (0|1|2|3|null)")
-    guesses: LightInputGuesses | None = Field(None, description="상대방 질문별 예측 인덱스 (0|1|2|3|null)")
+    answers: list[AnswerOptionIndex | None] = Field(
+        ..., 
+        description="본인 질문별 답변 인덱스 리스트 (0|1|2|3|null)",
+        json_schema_extra={"example": [0, 1, None, 3]}
+    )
+    guesses: list[AnswerOptionIndex | None] | None = Field(
+        None, 
+        description="상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
+        json_schema_extra={"example": [1, 1, 2, None]}
+    )
 
 class SubmitInputRequest(BaseModel):
-    answers: LightInputAnswers = Field(..., description="본인 질문별 최종 답변 인덱스 (0|1|2|3|null)")
-    guesses: LightInputGuesses | None = Field(None, description="상대방 질문별 최종 예측 인덱스 (0|1|2|3|null)")
+    answers: list[AnswerOptionIndex | None] = Field(
+        ..., 
+        description="본인 질문별 최종 답변 인덱스 리스트 (0|1|2|3|null)",
+        json_schema_extra={"example": [0, 1, 2, 3]}
+    )
+    guesses: list[AnswerOptionIndex | None] | None = Field(
+        None, 
+        description="상대방 질문별 최종 예측 인덱스 리스트 (0|1|2|3|null)",
+        json_schema_extra={"example": [1, 1, 2, 0]}
+    )
 
 class SessionStatusResponse(BaseModel):
-    sessionId: str = Field(..., description="세션 ID", json_schema_extra={"example": "sess_8f3a9b2c"})
-    status: str = Field("in_progress", description="세션 진행 상태 (in_progress | completed | expired)", json_schema_extra={"example": "in_progress"})
-    isCompleted: bool = Field(False, description="양측 제출 완료 여부", json_schema_extra={"example": False})
-    mySubmitted: bool = Field(False, description="내 제출 완료 여부", json_schema_extra={"example": True})
-    partnerSubmitted: bool = Field(False, description="상대방 제출 완료 여부", json_schema_extra={"example": False})
-    partnerNickname: str | None = Field(None, description="상대방 닉네임", json_schema_extra={"example": "예신이"})
+    meCompleted: bool = Field(False, description="내 제출 완료 여부", json_schema_extra={"example": True})
+    partnerJoined: bool = Field(False, description="상대방 세션 참여 여부", json_schema_extra={"example": True})
+    partnerCompleted: bool = Field(False, description="상대방 제출 완료 여부", json_schema_extra={"example": False})
+    partnerNudgedAt: str | None = Field(None, description="최근 넛지 알림 전송 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-12T12:30:00Z"})
+    expiresAt: str | None = Field(None, description="세션 만료 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-19T12:00:00Z"})
 
 class NudgeResponse(BaseModel):
     status: str = Field("success", description="처리 상태", json_schema_extra={"example": "success"})
@@ -242,8 +250,35 @@ class NudgeResponse(BaseModel):
 
 
 # ==========================================
-# Gate 1: 결과 Discriminated Union 스키마
+# Gate 1: 결과 양측 비교 및 Discriminated Union 스키마
 # ==========================================
+
+class QuestionComparisonItem(BaseModel):
+    questionId: str = Field(..., description="질문 고유 식별자 ID", json_schema_extra={"example": "spending_style"})
+    questionText: str = Field(..., description="질문 본문 문구", json_schema_extra={"example": "소비 및 저축 성향"})
+    myAnswer: AnswerOptionIndex | None = Field(..., description="본인 공개 답변 인덱스 (0|1|2|3|null)", json_schema_extra={"example": 2})
+    partnerAnswer: AnswerOptionIndex | None = Field(..., description="상대방 공개 답변 인덱스 (0|1|2|3|null)", json_schema_extra={"example": 2})
+    myGuess: AnswerOptionIndex | None = Field(None, description="내가 예측한 상대방 답변 인덱스 (0|1|2|3|null)", json_schema_extra={"example": 2})
+    isHit: bool = Field(..., description="현재 사용자 관점의 상대방 예측 적중 여부 (myGuess == partnerAnswer)", json_schema_extra={"example": True})
+    isMatch: bool = Field(..., description="질문별 본인과 상대방의 답변 일치 여부 (myAnswer == partnerAnswer)", json_schema_extra={"example": True})
+    myAnswerLabel: str | None = Field(None, description="본인 답변 선택지 라벨", json_schema_extra={"example": "저축 약간 우선"})
+    partnerAnswerLabel: str | None = Field(None, description="상대방 답변 선택지 라벨", json_schema_extra={"example": "저축 약간 우선"})
+
+class LightComparisonResultData(BaseModel):
+    questionCount: int = Field(..., description="전체 질문 수", json_schema_extra={"example": 5})
+    mutualHitCount: int = Field(..., description="양측 상호 예측 적중 개수", json_schema_extra={"example": 3})
+    tagline: str = Field(..., description="중립적인 결과 태그라인", json_schema_extra={"example": "서로의 생각을 이해하고 맞춰가는 첫걸음"})
+    myType: TypeClassificationResult = Field(..., description="본인의 성향 유형 분류 결과")
+    partnerType: TypeClassificationResult = Field(..., description="상대방의 성향 유형 분류 결과")
+    discussionTopics: list[str] = Field(
+        default_factory=list, 
+        description="대화해 볼 중립적인 주제 목록",
+        json_schema_extra={"example": ["월 고정비와 자유 사용 경비의 기준 나누기", "비상금 관리 방식 정하기"]}
+    )
+    questions: list[QuestionComparisonItem] = Field(
+        ..., 
+        description="질문별 양측 비교 및 적중 목록"
+    )
 
 class ResultWaitingResponse(BaseModel):
     status: Literal["waiting"] = Field("waiting", description="결과 대기 상태 식별자")
@@ -252,7 +287,7 @@ class ResultWaitingResponse(BaseModel):
 class ResultReadyResponse(BaseModel):
     status: Literal["ready"] = Field("ready", description="결과 준비 완료 상태 식별자")
     partnerCompleted: Literal[True] = Field(True, description="상대방 완료 여부 (항상 True)")
-    result: LightDiagnosisResultData = Field(..., description="합산 및 비교 진단 결과 데이터")
+    result: LightComparisonResultData = Field(..., description="양측 비교 결과 데이터 (금액 정보 제외)")
 
 SessionResultResponse = Annotated[
     ResultWaitingResponse | ResultReadyResponse,

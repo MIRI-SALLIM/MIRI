@@ -1,5 +1,6 @@
 import io
 import sys
+from pathlib import Path
 from typing import Any, cast
 
 from fastapi.testclient import TestClient
@@ -172,7 +173,7 @@ def test_validator_endpoint_and_rules():
     print("✅ [테스트 6] /api/v1/validate/input 및 V-01~V-05 유효성 검증 정상")
 
 def test_gate1_session_and_result_contract():
-    """Gate 1 세션 생성, 초대, 쿠키, Idempotency-Key 및 waiting 응답(정확히 2개 키) 계약 검증"""
+    """F2 계약: 세션 생성, 초대 미리보기(최소 정보), 가변 입력(배열), 세션 상태, 양측 비교 결과 DTO 및 쿠키 검증"""
     # 1. 세션 생성 (201 Created, Idempotency-Key 헤더, 쿠키 발급 확인)
     headers = {"Idempotency-Key": "test-uuid-1234"}
     create_res = client.post("/api/v1/sessions", json={"nickname": "예랑이", "mode": "light"}, headers=headers)
@@ -182,11 +183,24 @@ def test_gate1_session_and_result_contract():
     assert sess_data["myRole"] == "creator"
     assert "mrs_participant" in create_res.cookies
 
-    # 2. 초대 조회
+    # 2. 초대 미리보기 조회 (최소 정보: mode, duration, expiresAt만 노출)
     inv_code = sess_data["invitationCode"]
     inv_res = client.get(f"/api/v1/invitations/{inv_code}")
     assert inv_res.status_code == 200
-    assert inv_res.json()["invitationCode"] == inv_code
+    inv_data = inv_res.json()
+    assert set(inv_data.keys()) == {"mode", "duration", "expiresAt"}
+    assert inv_data["mode"] == "light"
+    assert inv_data["duration"] == "3분"
+    assert "expiresAt" in inv_data
+
+    # 유효하지 않거나 만료된 코드에 대해 중립적인 404 에러 반환 검증
+    bad_inv_res = client.get("/api/v1/invitations/INVALID_CODE")
+    assert bad_inv_res.status_code == 404
+    assert bad_inv_res.json()["error"]["code"] == "INVITATION_NOT_FOUND"
+
+    expired_inv_res = client.get("/api/v1/invitations/EXPIRED")
+    assert expired_inv_res.status_code == 404
+    assert expired_inv_res.json()["error"]["code"] == "INVITATION_NOT_FOUND"
 
     # 3. 초대 참여 (쿠키 발급)
     join_res = client.post(f"/api/v1/invitations/{inv_code}/join", json={"nickname": "예신이"}, headers=headers)
@@ -194,38 +208,45 @@ def test_gate1_session_and_result_contract():
     assert join_res.json()["myRole"] == "invitee"
     assert "mrs_participant" in join_res.cookies
 
-    # 4. 입력 저장 (0|1|2|3|null DTO 검증)
+    # 4. 가변 질문 입력 저장 (배열 구조: 0|1|2|3|null)
     input_payload = {
-        "answers": {
-            "monthly_income": 1,
-            "saving_ratio": 2,
-            "spending_style": 3,
-            "debt_load": 0,
-            "shared_expense": 2
-        },
-        "guesses": {
-            "monthly_income": 1,
-            "saving_ratio": 1,
-            "spending_style": 0,
-            "debt_load": 0,
-            "shared_expense": 2
-        }
+        "answers": [0, 1, None, 3],
+        "guesses": [1, 1, 2, None]
     }
     save_res = client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=input_payload, headers=headers)
     assert save_res.status_code == 200
-    assert save_res.json()["answers"]["monthly_income"] == 1
+    save_data = save_res.json()
+    assert save_data["answers"] == [0, 1, None, 3]
+    assert save_data["guesses"] == [1, 1, 2, None]
 
     # 5. 잘못된 답변 값(범위 밖 4 등) 전송 시 422 검증
     bad_input_payload = {
-        "answers": {
-            "monthly_income": 4  # 0, 1, 2, 3 범위를 벗어남
-        }
+        "answers": [4, 1, 0]  # 4는 0|1|2|3 범위를 벗어남
     }
     bad_res = client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=bad_input_payload)
     assert bad_res.status_code == 422
     assert bad_res.json()["error"]["code"] == "VALIDATION_ERROR"
 
-    # 6. 결과 조회 (waiting 응답의 키가 정확히 2개인지 검증: status, partnerCompleted)
+    # 6. 세션 상태 조회 (최종 정리된 필드: meCompleted, partnerJoined, partnerCompleted, partnerNudgedAt, expiresAt)
+    status_res = client.get(f"/api/v1/sessions/{sess_data['id']}/status")
+    assert status_res.status_code == 200
+    status_data = status_res.json()
+    expected_status_keys = {"meCompleted", "partnerJoined", "partnerCompleted", "partnerNudgedAt", "expiresAt"}
+    assert set(status_data.keys()) == expected_status_keys
+    assert status_data["meCompleted"] is True
+    assert status_data["partnerCompleted"] is False
+
+    # 7. 최종 제출
+    submit_payload = {
+        "answers": [0, 1, 2, 3],
+        "guesses": [1, 1, 2, 0]
+    }
+    submit_res = client.post(f"/api/v1/sessions/{sess_data['id']}/me/submit", json=submit_payload, headers=headers)
+    assert submit_res.status_code == 200
+    submit_data = submit_res.json()
+    assert set(submit_data.keys()) == expected_status_keys
+
+    # 8. 결과 조회 (waiting 응답의 키가 정확히 2개인지 검증: status, partnerCompleted)
     result_res = client.get(f"/api/v1/sessions/{sess_data['id']}/result")
     assert result_res.status_code == 200
     res_json = result_res.json()
@@ -233,16 +254,16 @@ def test_gate1_session_and_result_contract():
     assert res_json["status"] == "waiting"
     assert res_json["partnerCompleted"] is False
 
-    # 7. 쿠키 없이 /api/v1/me/session 호출 시 401 공통 에러 봉투 확인
+    # 9. 쿠키 없이 /api/v1/me/session 호출 시 401 공통 에러 봉투 확인
     unauth_client = TestClient(app, cookies={})
     unauth_res = unauth_client.get("/api/v1/me/session")
     assert unauth_res.status_code == 401
     assert unauth_res.json()["error"]["code"] == "PARTICIPANT_UNAUTHORIZED"
 
-    print("✅ [테스트 7] Gate 1 세션/초대/쿠키/waiting(2개 키) 및 0|1|2|3|null DTO 검증 정상")
+    print("✅ [테스트 7] F2 세션/초대(최소정보)/가변입력(배열)/상태DTO/waiting결과 검증 정상")
 
 def test_openapi_schema_integrity():
-    """OpenAPI 스키마에서 HTTPValidationError 제거 및 ErrorResponse 통일, cookieAuth 검증"""
+    """OpenAPI 스키마 무결성 검증: HTTPValidationError 제거, cookieAuth 연결, 양측 openapi.json 동일성"""
     schema = app.openapi()
     schemas = schema.get("components", {}).get("schemas", {})
 
@@ -258,7 +279,35 @@ def test_openapi_schema_integrity():
     assert "cookieAuth" in sec_schemes
     assert sec_schemes["cookieAuth"]["name"] == "mrs_participant"
 
-    print("✅ [테스트 8] OpenAPI 스키마 HTTPValidationError 제거 및 ErrorResponse 통일 무결성 정상")
+    # 4. 보호 대상 엔드포인트 7개에 security: [{'cookieAuth': []}] 설정 확인
+    protected_targets = [
+        ("get", "/api/v1/me/session"),
+        ("get", "/api/v1/sessions/{session_id}/me/input"),
+        ("patch", "/api/v1/sessions/{session_id}/me/input"),
+        ("post", "/api/v1/sessions/{session_id}/me/submit"),
+        ("get", "/api/v1/sessions/{session_id}/status"),
+        ("post", "/api/v1/sessions/{session_id}/nudge"),
+        ("get", "/api/v1/sessions/{session_id}/result"),
+    ]
+    paths = schema.get("paths", {})
+    for method, path in protected_targets:
+        op = paths.get(path, {}).get(method, {})
+        assert "security" in op, f"{method.upper()} {path}에 security 항목이 정의되어 있어야 합니다."
+        assert op["security"] == [{"cookieAuth": []}], f"{method.upper()} {path} security가 cookieAuth로 설정되어야 합니다."
+
+    # 5. 백엔드 및 프론트엔드 openapi.json 동일성 검증
+    from export_openapi import export_openapi
+    export_openapi()
+    
+    backend_path = Path(__file__).resolve().parent / "openapi.json"
+    frontend_path = Path(__file__).resolve().parents[1] / "frontend" / "openapi.json"
+    
+    with open(backend_path, "r", encoding="utf-8") as fb, open(frontend_path, "r", encoding="utf-8") as ff:
+        backend_content = fb.read()
+        frontend_content = ff.read()
+    assert backend_content == frontend_content, "apps/backend/openapi.json과 apps/frontend/openapi.json이 100% 일치해야 합니다."
+
+    print("✅ [테스트 8] OpenAPI 스키마 security 연결, HTTPValidationError 제거 및 프론트/백 동기화 무결성 정상")
 
 if __name__ == "__main__":
     test_health()
@@ -270,3 +319,4 @@ if __name__ == "__main__":
     test_gate1_session_and_result_contract()
     test_openapi_schema_integrity()
     print("\n🎉 [전체 통과] 모든 백엔드 완료 조건 검증 완료!")
+

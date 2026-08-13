@@ -24,8 +24,6 @@ from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyCookie
 from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -37,8 +35,6 @@ from schemas import (
     JoinInvitationRequest,
     LightDiagnosisRequest,
     LightDiagnosisResponse,
-    LightInputAnswers,
-    LightInputGuesses,
     NudgeResponse,
     QuestionSet,
     ResultWaitingResponse,
@@ -52,6 +48,7 @@ from schemas import (
 )
 from services.calculator import calculate_light_surplus, classify_type
 from services.validator import validate_input
+from starlette.middleware.base import BaseHTTPMiddleware
 
 load_dotenv()
 
@@ -520,6 +517,7 @@ async def create_session(
         401: {"model": ErrorResponse, "description": "참여자 인증 쿠키 누락 또는 만료"},
         404: {"model": ErrorResponse, "description": "세션을 찾을 수 없음"}
     },
+    openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["세션"]
 )
 async def get_my_session(
@@ -550,33 +548,28 @@ async def get_my_session(
 
 @app.get(
     "/api/v1/invitations/{code}",
-    summary="초대 코드 유효성 확인 및 초대자 정보 조회",
+    summary="초대 코드 유효성 확인 및 공개 초대 미리보기 조회",
     response_model=InvitationResponse,
     responses={
-        404: {"model": ErrorResponse, "description": "유효하지 않은 초대 코드"},
-        410: {"model": ErrorResponse, "description": "만료된 초대 코드"}
+        404: {"model": ErrorResponse, "description": "유효하지 않거나 만료된 초대 링크"}
     },
     tags=["초대"]
 )
 async def get_invitation(
     code: str = FastPath(..., description="초대 코드 (예: INV-7890)")
 ) -> dict[str, Any]:
-    if code == "EXPIRED":
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail={"code": "INVITATION_EXPIRED", "message": "만료된 초대 링크입니다."}
-        )
-    if not code.startswith("INV-"):
+    # 유효하지 않은 코드, 만료된 코드, 이미 참여된 코드 모두 중립적인 404 반환
+    if not code.startswith("INV-") or code in ("EXPIRED", "INVALID", "JOINED"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "INVITATION_NOT_FOUND", "message": "존재하지 않는 초대 코드입니다."}
+            detail={"code": "INVITATION_NOT_FOUND", "message": "유효하지 않거나 만료된 초대 링크입니다."}
         )
 
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=SESSION_TTL_DAYS)).isoformat()
     return {
-        "invitationCode": code,
-        "inviterNickname": "초대자",
         "mode": "light",
-        "status": "active"
+        "duration": "3분",
+        "expiresAt": expires_at
     }
 
 
@@ -585,9 +578,8 @@ async def get_invitation(
     summary="초대 수락 및 세션 참여 (쿠키 발급)",
     response_model=SessionResponse,
     responses={
-        404: {"model": ErrorResponse, "description": "존재하지 않는 초대 코드"},
+        404: {"model": ErrorResponse, "description": "존재하지 않거나 만료된 초대 코드"},
         409: {"model": ErrorResponse, "description": "이미 상대방이 참여 완료된 세션"},
-        410: {"model": ErrorResponse, "description": "만료된 초대 코드"},
         422: {"model": ErrorResponse, "description": "입력값 검증 실패"}
     },
     tags=["초대"]
@@ -598,10 +590,10 @@ async def join_invitation(
     response: Response,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
-    if not code.startswith("INV-"):
+    if not code.startswith("INV-") or code in ("EXPIRED", "INVALID"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "INVITATION_NOT_FOUND", "message": "존재하지 않는 초대 코드입니다."}
+            detail={"code": "INVITATION_NOT_FOUND", "message": "유효하지 않거나 만료된 초대 링크입니다."}
         )
 
     session_id = f"sess_joined_{code.replace('INV-', '')}"
@@ -638,6 +630,7 @@ async def join_invitation(
         401: {"model": ErrorResponse, "description": "참여자 인증 실패"},
         404: {"model": ErrorResponse, "description": "세션 또는 저장된 입력을 찾을 수 없음"}
     },
+    openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["입력"]
 )
 async def get_my_input(
@@ -645,20 +638,8 @@ async def get_my_input(
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> dict[str, Any]:
     return {
-        "answers": LightInputAnswers(
-            monthly_income=1,
-            saving_ratio=2,
-            spending_style=2,
-            debt_load=0,
-            shared_expense=2
-        ).model_dump(),
-        "guesses": LightInputGuesses(
-            monthly_income=1,
-            saving_ratio=1,
-            spending_style=1,
-            debt_load=0,
-            shared_expense=2
-        ).model_dump()
+        "answers": [1, 2, 2, 0, 2],
+        "guesses": [1, 1, 1, 0, 2]
     }
 
 
@@ -671,6 +652,7 @@ async def get_my_input(
         409: {"model": ErrorResponse, "description": "이미 제출 완료되어 수정 불가"},
         422: {"model": ErrorResponse, "description": "입력값 검증 실패"}
     },
+    openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["입력"]
 )
 async def save_my_input(
@@ -680,8 +662,8 @@ async def save_my_input(
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
     return {
-        "answers": req.answers.model_dump(),
-        "guesses": req.guesses.model_dump() if req.guesses else None
+        "answers": req.answers,
+        "guesses": req.guesses
     }
 
 
@@ -694,6 +676,7 @@ async def save_my_input(
         409: {"model": ErrorResponse, "description": "이미 제출 완료된 상태"},
         422: {"model": ErrorResponse, "description": "필수 답변 누락 등 검증 실패"}
     },
+    openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["입력"]
 )
 async def submit_my_input(
@@ -702,13 +685,13 @@ async def submit_my_input(
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME),
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=SESSION_TTL_DAYS)).isoformat()
     return {
-        "sessionId": session_id,
-        "status": "in_progress",
-        "isCompleted": False,
-        "mySubmitted": True,
-        "partnerSubmitted": False,
-        "partnerNickname": "상대방"
+        "meCompleted": True,
+        "partnerJoined": False,
+        "partnerCompleted": False,
+        "partnerNudgedAt": None,
+        "expiresAt": expires_at
     }
 
 
@@ -720,19 +703,20 @@ async def submit_my_input(
         401: {"model": ErrorResponse, "description": "참여자 인증 실패"},
         404: {"model": ErrorResponse, "description": "세션을 찾을 수 없음"}
     },
+    openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["세션"]
 )
 async def get_session_status(
     session_id: str = FastPath(..., description="세션 ID"),
     mrs_participant: str | None = Cookie(None, alias=PARTICIPANT_COOKIE_NAME)
 ) -> dict[str, Any]:
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=SESSION_TTL_DAYS)).isoformat()
     return {
-        "sessionId": session_id,
-        "status": "in_progress",
-        "isCompleted": False,
-        "mySubmitted": True,
-        "partnerSubmitted": False,
-        "partnerNickname": "상대방"
+        "meCompleted": True,
+        "partnerJoined": False,
+        "partnerCompleted": False,
+        "partnerNudgedAt": None,
+        "expiresAt": expires_at
     }
 
 
@@ -744,6 +728,7 @@ async def get_session_status(
         401: {"model": ErrorResponse, "description": "참여자 인증 실패"},
         429: {"model": ErrorResponse, "description": "단시간 내 과도한 알림 요청 제한"}
     },
+    openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["세션"]
 )
 async def nudge_partner(
@@ -766,6 +751,7 @@ async def nudge_partner(
         404: {"model": ErrorResponse, "description": "세션을 찾을 수 없음"},
         500: {"model": ErrorResponse, "description": "결과 연산 실패"}
     },
+    openapi_extra={"security": [{"cookieAuth": []}]},
     tags=["결과"]
 )
 async def get_session_result(
@@ -806,20 +792,33 @@ def custom_openapi() -> dict[str, Any]:
         "description": "참여자 세션 인증을 위한 HttpOnly 쿠키"
     }
 
-    # 2. 모든 422 상태 응답을 ErrorResponse로 교체
-    error_response_ref = {"$ref": "#/components/schemas/ErrorResponse"}
+    # 2. 보호 대상 엔드포인트 security 연결
+    protected_paths = {
+        "/api/v1/me/session",
+        "/api/v1/sessions/{session_id}/me/input",
+        "/api/v1/sessions/{session_id}/me/submit",
+        "/api/v1/sessions/{session_id}/status",
+        "/api/v1/sessions/{session_id}/nudge",
+        "/api/v1/sessions/{session_id}/result",
+    }
+
     paths = openapi_schema.get("paths", {})
-    for path_item in paths.values():
+    for path_key, path_item in paths.items():
         if isinstance(path_item, dict):
             for method_item in path_item.values():
                 if isinstance(method_item, dict):
+                    # 보호 대상 경로인 경우 security 설정
+                    if path_key in protected_paths:
+                        method_item["security"] = [{"cookieAuth": []}]
+
+                    # 422 상태 응답을 ErrorResponse로 교체
                     responses = method_item.get("responses", {})
                     if "422" in responses:
                         responses["422"] = {
                             "description": "입력값 검증 실패 (Validation Error)",
                             "content": {
                                 "application/json": {
-                                    "schema": error_response_ref
+                                    "schema": {"$ref": "#/components/schemas/ErrorResponse"}
                                 }
                             }
                         }
@@ -832,4 +831,4 @@ def custom_openapi() -> dict[str, Any]:
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
-app.openapi = custom_openapi  # type: ignore[method-assign]
+app.openapi = custom_openapi  # type: ignore[method-assign]

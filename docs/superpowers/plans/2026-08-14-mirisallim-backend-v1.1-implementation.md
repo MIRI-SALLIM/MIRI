@@ -1,4 +1,4 @@
-# 미리살림 Backend V2 B1–B6 Implementation Plan
+# 미리살림 Backend v1.1 B1–B6 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 공개 HTTP API는 `/api/v1`이며 Backend V2라는 구현 이름 때문에 `/api/v2`를 만들지 않는다.
+- 공개 HTTP API는 계속 `/api/v1`이며 Backend v1.1 개편을 위해 `/api/v2`를 만들지 않는다.
 - Light는 로그인·닉네임 없이 동작하고 Deep 실행 API는 제공하지 않는다.
 - 질문 ID 순서는 `monthly_income`, `monthly_savings_amount`, `spending_style`, `debt_load`, `shared_expense`다.
 - 월 저축액은 비율이 아니며 성향 분류에 사용하지 않는다.
@@ -220,7 +220,7 @@ Run: `uv run mypy app`
 
 ```bash
 git add apps/backend/pyproject.toml apps/backend/uv.lock apps/backend/app apps/backend/tests/core apps/backend/tests/api apps/backend/main.py apps/backend/.env.example
-git commit -m "refactor(api): establish Backend V2 runtime"
+git commit -m "refactor(api): establish Backend v1.1 runtime"
 ```
 
 ---
@@ -330,7 +330,7 @@ Run: `uv run mypy app`
 
 ```bash
 git add apps/backend/config/light_questions.json apps/backend/config/light_types.json apps/backend/app/schemas/questions.py apps/backend/app/services/question_catalog.py apps/backend/app/api/v1 apps/backend/tests/core/test_question_catalog.py apps/backend/tests/api/test_questions.py
-git commit -m "feat(api): publish Backend V2 light questions"
+git commit -m "feat(api): publish Backend v1.1 light questions"
 ```
 
 ---
@@ -466,7 +466,7 @@ Run: `uv run pytest tests/api/test_error_contract.py tests/api/test_openapi_cont
 
 ```bash
 git add apps/backend/app apps/backend/scripts apps/backend/openapi.json apps/frontend/openapi.json apps/backend/tests/api
-git commit -m "feat(api): freeze Backend V2 OpenAPI contract"
+git commit -m "feat(api): freeze Backend v1.1 OpenAPI contract"
 ```
 
 ---
@@ -788,7 +788,7 @@ def test_nudge_allows_exact_24_hour_boundary(pair: SessionPair, clock: FakeClock
 
 Run: `uv run pytest tests/integration/test_invitation.py tests/integration/test_status_and_nudge.py -v`
 
-Expected: Backend V2 invitation/status/nudge 계약이 없어 실패한다.
+Expected: Backend v1.1 invitation/status/nudge 계약이 없어 실패한다.
 
 - [ ] **Step 4: preview와 atomic join 구현**
 
@@ -921,12 +921,12 @@ git commit -m "feat(api): unlock cached light results after both submit"
 - Delete: `apps/backend/services/session_repository.py`
 - Delete: `apps/backend/test_korean_support.py`
 - Delete: `apps/backend/requirements.txt`
-- Replace: 기존 `apps/backend/tests/integration/test_*.py`를 Backend V2 fixture 기준 테스트로 유지
+- Replace: 기존 `apps/backend/tests/integration/test_*.py`를 Backend v1.1 fixture 기준 테스트로 유지
 - Modify: `apps/backend/openapi.json`
 - Modify: `apps/frontend/openapi.json`
 
 **Interfaces:**
-- Consumes: Task 1–7의 전체 Backend V2.
+- Consumes: Task 1–7의 전체 Backend v1.1.
 - Produces: 실제 MongoDB 인덱스·경합 검증과 최종 B1–B6 OpenAPI.
 
 - [ ] **Step 1: MongoDB testcontainer fixture 작성**
@@ -974,7 +974,7 @@ for removed_path in (
     assert removed_path not in app.openapi()["paths"]
 ```
 
-계산 참고용 legacy config와 `services/calculator.py`, `services/validator.py`는 다른 사용자 작업 가능성이 있으므로 삭제하지 않고 Backend V2 앱에서 import하지 않는다.
+계산 참고용 legacy config와 `services/calculator.py`, `services/validator.py`는 다른 사용자 작업 가능성이 있으므로 삭제하지 않고 Backend v1.1 앱에서 import하지 않는다.
 
 - [ ] **Step 5: OpenAPI 최종 생성**
 
@@ -1004,7 +1004,7 @@ Run: `git diff --check`
 
 ```bash
 git add apps/backend apps/frontend/openapi.json
-git commit -m "test(api): verify Backend V2 B1-B6 contract"
+git commit -m "test(api): verify Backend v1.1 B1-B6 contract"
 ```
 
 원격에는 push하지 않는다. 실제 Railway, Atlas, Vercel 설정은 B7–B8과 사용자 승인 뒤 수행한다.
@@ -1029,4 +1029,4 @@ LightQuestionCard
 PATCH /api/v1/sessions/{id}/me/input
 ```
 
-프론트는 질문 수, 금액 대표값, 유형 규칙을 하드코딩하지 않는다. Backend V2 OpenAPI가 확정된 뒤 프론트 F2/F4 계획의 nickname body와 `baseUrl: /api/v1` 문구를 새 계약에 맞춰 별도 변경해야 한다.
+프론트는 질문 수, 금액 대표값, 유형 규칙을 하드코딩하지 않는다. Backend v1.1 OpenAPI가 확정된 뒤 프론트 F2/F4 계획의 nickname body와 `baseUrl: /api/v1` 문구를 새 계약에 맞춰 별도 변경해야 한다.

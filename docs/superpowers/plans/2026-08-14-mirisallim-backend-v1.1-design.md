@@ -1,4 +1,4 @@
-# 미리살림 Backend V2 B1–B6 통합 설계
+# 미리살림 Backend v1.1 B1–B6 통합 설계
 
 **작성일:** 2026-08-14
 
@@ -12,7 +12,7 @@
 
 현재 백엔드 프로토타입에서 검증된 HMAC 참여자 토큰, MongoDB 조건부 갱신, TTL 인덱스의 기본 방향은 유지한다. 반면 승인된 익명 Light 제품 흐름과 충돌하는 닉네임, 임의 `mode`, `INV-` 코드, 제출 DTO, 결과 stub, 단일 대형 `main.py` 구조는 교체한다.
 
-Backend V2는 다음 사용자 흐름을 하나의 일관된 계약으로 완성한다.
+Backend v1.1은 다음 사용자 흐름을 하나의 일관된 계약으로 완성한다.
 
 1. 익명 사용자 A가 로그인과 닉네임 없이 Light 세션을 생성한다.
 2. A가 `MRS-XXXXXX` 초대 링크를 공유한다.
@@ -30,11 +30,11 @@ Backend V2는 다음 사용자 흐름을 하나의 일관된 계약으로 완성
 
 | 구분 | 이번 결정 | 의미 |
 | --- | --- | --- |
-| 구현 세대 | `Backend V2` | 내부 구조와 구현 계획의 이름 |
+| 구현 세대 | `Backend v1.1` | 기존 `/api/v1` 계약을 바로잡는 내부 개편 이름 |
 | 공개 HTTP API | `/api/v1` | 프론트엔드가 소비하는 URL 계약 |
 | 질문·규칙 버전 | `light-v1` | 세션에 고정되는 질문과 결과 규칙 |
 
-`Backend V2`라는 이름은 `/api/v2`를 의미하지 않는다.
+`Backend v1.1`은 기존 `/api/v1`을 유지하면서 아직 운영 전인 계약과 내부 구조를 정리하는 개편이다.
 
 ### 2.2 이번에는 `/api/v2`를 만들지 않는다
 
@@ -70,7 +70,7 @@ Light와 Deep은 API 버전이 아니라 제품 모드다.
 | 질문 노출 | `/api/v1/light/questions` | 인증 설계 승인 후 `/api/v1/deep/...` 추가 |
 | 저장 기간 | 익명 세션 7일 | 계정 보존 정책을 별도 승인 |
 
-현재 존재하는 익명 `/api/v1/deep/questions`와 임의 `mode` 세션 생성은 Backend V2에서 제거한다. 랜딩의 Deep CTA는 준비 중 상태를 유지한다.
+현재 존재하는 익명 `/api/v1/deep/questions`와 임의 `mode` 세션 생성은 Backend v1.1에서 제거한다. 랜딩의 Deep CTA는 준비 중 상태를 유지한다.
 
 향후 로그인 기능은 다음 순서로 별도 설계한다.
 
@@ -78,7 +78,7 @@ Light와 Deep은 API 버전이 아니라 제품 모드다.
 2. 로그인한 사용자가 완료된 익명 Light 결과를 명시적으로 계정에 연결하는 기능을 추가한다.
 3. 계정 인증이 필수인 Deep 세션 라우터를 `/api/v1/deep` 아래에 추가한다.
 
-KakaoTalk Share는 로그인 기능이 아니다. Backend V2가 만든 초대 URL을 프론트엔드가 Kakao Share SDK에 전달한다. Kakao OAuth나 Kakao Message API는 B1–B6에 넣지 않는다.
+KakaoTalk Share는 로그인 기능이 아니다. Backend v1.1이 만든 초대 URL을 프론트엔드가 Kakao Share SDK에 전달한다. Kakao OAuth나 Kakao Message API는 B1–B6에 넣지 않는다.
 
 ## 4. 배포와 CORS 정책
 
@@ -609,7 +609,7 @@ B7에서 추가할 초대 IP+코드 속도 제한, 별도 `rate_limits` 컬렉�
 - 프로토타입 `/api/v1/validate/input`
 - 단일 파일 `test_korean_support.py`
 
-위 네 프로토타입 API는 승인된 익명 2인 Light 세션 계약에 포함되지 않으며 운영 소비자가 없으므로 Backend V2 공개 OpenAPI에서 제거한다. 필요한 계산 로직은 B6 순수 엔진으로 옮긴다.
+위 네 프로토타입 API는 승인된 익명 2인 Light 세션 계약에 포함되지 않으며 운영 소비자가 없으므로 Backend v1.1 공개 OpenAPI에서 제거한다. 필요한 계산 로직은 B6 순수 엔진으로 옮긴다.
 
 ## 16. 완료 정의
 

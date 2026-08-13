@@ -12,6 +12,37 @@ VALUE_SCORE_MAP: dict[str, float] = {
     "joint_full": 5.0,
 }
 
+
+def calculate_mutual_hit_count(
+    answers_a: list[int | None],
+    guesses_a: list[int | None] | None,
+    answers_b: list[int | None],
+    guesses_b: list[int | None] | None,
+    question_count: int,
+) -> int:
+    """전체 질문 세트에서 양측 예측이 동시에 적중한 개수를 계산합니다."""
+    if guesses_a is None or guesses_b is None:
+        return 0
+
+    mutual_hit_count = 0
+    for index in range(question_count):
+        answer_a = answers_a[index] if index < len(answers_a) else None
+        answer_b = answers_b[index] if index < len(answers_b) else None
+        guess_a = guesses_a[index] if index < len(guesses_a) else None
+        guess_b = guesses_b[index] if index < len(guesses_b) else None
+
+        if (
+            answer_a is not None
+            and answer_b is not None
+            and guess_a is not None
+            and guess_b is not None
+            and guess_a == answer_b
+            and guess_b == answer_a
+        ):
+            mutual_hit_count += 1
+
+    return mutual_hit_count
+
 def calculate_light_surplus(
     income_a: float, 
     income_b: float, 

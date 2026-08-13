@@ -296,16 +296,12 @@ class LightComparisonResultData(BaseModel):
             return data
 
         public_questions: list[Any] = []
-        mutual_hit_count = 0
         for question in questions:
             question_id: object
-            is_hit: bool
             if isinstance(question, QuestionComparisonItem):
                 question_id = question.questionId
-                is_hit = question.isHit
             elif isinstance(question, dict):
                 question_id = question.get("questionId")
-                is_hit = question.get("isHit") is True
             else:
                 continue
 
@@ -313,12 +309,9 @@ class LightComparisonResultData(BaseModel):
                 continue
 
             public_questions.append(question)
-            mutual_hit_count += int(is_hit)
 
         public_data = dict(data)
         public_data["questions"] = public_questions
-        public_data["questionCount"] = len(public_questions)
-        public_data["mutualHitCount"] = mutual_hit_count
         return public_data
 
 class ResultWaitingResponse(BaseModel):

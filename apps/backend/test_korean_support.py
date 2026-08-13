@@ -11,7 +11,7 @@ if sys.platform == "win32" and isinstance(sys.stdout, io.TextIOWrapper):
 
 from main import app
 from schemas import LightComparisonResultData, ResultReadyResponse
-from services.calculator import classify_type
+from services.calculator import calculate_mutual_hit_count, classify_type
 from services.validator import validate_input
 
 client = TestClient(app)
@@ -265,7 +265,7 @@ def test_gate1_session_and_result_contract():
     print("✅ [테스트 7] F2 세션/초대(최소정보)/가변입력(배열)/상태DTO/waiting결과 검증 정상")
 
 def test_result_excludes_sensitive_questions():
-    """결과 DTO가 공개 질문만 직렬화하고 공개 질문 기준으로 집계하는지 검증"""
+    """결과 DTO가 공개 질문만 직렬화하고 서버 계산 집계를 보존하는지 검증"""
     question_ids = [
         "monthly_income",
         "saving_ratio",
@@ -293,13 +293,21 @@ def test_result_excludes_sensitive_questions():
         for question_id in question_ids
     ]
     type_result = classify_type(["saver_moderate"], ["joint_allowance"], cutoff=3.0)
+    mutual_hit_count = calculate_mutual_hit_count(
+        answers_a=[0, 1, 2, 3, None],
+        guesses_a=[1, 0, 2, 2, 3],
+        answers_b=[1, 1, 0, 2, 3],
+        guesses_b=[0, 1, 3, 0, None],
+        question_count=5,
+    )
+    assert mutual_hit_count == 1
 
     result = ResultReadyResponse(
         status="ready",
         partnerCompleted=True,
         result=LightComparisonResultData(
             questionCount=5,
-            mutualHitCount=2,
+            mutualHitCount=mutual_hit_count,
             tagline="서로의 생각을 이해하고 맞춰가는 첫걸음",
             myType=type_result,
             partnerType=type_result,
@@ -315,7 +323,7 @@ def test_result_excludes_sensitive_questions():
         "spending_style",
         "shared_expense",
     ]
-    assert serialized_data["result"]["questionCount"] == 2
+    assert serialized_data["result"]["questionCount"] == 5
     assert serialized_data["result"]["mutualHitCount"] == 1
     for sensitive_id in ("monthly_income", "saving_ratio", "debt_load"):
         assert sensitive_id not in serialized
@@ -324,6 +332,24 @@ def test_result_excludes_sensitive_questions():
 
     assert public_questions[0]["myAnswerLabel"] == "spending_style 공개 라벨"
     assert public_questions[1]["partnerAnswerLabel"] == "shared_expense 공개 라벨"
+
+def test_mutual_hit_count_requires_both_predictions_and_non_null_values():
+    """A만 또는 B만 적중한 질문과 null 비교는 상호 적중에서 제외하는지 검증"""
+    assert calculate_mutual_hit_count(
+        answers_a=[0, 1, None],
+        guesses_a=[1, 2, 2],
+        answers_b=[1, 0, 2],
+        guesses_b=[2, 1, None],
+        question_count=3,
+    ) == 0
+
+    assert calculate_mutual_hit_count(
+        answers_a=[0, 1],
+        guesses_a=[1, 0],
+        answers_b=[1, 0],
+        guesses_b=[0, 1],
+        question_count=2,
+    ) == 2
 
 def test_openapi_schema_integrity():
     """OpenAPI 스키마 무결성 검증: 필수 필드, cookieAuth, 백엔드 스냅샷"""
@@ -382,13 +408,19 @@ def test_openapi_schema_integrity():
         assert "security" in op, f"{method.upper()} {path}에 security 항목이 정의되어 있어야 합니다."
         assert op["security"] == [{"cookieAuth": []}], f"{method.upper()} {path} security가 cookieAuth로 설정되어야 합니다."
 
-    # 6. 체크인된 백엔드 openapi.json과 앱 스키마 동일성 검증
-    from export_openapi import generate_openapi_json_string
+    # 6. 백엔드/프론트엔드 OpenAPI 파일과 앱 스키마의 동일성 검증
+    from export_openapi import export_openapi, generate_openapi_json_string
+
+    export_openapi()
 
     backend_path = Path(__file__).resolve().parent / "openapi.json"
-    with open(backend_path, "r", encoding="utf-8") as fb:
-        backend_content = fb.read()
-    assert backend_content == generate_openapi_json_string()
+    frontend_path = Path(__file__).resolve().parents[1] / "frontend" / "openapi.json"
+    expected_content = generate_openapi_json_string().encode("utf-8")
+    backend_content = backend_path.read_bytes()
+    frontend_content = frontend_path.read_bytes()
+    assert backend_content == expected_content
+    assert frontend_content == expected_content
+    assert backend_content == frontend_content
 
     print("✅ [테스트 9] OpenAPI required/security 계약 및 백엔드 스키마 무결성 정상")
 
@@ -401,6 +433,7 @@ if __name__ == "__main__":
     test_validator_endpoint_and_rules()
     test_gate1_session_and_result_contract()
     test_result_excludes_sensitive_questions()
+    test_mutual_hit_count_requires_both_predictions_and_non_null_values()
     test_openapi_schema_integrity()
     print("\n🎉 [전체 통과] 모든 백엔드 완료 조건 검증 완료!")
 

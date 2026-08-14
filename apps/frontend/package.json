@@ -9,19 +9,23 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "build": "tsc --noEmit && vite build",
-    "api:generate": "openapi-typescript openapi.json -o src/shared/api/schema.d.ts",
+    "api:generate": "node scripts/generate-api-types.mjs",
+    "api:check": "npm run api:generate && git diff --exit-code -- src/shared/api/schema.d.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.4",
+    "openapi-fetch": "^0.17.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",
-    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.2.0",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
@@ -32,6 +36,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "jsdom": "^29.1.1",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.66.0",

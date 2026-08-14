@@ -1,13 +1,42 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css");
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --color-canvas: #FCFCFB;
+  --color-card: #FFFFFF;
+  --color-ink: #222222;
+  --color-ink-muted: #666666;
+  --color-ink-subtle: #999999;
+  --color-border: #E8E8E8;
+  --color-green: #43A77B;
+  --color-green-strong: #237A56;
+  --color-green-tint: #EAF7F1;
+  --color-purple: #8A6FD1;
+  --color-purple-strong: #6848AE;
+  --color-purple-tint: #F1EDFC;
+  --radius-card: 20px;
+  --radius-control: 14px;
+  --shadow-focus: 0 0 0 3px rgb(67 167 123 / 28%);
+  --animate-fadeup: fadeup 420ms ease-out both;
+  --font-sans: "Pretendard Variable", Pretendard, sans-serif;
+
+  @keyframes fadeup {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
 
 :root {
-  color: #222222;
-  background: #fcfcfb;
-  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   word-break: keep-all;
@@ -15,7 +44,7 @@
 
 html {
   min-width: 320px;
-  background: #fcfcfb;
+  background: var(--color-canvas);
   scroll-behavior: smooth;
 }
 
@@ -23,7 +52,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: #fcfcfb;
+  background: var(--color-canvas);
 }
 
 button,
@@ -39,13 +68,13 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid #237a56;
+  outline: 3px solid var(--color-green-strong);
   outline-offset: 3px;
 }
 
 ::selection {
-  color: #222222;
-  background: #eaf7f1;
+  color: var(--color-ink);
+  background: var(--color-green-tint);
 }
 
 @media (prefers-reduced-motion: reduce) {

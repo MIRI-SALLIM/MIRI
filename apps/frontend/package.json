@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "build": "tsc --noEmit && vite build",
-    "api:generate": "node scripts/generate-api-types.mjs",
+    "api:generate": "node scripts/generate-api-types.js",
     "api:check": "npm run api:generate && git diff --exit-code -- src/shared/api/schema.d.ts",
     "test:e2e": "playwright test"
   },

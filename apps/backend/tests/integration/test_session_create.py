@@ -89,3 +89,35 @@ def test_join_uses_the_question_count_pinned_on_the_session():
             main_module._config_cache.pop("light_questions", None)
         creator.close()
         partner.close()
+
+
+def test_anonymous_participant_nickname_is_null_and_named_is_preserved():
+    with TestClient(app) as client_anon:
+        # 익명 세션 생성 (Empty Body)
+        anon_resp = client_anon.post("/api/v1/sessions", json={})
+        assert anon_resp.status_code == 201
+        data = anon_resp.json()
+        assert len(data["participants"]) == 1
+        assert data["participants"][0]["nickname"] is None  # 문자열 "None"이 아닌 null이어야 함
+
+        # 익명 참여자 입장
+        invitation_code = data["invitationCode"]
+        with TestClient(app) as client_guest:
+            join_resp = client_guest.post(f"/api/v1/invitations/{invitation_code}/join", json={})
+            assert join_resp.status_code == 200
+            join_data = join_resp.json()
+            assert len(join_data["participants"]) == 2
+            assert join_data["participants"][0]["nickname"] is None
+            assert join_data["participants"][1]["nickname"] is None
+
+            # 새로고침 복원에서도 null 확인
+            me_resp = client_guest.get("/api/v1/me/session")
+            assert me_resp.status_code == 200
+            assert me_resp.json()["participants"][0]["nickname"] is None
+            assert me_resp.json()["participants"][1]["nickname"] is None
+
+    with TestClient(app) as client_named:
+        # 닉네임을 명시한 경우 보존 확인
+        named_resp = client_named.post("/api/v1/sessions", json={"nickname": "행복한알뜰이"})
+        assert named_resp.status_code == 201
+        assert named_resp.json()["participants"][0]["nickname"] == "행복한알뜰이"

@@ -284,7 +284,7 @@ def _parse_participant_cookie(cookie: str | None) -> tuple[str, str] | None:
 def _public_participant(participant: dict[str, Any]) -> SessionParticipant:
     return SessionParticipant(
         role=str(participant.get("role", "creator")),
-        nickname=str(participant.get("nickname", "")),
+        nickname=participant.get("nickname"),
         hasSubmitted=participant.get("completedAt") is not None,
     )
 

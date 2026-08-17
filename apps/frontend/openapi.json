@@ -33,17 +33,21 @@
             "type": "string"
           },
           "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "작성자 닉네임",
             "example": "예랑이",
-            "maxLength": 20,
-            "minLength": 1,
-            "title": "Nickname",
-            "type": "string"
+            "title": "Nickname"
           }
         },
-        "required": [
-          "nickname"
-        ],
         "title": "CreateSessionRequest",
         "type": "object"
       },
@@ -253,17 +257,21 @@
       "JoinInvitationRequest": {
         "properties": {
           "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "참여자 닉네임",
             "example": "예신이",
-            "maxLength": 20,
-            "minLength": 1,
-            "title": "Nickname",
-            "type": "string"
+            "title": "Nickname"
           }
         },
-        "required": [
-          "nickname"
-        ],
         "title": "JoinInvitationRequest",
         "type": "object"
       },
@@ -988,10 +996,17 @@
             "type": "boolean"
           },
           "nickname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "참여자 닉네임",
             "example": "예랑이",
-            "title": "Nickname",
-            "type": "string"
+            "title": "Nickname"
           },
           "role": {
             "description": "참여자 역할 (creator | invitee)",
@@ -1001,8 +1016,7 @@
           }
         },
         "required": [
-          "role",
-          "nickname"
+          "role"
         ],
         "title": "SessionParticipant",
         "type": "object"
@@ -1642,11 +1656,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JoinInvitationRequest"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/JoinInvitationRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Req"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1854,11 +1875,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateSessionRequest"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CreateSessionRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Req"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {

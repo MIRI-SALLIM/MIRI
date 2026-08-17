@@ -180,12 +180,12 @@ PUBLIC_QUESTION_IDS: frozenset[PublicQuestionId] = frozenset(
 )
 
 class CreateSessionRequest(BaseModel):
-    nickname: str = Field(..., min_length=1, max_length=20, description="작성자 닉네임", json_schema_extra={"example": "예랑이"})
+    nickname: str | None = Field(None, min_length=1, max_length=20, description="작성자 닉네임", json_schema_extra={"example": "예랑이"})
     mode: str = Field("light", description="진단 모드 (light | deep)", json_schema_extra={"example": "light"})
 
 class SessionParticipant(BaseModel):
     role: str = Field(..., description="참여자 역할 (creator | invitee)", json_schema_extra={"example": "creator"})
-    nickname: str = Field(..., description="참여자 닉네임", json_schema_extra={"example": "예랑이"})
+    nickname: str | None = Field(None, description="참여자 닉네임", json_schema_extra={"example": "예랑이"})
     hasSubmitted: bool = Field(False, description="답변 제출 완료 여부", json_schema_extra={"example": False})
 
 class SessionResponse(BaseModel):
@@ -203,7 +203,7 @@ class InvitationResponse(BaseModel):
     expiresAt: str = Field(..., description="초대장 만료 일시 (ISO 8601)", json_schema_extra={"example": "2026-08-19T12:00:00Z"})
 
 class JoinInvitationRequest(BaseModel):
-    nickname: str = Field(..., min_length=1, max_length=20, description="참여자 닉네임", json_schema_extra={"example": "예신이"})
+    nickname: str | None = Field(None, min_length=1, max_length=20, description="참여자 닉네임", json_schema_extra={"example": "예신이"})
 
 class UserInputData(BaseModel):
     answers: list[AnswerOptionIndex | None] = Field(

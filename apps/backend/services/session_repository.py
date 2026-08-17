@@ -91,7 +91,7 @@ class SessionRepository:
     async def create(
         self,
         *,
-        nickname: str,
+        nickname: str | None = None,
         mode: str,
         question_set_version: str,
         question_count: int,
@@ -226,7 +226,7 @@ class SessionRepository:
         self,
         *,
         invitation_code: str,
-        nickname: str,
+        nickname: str | None = None,
         question_count: int,
         pepper: str,
         now: datetime,

@@ -647,18 +647,19 @@ def validate_user_input(req: InputValidationRequest) -> dict[str, Any]:
     tags=["세션"]
 )
 async def create_session(
-    req: CreateSessionRequest,
     response: Response,
+    req: CreateSessionRequest | None = None,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
+    active_req = req or CreateSessionRequest(nickname=None, mode="light")
     repository = await get_session_repository()
     now = utc_now()
     question_config = get_cached_config("light_questions")
     question_count = question_count_for(question_config)
     document, token = await repository.create(
-        nickname=req.nickname,
-        mode=req.mode,
-        question_set_version="light-v1" if req.mode == "light" else f"{req.mode}-v1",
+        nickname=active_req.nickname,
+        mode=active_req.mode,
+        question_set_version="light-v1" if active_req.mode == "light" else f"{active_req.mode}-v1",
         question_count=question_count,
         idempotency_key=idempotency_key,
         pepper=PARTICIPANT_TOKEN_PEPPER,
@@ -762,10 +763,11 @@ async def get_invitation(
 )
 async def join_invitation(
     code: str,
-    req: JoinInvitationRequest,
     response: Response,
+    req: JoinInvitationRequest | None = None,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key", description="중복 요청 방지를 위한 멱등성 키 (UUID)")
 ) -> dict[str, Any]:
+    active_req = req or JoinInvitationRequest(nickname=None)
     repository = await get_session_repository()
     document = await repository.get_by_code(code)
     if not code.startswith("INV-") or document is None:
@@ -788,7 +790,7 @@ async def join_invitation(
     question_count = _session_question_count(document)
     joined_document, token = await repository.join(
         invitation_code=code,
-        nickname=req.nickname,
+        nickname=active_req.nickname,
         question_count=question_count,
         pepper=PARTICIPANT_TOKEN_PEPPER,
         now=utc_now(),

@@ -8,7 +8,9 @@ describe("App", () => {
     window.history.pushState({}, "", "/");
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "미리살림 랜딩" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "돈 이야기, 다투기 전에 맞춰봐요" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "돈 이야기를, 조금 더 편안하게" })).not.toBeInTheDocument();
   });
 });

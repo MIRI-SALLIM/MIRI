@@ -1,11 +1,26 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { AppRoutes } from "./AppRoutes";
 
+function renderRoute(path: string) {
+  const queryClient = new QueryClient({
+    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
 const routeCases = [
-  ["/", "미리살림 랜딩"],
+  ["/", "돈 이야기, 다투기 전에 맞춰봐요"],
   ["/light/1", "라이트 질문"],
   ["/done", "제출 완료"],
   ["/invite/INV-A", "초대 참여"],
@@ -16,21 +31,13 @@ const routeCases = [
 
 describe("AppRoutes", () => {
   it.each(routeCases)("renders the matching lazy page for %s", async (path, heading) => {
-    render(
-      <MemoryRouter initialEntries={[path]}>
-        <AppRoutes />
-      </MemoryRouter>,
-    );
+    renderRoute(path);
 
     expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument();
   });
 
   it("renders a neutral error page for an unknown path", async () => {
-    render(
-      <MemoryRouter initialEntries={["/unknown"]}>
-        <AppRoutes />
-      </MemoryRouter>,
-    );
+    renderRoute("/unknown");
 
     expect(await screen.findByRole("heading", { name: "페이지를 찾을 수 없어요" })).toBeInTheDocument();
   });

@@ -1,16 +1,32 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SharePage } from "./SharePage";
 
-const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
+const { downloadShareCardMock, fetchMock, mapperMock } = vi.hoisted(() => ({
+  downloadShareCardMock: vi.fn(),
+  fetchMock: vi.fn(),
+  mapperMock: vi.fn(),
+}));
 
 vi.mock("@/shared/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/shared/api")>();
 
   return { ...actual, apiClient: actual.createApiClient({ fetch: fetchMock }) };
+});
+
+vi.mock("@/features/download-share-card/lib/download-share-card", () => ({
+  downloadShareCard: downloadShareCardMock,
+}));
+
+vi.mock("@/features/download-share-card", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/download-share-card")>();
+
+  mapperMock.mockImplementation(actual.toShareCardModel);
+
+  return { ...actual, toShareCardModel: mapperMock };
 });
 
 const readyResult = {
@@ -76,8 +92,14 @@ function renderShare(initialEntry = "/result/light/session-a/share") {
 
 beforeEach(() => {
   fetchMock.mockReset();
+  mapperMock.mockClear();
+  downloadShareCardMock.mockReset();
   localStorage.clear();
   sessionStorage.clear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe("SharePage", () => {
@@ -106,6 +128,7 @@ describe("SharePage", () => {
     expect(await screen.findByRole("heading", { name: "상대방을 기다리는 중" })).toBeInTheDocument();
     expect(screen.queryByTestId("share-card")).not.toBeInTheDocument();
     expect(screen.queryByText("차곡차곡 지도")).not.toBeInTheDocument();
+    expect(mapperMock).not.toHaveBeenCalled();
   });
 
   it("renders a ready result as a portrait card by default", async () => {
@@ -154,5 +177,39 @@ describe("SharePage", () => {
     await screen.findByTestId("share-card");
 
     expect(setItemSpy).not.toHaveBeenCalled();
+  });
+
+  it("passes the rendered card node and restricted model through the real download button", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(readyResult));
+    downloadShareCardMock.mockResolvedValue(undefined);
+
+    renderShare();
+
+    const card = await screen.findByTestId("share-card");
+    fireEvent.click(screen.getByRole("button", { name: "이미지 저장" }));
+
+    await waitFor(() => expect(downloadShareCardMock).toHaveBeenCalledOnce());
+
+    const [node, model] = downloadShareCardMock.mock.calls[0] as [HTMLDivElement, Record<string, unknown>];
+
+    expect(node).toBe(card);
+    expect(node).toBeInstanceOf(HTMLDivElement);
+    expect(model).toEqual({
+      leftType: "차곡차곡 지도",
+      rightType: "유연한 나침반",
+      tagline: "서로의 생각을 이해하고 맞춰가는 첫걸음",
+      mutualHitCount: 4,
+      questionCount: 7,
+      ratio: "portrait",
+    });
+    expect(Object.keys(model).sort()).toEqual([
+      "leftType",
+      "mutualHitCount",
+      "questionCount",
+      "ratio",
+      "rightType",
+      "tagline",
+    ]);
+    expect(JSON.stringify(model)).not.toMatch(/amount|income|debt|saving|금액|소득|부채|저축액|answers|guesses/i);
   });
 });

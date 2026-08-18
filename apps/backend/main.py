@@ -242,33 +242,32 @@ async def get_session_repository() -> SessionRepository:
     if _session_repository is not None:
         return _session_repository
 
-    if ENVIRONMENT.lower() == "test":
+    if ENVIRONMENT.lower() in ("test", "local"):
         _session_repository = SessionRepository(use_memory=True)
         return _session_repository
 
     database = await get_database()
-    if database is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "code": "DATABASE_UNAVAILABLE",
-                "message": "세션 데이터베이스에 연결할 수 없습니다.",
-            },
-        )
+    if database is not None:
+        try:
+            repo = SessionRepository(database)
+            await repo.ensure_indexes()
+            _session_repository = repo
+            return _session_repository
+        except (PyMongoError, Exception):  # noqa: BLE001, S110
+            pass
 
-    _session_repository = SessionRepository(database)
-    try:
-        await _session_repository.ensure_indexes()
-    except PyMongoError as exc:
-        _session_repository = None
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "code": "DATABASE_UNAVAILABLE",
-                "message": "세션 데이터베이스에 연결할 수 없습니다.",
-            },
-        ) from exc
-    return _session_repository
+    # 로컬 개발 환경에서는 DB 연결 실패 시 In-Memory로 자동 폴백하여 끊김 없는 로컬 테스트 보장
+    if not IS_PRODUCTION:
+        _session_repository = SessionRepository(use_memory=True)
+        return _session_repository
+
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "DATABASE_UNAVAILABLE",
+            "message": "세션 데이터베이스에 연결할 수 없습니다.",
+        },
+    )
 
 
 def _parse_participant_cookie(cookie: str | None) -> tuple[str, str] | None:

@@ -13,6 +13,15 @@ export default defineConfig({
       "@": path.resolve(rootDirectory, "src"),
     },
   },
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,

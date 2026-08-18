@@ -2,14 +2,13 @@ import asyncio
 import os
 import uuid
 
+import main as main_module
 import pytest
 from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
+from main import app
 from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
-
-import main as main_module
-from main import app
 from services.light_result import (
     calculate_light_canonical_result,
     calculate_mutual_hit_count,
@@ -35,7 +34,13 @@ async def real_mongo_db():
     if not MONGODB_URI:
         pytest.skip("MONGODB_URI가 설정되어 있지 않아 실제 MongoDB 동시성 테스트를 건너뜁니다.")
 
-    client: AsyncMongoClient = AsyncMongoClient(MONGODB_URI)
+    client: AsyncMongoClient = AsyncMongoClient(MONGODB_URI, serverSelectionTimeoutMS=2000)
+    try:
+        await client.admin.command("ping")
+    except (PyMongoError, Exception):  # noqa: BLE001
+        await client.close()
+        pytest.skip("MongoDB 서버에 연결할 수 없어 실제 DB 동시성 테스트를 건너뜁니다.")
+
     test_db_name = f"mirisalim_test_result_{uuid.uuid4().hex[:8]}"
     db = client[test_db_name]
     try:

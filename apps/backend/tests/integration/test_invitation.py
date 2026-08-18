@@ -1,8 +1,7 @@
 from datetime import timedelta
 
-from fastapi.testclient import TestClient
-
 import main as main_module
+from fastapi.testclient import TestClient
 from main import app
 from services.session_repository import utc_now
 

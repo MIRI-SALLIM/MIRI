@@ -24,8 +24,6 @@ from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyCookie
 from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -59,6 +57,7 @@ from services.session_repository import (
     utc_now,
 )
 from services.validator import validate_input
+from starlette.middleware.base import BaseHTTPMiddleware
 
 load_dotenv()
 
@@ -896,7 +895,7 @@ async def save_my_input(
     if result == "expired":
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail={"code": "SESSION_EXPIRED", "message": "?몄뀡??留뚮즺?섏뿀?듬땲??"},
+            detail={"code": "SESSION_EXPIRED", "message": "세션이 만료되었습니다."},
         )
     if result == "submitted":
         raise HTTPException(

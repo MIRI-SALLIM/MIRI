@@ -2,6 +2,27 @@
 
 > **에이전트 작업자 안내:** 필수 서브스킬 — 이 계획을 태스크 단위로 실행할 때는 superpowers:subagent-driven-development(권장) 또는 superpowers:executing-plans를 사용한다. 각 스텝은 체크박스(`- [ ]`) 문법으로 진행 상황을 추적한다.
 
+## 현재 진행 상황 (2026-08-18 기준, `develop` 커밋 `ca94786`)
+
+| 단계 | 상태 | 이슈 | PR | 비고 |
+| --- | --- | --- | --- | --- |
+| F1 | ✅ 병합됨 | #1 | #2 | FSD 경계, 디자인 시스템 |
+| F2 | ✅ 병합됨 | #4 | — | OpenAPI 클라이언트, 라우터. `feature/4-openapi-client` 커밋을 `develop`에 직접 통합 |
+| F3 | ✅ 병합됨 | #7 | #9 | 랜딩·세션 시작. 무기명 진입으로 정정된 뒤 병합 |
+| F4 | ✅ 병합됨 | #12 | #14 | 가변 질문 입력·자동저장·제출·완료 |
+| F5 | ✅ 병합됨 | #8 | #13 | 초대·대기·폴링·nudge. 무기명 진입 |
+| F6 | 🚧 진행 중 | #15 | — | 동시공개 결과 화면. 워크트리 `feature/15-light-result` 준비됨, 구현 착수 전 |
+| F7 | ⬜ 미착수 | — | — | F6 위에서 진행 |
+| F8 | ⬜ 미착수 | — | — | 두 트랙(F3→F4, F5→F6→F7) 모두 끝난 뒤 단독 진행 |
+
+**병렬 트랙 구성**(`## 진행 방식` 섹션 참고): 트랙 A(F3→F4)는 완료되어 종료됐다. 트랙 B(F5→F6→F7)가 지금 F6을 진행 중이다.
+
+**계약 변경 이력:** 백엔드 PR #5가 `nickname`을 선택 필드로 바꿔, F3·F5가 초안에서 만들었던 닉네임 다이얼로그를 제거하고 무기명 진입으로 정정했다. 아래 F3·F5 섹션 본문과 전역 제약사항의 "계약 편차 메모"는 이 정정을 반영해 갱신되어 있다.
+
+**남은 미확정 사항:** F8 착수 전 배포 오리진(Render vs Railway) 확인이 필요하다. 전역 제약사항 하단 참고.
+
+**이 표와 아래 체크박스가 실제 코드 상태와 어긋나면 이 표를 신뢰하지 마라.** `git log --oneline origin/develop` 과 `gh pr list --state all`로 직접 확인한 뒤 이 표를 갱신하라.
+
 **목표:** 백엔드 OpenAPI 계약만 의존해 랜딩, 가변 질문 입력, 초대·대기, 동시공개 결과와 금액 없는 공유 카드를 제공하는 독립 React 애플리케이션을 구축하고 Vercel에 배포한다.
 
 **아키텍처:** React 앱은 FSD의 `app/pages/widgets/features/entities/shared` 계층을 따르고 각 슬라이스는 `index.ts` 공개 API만 노출한다. 서버 상태는 TanStack Query, 미제출 폼 상태는 Zustand와 react-hook-form, API 타입은 FastAPI OpenAPI 생성물로 관리한다.
@@ -28,6 +49,7 @@
    - 설계 스펙 2.3은 "익명 첫 사이클에서는 초대자 이름을 받지 않고 초대 화면에 `파트너가 함께 해보자고 초대했어요`라는 일반 카피를 사용한다"고 명시한다. 계약은 양측 모두에게 닉네임을 요구하므로 이 문장과 정면으로 어긋난다.
    - 응답 쪽 노출 범위는 확인 결과 제한적이다. `SessionStatusResponse`는 닉네임을 담지 않고 boolean 플래그(`partnerJoined`, `partnerCompleted`)만 반환한다. 닉네임이 실려오는 것은 `participants[]`를 포함하는 `SessionResponse`뿐이다.
    - **처리 방침:** 닉네임은 계약을 만족시키기 위해 수집하되 **화면에 렌더링하지 않는다.** 초대·대기·결과 화면은 스펙대로 일반 카피를 유지하고, 응답으로 받은 상대 닉네임은 어떤 UI에도 바인딩하지 않는다. 닉네임 입력 UI는 `features/create-session`과 `features/join-session` 안에만 가둬서, 계약이 뒤집히면 두 슬라이스만 되돌리면 되게 한다.
+   - **최종 해소 (2026-08-18, 백엔드 PR #5 `9550d4b` 머지):** 편차가 뒤집혔다. `CreateSessionRequest.nickname`과 `JoinInvitationRequest.nickname` 모두 `str | None`(선택)으로 바뀌었고 `openapi.json`의 `required`에서 제거됐다. 즉 스펙 2.3의 무기명 진입이 최종 계약이다. F3·F5는 위 처리 방침대로 가뒀던 `NicknameDialog`/`JoinNicknameDialog`를 병합 직후 각각 제거했다(PR #9, #13). **더 이상 닉네임을 수집하지 않는다.** 이 항목은 F3/F5/F8에 재조정이 필요 없다 — 이미 반영 완료됐다.
 2. OpenAPI 계약에 이번 사이클 범위 밖 엔드포인트(`/deep/questions`, `/calculate/light`, `/config/{config_type}`, `/validate/input`)와 타입(`SurplusResult`, `TypeClassificationResult` 등)이 함께 노출된다. F2는 실제로 호출하는 엔드포인트만의 명시적 화이트리스트를 유지한다. **(F2 반영 완료: `shared/api/allowed-operations.ts`의 `AllowedPaths`로 `apiClient`의 경로·메서드를 11개로 좁혔고, `allowed-operations.type-test.ts`가 범위 밖 호출이 컴파일되지 않음을 `tsc --noEmit`에서 강제한다)**
 3. 백엔드 CORS 기본 오리진이 Render(`https://mirisalim-backend.onrender.com`)를 가리킨다. F8은 Vercel rewrite 대상을 확정하기 전에 실제 배포 오리진(Render 또는 Railway)을 인프라 담당자와 재확인한다.
 
@@ -61,7 +83,7 @@ F1·F2가 `develop`에 들어간 시점부터 남은 슬라이스를 두 트랙�
 ### 전면 병렬(F3~F7 동시)을 하지 않는 이유
 
 - 임시 worktree의 `node_modules` junction을 통해 재귀 삭제가 `apps/frontend`까지 번진 사고가 실제로 있었다. worktree 수를 늘릴수록 위험이 비례해 커진다.
-- 닉네임 계약이 아직 확정이 아니다. 트랙 A만 영향을 받도록 격리해 둔다.
+- 닉네임 계약이 아직 확정이 아니다(2026-08-18에 PR #5로 해소됨 — 위 계약 편차 메모의 "최종 해소" 참고). 당시엔 트랙 A만 영향을 받도록 격리해 뒀다.
 - 슬라이스가 TDD 단위라, 병렬 브랜치가 각자 초록불이어도 합칠 때 깨지는 것을 늦게 발견하게 된다. 트랙이 둘이면 수렴 지점도 둘뿐이다.
 
 ### 브랜치와 이슈
@@ -103,6 +125,8 @@ apps/frontend/
 
 ### F1: Vite 실행 기반, FSD 경계, 디자인 시스템
 
+> ✅ **병합됨** — 이슈 #1, PR #2. `chore/1-frontend-foundation` 브랜치.
+
 **파일:**
 - 생성: `.gitignore`
 - 생성: `.editorconfig`
@@ -134,11 +158,11 @@ apps/frontend/
 - 산출물: `Button`, `Badge`, `PillToggle`, `Progress`, `AppShell` 공개 API.
 - 산출물: `useWindowWidth(): number`.
 
-- [ ] **Step 1: 워크스페이스와 테스트 설정 구성**
+- [x] **Step 1: 워크스페이스와 테스트 설정 구성**
 
 `dev`, `lint`, `typecheck`, `test`, `build`, `api:generate`, `test:e2e` 스크립트를 갖춘 npm 워크스페이스 `@mirisallim/frontend`를 구성한다. jsdom, Testing Library matcher, React 18, Vite를 설정한다.
 
-- [ ] **Step 2: 실패하는 공유 UI 테스트 작성**
+- [x] **Step 2: 실패하는 공유 UI 테스트 작성**
 
 ~~~tsx
 it("exposes toggle state", () => {
@@ -149,21 +173,21 @@ it("exposes toggle state", () => {
 
 정확히 900px에서 헤더 모드가 전환되는지 검증하는 `useWindowWidth` 테스트를 추가한다.
 
-- [ ] **Step 3: 테스트 실행**
+- [x] **Step 3: 테스트 실행**
 
 `npm --workspace @mirisallim/frontend run test -- --run src/shared`를 실행한다.
 
 예상 결과: UI와 훅 구현이 없으므로 FAIL.
 
-- [ ] **Step 4: 토큰과 UI 구현**
+- [x] **Step 4: 토큰과 UI 구현**
 
 캔버스 `#FCFCFB`, Green `#43A77B`, Purple `#8A6FD1`, 카드 radius 20px, 컨트롤 radius 14px, fadeup 모션, Pretendard CDN, tabular numerals, 한글 word breaking을 등록한다. 버튼은 실제 button 요소를 사용하고 토글은 `aria-pressed`를 노출한다.
 
-- [ ] **Step 5: FSD 경계 강제**
+- [x] **Step 5: FSD 경계 강제**
 
 상위 계층 import가 아래 방향으로만 흐르고 슬라이스 간 import는 `index.ts`를 통해서만 해석되도록 `eslint-plugin-boundaries`를 구성한다. shared→feature로 금지된 import를 시도하는 fixture가 lint에서 실패하는지 확인한 뒤, fixture를 제거하고 lint가 통과하는지 확인한다.
 
-- [ ] **Step 6: 검증 및 커밋**
+- [x] **Step 6: 검증 및 커밋**
 
 lint, typecheck, 포커스 테스트, build를 실행한다.
 
@@ -175,6 +199,8 @@ git commit -m "feat(web): scaffold FSD design system"
 ---
 
 ### F2: OpenAPI 클라이언트, 앱 프로바이더, 라우터
+
+> ✅ **병합됨** — 이슈 #4. `feature/4-openapi-client` 브랜치의 커밋들을 `develop`에 직접 통합했다(별도 PR 번호 없음).
 
 **파일:** (2026-08-14 `feature/4-openapi-client` 브랜치 `8be3fa4` 구현 결과를 반영해 갱신)
 - 소비: 백엔드 B2가 제공하는 `apps/frontend/openapi.json` (읽기 전용 스냅샷. 프론트엔드에서 수정하거나 다시 뽑지 않는다)
@@ -234,7 +260,7 @@ git commit -m "feat(web): scaffold FSD design system"
 - 타이밍: F1이 이제 막 스캐폴딩된 초기 단계라 마이그레이션 비용(토큰 몇 개 이전)이 지금이 가장 낮다. F1 Step 4(토큰과 UI 구현)를 v4 방식(`@tailwindcss/vite` 플러그인, `@theme` 기반 캔버스/Green/Purple/radius 토큰)으로 진행하고, F1의 **파일** 목록에서 `apps/frontend/postcss.config.cjs`는 제거 대상, `apps/frontend/tailwind.config.ts`는 CSS 진입점(`app/styles/globals.css`) 내 `@theme` 블록으로 대체 대상이 된다.
 - 반영 완료 (2026-08-14): 이 계획 상단의 **기술 스택** 표기는 `Tailwind CSS 4`로 갱신했고, F2가 `postcss.config.cjs`·`tailwind.config.ts`를 삭제하고 토큰을 `globals.css`의 `@theme` 블록으로 옮겼다. F1의 **파일** 목록에 남아 있는 두 항목은 그래서 현재 트리에 존재하지 않는다.
 
-- [ ] **Step 0: F2 의존성 설치**
+- [x] **Step 0: F2 의존성 설치**
 
 F1은 `api:generate` 스크립트만 만들어 두었고 실제 패키지는 아직 없다. 지금 상태에서 `api:generate`를 실행하면 바로 실패한다. 워크스페이스에 런타임 의존성 `openapi-fetch`, `react-router-dom`, `@tanstack/react-query`와 devDependency `openapi-typescript`를 설치한다. 버전은 이 계획의 기술 스택(React 18, TanStack Query 5)과 호환되는 것을 고른다.
 
@@ -243,7 +269,7 @@ npm install --workspace @mirisallim/frontend openapi-fetch react-router-dom @tan
 npm install --workspace @mirisallim/frontend -D openapi-typescript
 ~~~
 
-- [ ] **Step 1: API 타입 생성**
+- [x] **Step 1: API 타입 생성**
 
 `openapi-typescript openapi.json -o src/shared/api/schema.d.ts`를 실행한다. 셸 의존 문법과 PATH 의존을 피하기 위해 `api:generate`는 `node scripts/generate-api-types.mjs`로 두고, 이 Node 래퍼가 `require.resolve("openapi-typescript/package.json")`으로 찾은 로컬 CLI를 `apps/frontend`를 cwd로 실행한다. Windows와 Git Bash 양쪽에서 동일하게 동작한다.
 
@@ -251,29 +277,29 @@ clean-diff는 `api:check`로 구현한다: `npm run api:generate && git diff --e
 
 주의: `git diff --exit-code`는 line ending 정규화 때문에 `git status`에는 ` M`으로 보이는데도 통과할 수 있다(내용이 같으면 diff가 비어 exit 0). 판단 기준은 `git status`가 아니라 `api:check`의 종료 코드다.
 
-- [ ] **Step 1b: 엔드포인트 화이트리스트 문서화**
+- [x] **Step 1b: 엔드포인트 화이트리스트 문서화**
 
 `allowed-operations.ts`에 위 인터페이스의 11개 오퍼레이션 목록을 타입 수준으로 선언하고, `apiClient`가 이 목록 밖의 경로로 호출되면 typecheck·lint·test 중 하나가 반드시 실패하도록 구성한다. 목적은 범위 밖 백엔드 표면(deep 모드, 계산기, 설정, 검증기)이 라이트 모드 앱에 실수로 새어 들어오지 않게 막는 것이다. 주석만 남기는 것으로는 부족하며, 실제로 실패하는 검사가 있어야 한다.
 
-- [ ] **Step 2: 실패하는 API 클라이언트 테스트 작성**
+- [x] **Step 2: 실패하는 API 클라이언트 테스트 작성**
 
 fetch를 모킹해 요청이 `/api/v1`을 사용하고, credentials를 포함하며, 공통 에러 envelope(`{ error: { code, message, fieldErrors? } }`)를 파싱하고, 401/404/409/410/422/429 뮤테이션은 자동으로 재시도하지 않는지 검증한다. MSW는 아직 설치되어 있지 않고 이 스텝에 필요하지 않다. 화이트리스트 밖 경로 호출이 차단되는지도 함께 검증한다.
 
-- [ ] **Step 3: 테스트 실행**
+- [x] **Step 3: 테스트 실행**
 
 `npm --workspace @mirisallim/frontend run test -- --run src/shared/api/client.test.ts`를 실행한다.
 
 예상 결과: 클라이언트 래퍼가 없으므로 FAIL.
 
-- [ ] **Step 4: 클라이언트와 프로바이더 구현**
+- [x] **Step 4: 클라이언트와 프로바이더 구현**
 
 GET 재시도 횟수를 제한하고 뮤테이션은 재시도하지 않는 QueryClient를 하나 생성한다(`createAppQueryClient`, 인스턴스는 `useState` 초기화로 한 번만 만든다). `AppProviders`는 `QueryClientProvider` → `AppErrorBoundary` → `AppRouter` 순으로 감싼다 (data router를 쓰지 않으므로 `RouterProvider`가 아니라 `AppRouter`의 `BrowserRouter`다. 위 **인터페이스** 항목 참고). 서버의 원본 상세 정보를 노출하지 않고 API 에러 코드를 중립적인 한국어 에러 상태로 매핑한다. `shared/api/index.ts`에 `apiClient`, 에러 매핑, `createIdempotencyKey`, 스키마 파생 타입의 공개 API를 모아 re-export한다.
 
-- [ ] **Step 5: 라우트 셸과 앱 진입점 교체**
+- [x] **Step 5: 라우트 셸과 앱 진입점 교체**
 
 각 라우트는 처음에는 lazy import를 통해 이름이 지정된 페이지 셸을 렌더링한다. 에러 페이지는 인증 실패, 만료, 사용 불가능한 초대, 충돌, rate limit, 일시적 실패 상태를 처리한다. F1의 데모 미리보기를 렌더링하던 `App.tsx`를 `AppProviders` 렌더링으로 교체하고, 그 데모 문구를 검증하던 `App.test.tsx`를 라우터 셸 검증으로 함께 교체한다. 데모 마크업은 F3 랜딩에서 다시 만들므로 보존하지 않는다.
 
-- [ ] **Step 6: 검증 및 커밋**
+- [x] **Step 6: 검증 및 커밋**
 
 API 생성 clean-diff, lint, typecheck, 전체 테스트, build를 실행한다. `lint`는 `--max-warnings 0`이므로 경고 하나도 허용되지 않는다. 특히 컴포넌트가 아닌 값을 export하는 `.tsx`(예: 라우트 상수를 함께 내보내는 `AppRoutes.tsx`)에서 `react-refresh/only-export-components`가 걸릴 수 있고, `boundaries/no-unknown-files`가 error이므로 새 디렉터리가 `eslint.config.js`의 `boundaries/elements` 패턴에 맞아야 한다. F1이 남긴 `src/shared/config/fsd-boundaries.test.ts`도 계속 통과해야 한다.
 
@@ -286,53 +312,53 @@ git commit -m "feat(web): add typed API client and routes"
 
 ### F3: 랜딩과 세션 시작
 
-**파일:**
-- 생성: `apps/frontend/src/features/create-session/api/create-session.ts`
-- 생성: `apps/frontend/src/features/create-session/ui/StartLightButton.tsx`
-- 생성: `apps/frontend/src/features/create-session/ui/NicknameDialog.tsx` — 백엔드가 `nickname`을 필수로 요구하므로 세션 생성 전 닉네임을 입력받는 다이얼로그
+> ✅ **병합됨** — 이슈 #7, PR #9. `feature/7-landing-session` 브랜치. 아래 본문은 초안이 만들었던 닉네임 다이얼로그를 병합 후 제거하고 무기명 진입으로 정정한 최종 상태를 반영한다.
+
+**파일 (실제 병합된 상태):**
+- 생성: `apps/frontend/src/features/create-session/api/create-session.ts` — `createSession()`은 인자를 받지 않고 `{ mode: "light" }`만 전송한다.
+- 생성: `apps/frontend/src/features/create-session/ui/StartLightButton.tsx` — CTA에서 곧바로 세션을 생성한다. 실패 메시지는 인라인 `role="alert"`로 보여준다.
 - 생성: `apps/frontend/src/features/create-session/index.ts`
 - 생성: `apps/frontend/src/pages/landing/ui/LandingPage.tsx`
 - 생성: `apps/frontend/src/pages/landing/ui/LandingPage.test.tsx`
 - 생성: `apps/frontend/src/pages/landing/index.ts`
-- 수정: `apps/frontend/src/app/router/AppRoutes.tsx` — F2가 만든 파일이다. 계획 초안의 `router.tsx`는 존재하지 않는다.
+- 수정: `apps/frontend/src/app/router/AppRoutes.tsx` — 하지 않았다. F2가 만든 라우트 7개를 그대로 쓴다. 계획 초안의 "router.tsx 수정"과 "NicknameDialog.tsx 생성"은 낡은 항목이며 실제로는 만들어지지 않았다.
 
 **인터페이스:**
-- 소비: 백엔드 B3의 `POST /sessions -> SessionCreated`. 현재 계약은 `nickname`(1–20자, 필수)을 요구하고 `mode`는 `"light"`로 고정 전송한다.
-- 산출물: 랜딩 CTA는 닉네임 다이얼로그를 먼저 열고, 제출 후 `activeSessionId`만 저장한 뒤 `/light/1`로 이동한다.
+- 소비: `POST /api/v1/sessions -> SessionCreated`. **닉네임을 보내지 않는다.** 백엔드 PR #5로 `nickname`이 선택 필드가 되어, 설계 스펙 2.3의 무기명 진입이 최종 동작이다. `mode`는 `"light"`로 고정 전송한다.
+- 산출물: 랜딩 CTA를 누르면 **중간 다이얼로그 없이** 곧바로 세션을 생성하고, 성공 후 `activeSessionId`만 저장한 뒤 `/light/1`로 이동한다.
 
-- [ ] **Step 1: 실패하는 랜딩 테스트 작성**
+- [x] **Step 1: 실패하는 랜딩 테스트 작성**
 
 정확한 히어로 eyebrow, 헤드라인, 3개의 프라이버시 불릿, 두 모드 카드, 4단계 사용 방법, 제공된 alt 텍스트, 비활성화된 `준비 중` 15분 CTA를 검증한다.
 
-- [ ] **Step 2: 실패하는 세션 시작 테스트 작성**
+- [x] **Step 2: 실패하는 세션 시작 테스트 작성**
 
 ~~~tsx
-// 닉네임 다이얼로그가 열리고, 유효한 닉네임 입력 후에만 세션 생성 요청이 나가는지 검증
+// CTA 클릭 시 곧바로 세션 생성 요청이 나가고, 본문에 nickname 키가 없는지 검증
 await user.click(screen.getByRole("button", { name: /가볍게 맞춰보기/ }));
-await user.type(screen.getByLabelText("닉네임"), "예랑이");
-await user.click(screen.getByRole("button", { name: "시작하기" }));
-expect(createSession).toHaveBeenCalledWith(expect.objectContaining({ nickname: "예랑이", mode: "light" }));
+
+expect(await screen.findByRole("heading", { name: "라이트 질문" })).toBeInTheDocument();
+await expect(request.json()).resolves.toEqual({ mode: "light" });
 expect(sessionStorage.getItem("activeSessionId")).toBe("session-a");
-expect(router.state.location.pathname).toBe("/light/1");
 ~~~
 
-닉네임이 비어 있거나 20자를 초과하면 제출이 막히고 검증 메시지가 보이는지도 함께 검증한다.
+요청 실패 시 이동하지 않고 인라인 오류 상태를 보여주는지도 함께 검증한다.
 
-- [ ] **Step 3: 테스트 실행**
+- [x] **Step 3: 테스트 실행**
 
 `npm --workspace @mirisallim/frontend run test -- --run src/pages/landing`을 실행한다.
 
 예상 결과: 랜딩과 feature 구현이 없으므로 FAIL.
 
-- [ ] **Step 4: 반응형 랜딩 구현**
+- [x] **Step 4: 반응형 랜딩 구현**
 
 제공된 히어로와 3분 모드 PNG를 사용하고, 승인된 프레이밍에 맞는 object-position/크롭, border 기반 카드, Green CTA, 15분 카드와 사용법 아이콘용 인라인 SVG, sticky 헤더, 모바일 내비게이션을 구현한다.
 
-- [ ] **Step 5: 세션 뮤테이션 구현**
+- [x] **Step 5: 세션 뮤테이션 구현**
 
-CTA를 누르면 `NicknameDialog`가 열린다 (백엔드와 동일한 1–20자 클라이언트 검증). 제출 시 F2가 만든 `createIdempotencyKey()`(`shared/api`)로 클라이언트 idempotency UUID를 생성하고 — 새로 만들지 않는다 — `{ nickname, mode: "light" }`로 타입이 지정된 엔드포인트를 호출한다. 공개 세션 ID만 `sessionStorage`에 저장하고 닉네임 자체는 저장하지 않는다(민감 정보 저장 금지 원칙 유지). active-session 쿼리를 무효화하고 201 응답을 받은 뒤에만 이동한다.
+CTA를 누르면 F2가 만든 `createIdempotencyKey()`(`shared/api`)로 클라이언트 idempotency UUID를 생성하고 — 새로 만들지 않는다 — `{ mode: "light" }`로 타입이 지정된 엔드포인트를 호출한다. 공개 세션 ID만 `sessionStorage`에 저장한다. active-session 쿼리를 무효화하고 201 응답을 받은 뒤에만 이동한다.
 
-- [ ] **Step 6: 검증 및 커밋**
+- [x] **Step 6: 검증 및 커밋**
 
 랜딩 테스트, lint, typecheck, build를 실행한다.
 
@@ -344,6 +370,8 @@ git commit -m "feat(web): launch light sessions from landing"
 ---
 
 ### F4: 가변 질문 입력, 자동 저장, 제출, 완료
+
+> ✅ **병합됨** — 이슈 #12, PR #14. `feature/12-light-form` 브랜치.
 
 **파일:**
 - 생성: `apps/frontend/src/entities/light-question/model/types.ts`
@@ -365,29 +393,29 @@ git commit -m "feat(web): launch light sessions from landing"
 - 산출물: `hydrate`, `setAnswer`, `setGuess`, `setCurrentStep`을 갖는 `useLightFormStore`.
 - 산출물: `LightFormPage`와 `DonePage`.
 
-- [ ] **Step 1: 실패하는 가변 개수 테스트 작성**
+- [x] **Step 1: 실패하는 가변 개수 테스트 작성**
 
 3문항 세트를 모킹한다. 진행률이 `1 / 3`으로 표시되고, 다음 버튼은 3단계에서 멈추며, 저장 payload 배열의 길이가 3이고, 점수 관련 UI가 `/5`를 절대 렌더링하지 않는지 검증한다.
 
-- [ ] **Step 2: 실패하는 인터랙션 테스트 작성**
+- [x] **Step 2: 실패하는 인터랙션 테스트 작성**
 
 Green 본인 답변 칩, Purple 예측 칩, `aria-pressed`, 이전/다음, null로 건너뛰기, 새로고침 시 hydration, 저장 성공, `저장되지 않음 · 다시 시도`, 키보드 인터랙션을 다룬다.
 
-- [ ] **Step 3: 테스트 실행**
+- [x] **Step 3: 테스트 실행**
 
 `npm --workspace @mirisallim/frontend run test -- --run src/pages/light-form`을 실행한다.
 
 예상 결과: 폼이 존재하지 않으므로 FAIL.
 
-- [ ] **Step 4: 폼 상태와 자동 저장 구현**
+- [x] **Step 4: 폼 상태와 자동 저장 구현**
 
 active session과 고정된 질문 버전, 본인의 입력을 가져온다. 답변은 메모리에만 유지하고, 타입별 PATCH 요청은 debounce 처리하며, 실패 시 로컬 값을 보존하고, 답변과 예측은 절대 web storage에 기록하지 않는다.
 
-- [ ] **Step 5: 제출과 완료 구현**
+- [x] **Step 5: 제출과 완료 구현**
 
 마지막 버튼은 `입력 완료하기` 문구를 표시하고 성공 응답을 받은 뒤에만 라우팅한다. DonePage는 초대 코드, 7일 후 삭제 안내 문구, 읽기 전용 입력 링크, 대기 링크, 홈 링크를 보여준다. 409 응답 시 로컬 데이터를 버리지 않고 읽기 전용 상태로 hydrate한다.
 
-- [ ] **Step 6: 검증 및 커밋**
+- [x] **Step 6: 검증 및 커밋**
 
 포커스 테스트, lint, typecheck, build를 실행한다.
 
@@ -400,11 +428,12 @@ git commit -m "feat(web): complete variable light questionnaire"
 
 ### F5: 초대, 대기, 폴링, 인앱 알림
 
-**파일:**
-- 생성: `apps/frontend/src/entities/session/model/invitation.ts`
-- 생성: `apps/frontend/src/features/join-session/api/join-session.ts`
+> ✅ **병합됨** — 이슈 #8, PR #13. `feature/8-invite-waiting` 브랜치. 아래 본문은 초안이 만들었던 `JoinNicknameDialog`를 병합 후 제거하고 무기명 진입으로 정정한 최종 상태를 반영한다.
+
+**파일 (실제 병합된 상태):**
+- 생성: `apps/frontend/src/entities/session/api/active-session.ts`
+- 생성: `apps/frontend/src/features/join-session/api/join-session.ts` — 닉네임을 보내지 않는다.
 - 생성: `apps/frontend/src/features/join-session/ui/JoinSessionButton.tsx`
-- 생성: `apps/frontend/src/features/join-session/ui/JoinNicknameDialog.tsx` — 계약상 `JoinInvitationRequest.nickname`이 필수라 참가 전에 닉네임을 받아야 한다. F3의 `NicknameDialog`와 같은 문제지만 슬라이스가 다르므로 별도 파일이며, 공용화는 두 트랙이 `develop`에서 만난 뒤에 판단한다(지금 `shared`로 올리면 트랙 간 충돌 지점이 생긴다).
 - 생성: `apps/frontend/src/features/poll-session-status/api/session-status.ts`
 - 생성: `apps/frontend/src/features/poll-session-status/model/use-session-status.ts`
 - 생성: `apps/frontend/src/features/send-nudge/api/send-nudge.ts`
@@ -413,36 +442,37 @@ git commit -m "feat(web): complete variable light questionnaire"
 - 생성: `apps/frontend/src/pages/invite/ui/InvitePage.test.tsx`
 - 생성: `apps/frontend/src/pages/waiting/ui/WaitingPage.tsx`
 - 생성: `apps/frontend/src/pages/waiting/ui/WaitingPage.test.tsx`
+- 만들지 않음: `JoinNicknameDialog.tsx` — 계획 초안에는 있었으나, 백엔드 PR #5로 `JoinInvitationRequest.nickname`이 선택 필드가 되어 무기명 진입으로 정정됐다. 만들어지지 않았다.
 
 **인터페이스:**
 - 소비: 백엔드 B5의 초대, 참가, 상태, nudge 엔드포인트.
-- 소비: `POST /api/v1/invitations/{code}/join`은 `nickname`(1–20자)을 **필수**로 요구한다. 위 계약 편차 메모 1번 참고.
+- **참가 요청에 `nickname`을 보내지 않는다.** 설계 스펙 2.3의 무기명 진입이 최종 동작이다.
 - 산출물: 대기 중일 때만 3000ms 간격으로 폴링하는 `useSessionStatus(sessionId)`.
-- 제약: 수집한 닉네임과 응답으로 받은 상대 닉네임을 **어떤 화면에도 렌더링하지 않는다.** 초대·대기 화면은 스펙 2.3대로 일반 카피(`파트너가 함께 해보자고 초대했어요`)를 유지한다. `SessionStatusResponse`는 닉네임을 담지 않고 `partnerJoined`/`partnerCompleted` boolean만 주므로, 대기 화면 구현은 이 플래그만으로 충분하다.
+- 제약: 닉네임을 수집하지 않으므로 저장·렌더링 문제 자체가 없다. 다만 응답 `SessionResponse.participants[].nickname`이 존재하더라도 **어떤 화면에도 렌더링하지 않는다.** 초대·대기 화면은 스펙 2.3대로 일반 카피(`파트너가 함께 해보자고 초대했어요`)를 유지한다. `SessionStatusResponse`는 닉네임을 담지 않고 `partnerJoined`/`partnerCompleted` boolean만 주므로, 대기 화면 구현은 이 플래그만으로 충분하다. 프라이버시 테스트는 응답에 상대 닉네임을 일부러 넣고 화면에 렌더링되지 않음을 확인하는 방식으로 검증했다(`InvitePage.test.tsx`).
 
-- [ ] **Step 1: 실패하는 InvitePage 테스트 작성**
+- [x] **Step 1: 실패하는 InvitePage 테스트 작성**
 
 일반화된 파트너 문구, 모드/소요시간 배지, 동시 공개 설명, 현재 데이터 프라이버시 문구, 사용 불가 코드 상태, 참가 성공 시 `/light/1`로의 이동을 검증한다.
 
-- [ ] **Step 2: 실패하는 WaitingPage 테스트 작성**
+- [x] **Step 2: 실패하는 WaitingPage 테스트 작성**
 
 파트너 미참가, 파트너 입장 중, 준비 완료, 만료, nudge rate-limit 상태를 다룬다. 잠금 미리보기 아이콘은 준비 완료 상태에서만 사라지고, 복사 피드백 문구가 1.6초간 `복사됨`으로 바뀌는지 검증한다.
 
-- [ ] **Step 3: 테스트 실행**
+- [x] **Step 3: 테스트 실행**
 
 `npm --workspace @mirisallim/frontend run test -- --run src/pages/invite src/pages/waiting`을 실행한다.
 
 예상 결과: invite와 waiting 페이지가 없으므로 FAIL.
 
-- [ ] **Step 4: 초대 참가 구현**
+- [x] **Step 4: 초대 참가 구현**
 
-코드를 저장하지 않고 미리보기만 하고, 참가 시 F2의 `createIdempotencyKey()`(`shared/api`)로 만든 클라이언트 idempotency 키를 전송하며, 반환된 공개 세션 ID만 저장하고, 인증은 백엔드 쿠키에 의존한다. 참가 요청 전에 `JoinNicknameDialog`로 닉네임을 받아 `nickname` 필드에 실어 보낸다(계약상 필수). 받은 닉네임은 요청 본문에만 쓰고 저장하거나 렌더링하지 않는다.
+코드를 저장하지 않고 미리보기만 하고, 참가 시 F2의 `createIdempotencyKey()`(`shared/api`)로 만든 클라이언트 idempotency 키를 전송하며, 반환된 공개 세션 ID만 저장하고, 인증은 백엔드 쿠키에 의존한다. 참가 요청에는 닉네임을 싣지 않는다.
 
-- [ ] **Step 5: 대기와 nudge 구현**
+- [x] **Step 5: 대기와 nudge 구현**
 
 TanStack Query는 준비되지 않은 동안에만 3000ms 간격으로 폴링하고, unmount되거나 준비 완료되면 멈춘다. 파트너가 참가하기 전에는 nudge 대신 링크 재공유를 보여준다. 참가 후에는 nudge 뮤테이션을 허용하고, 429는 다음 가능 시점 안내로 매핑한다.
 
-- [ ] **Step 6: 검증 및 커밋**
+- [x] **Step 6: 검증 및 커밋**
 
 포커스 테스트, lint, typecheck, build를 실행한다.
 

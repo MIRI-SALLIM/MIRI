@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 if sys.platform == "win32" and isinstance(sys.stdout, io.TextIOWrapper):
     sys.stdout.reconfigure(encoding="utf-8")
 
+import main as main_module
 from main import app
 from schemas import LightComparisonResultData, ResultReadyResponse
 from services.calculator import calculate_mutual_hit_count, classify_type
@@ -176,9 +177,11 @@ def test_validator_endpoint_and_rules():
 
 def test_gate1_session_and_result_contract():
     """F2 계약: 세션 생성, 초대 미리보기(최소 정보), 가변 입력(배열), 세션 상태, 양측 비교 결과 DTO 및 쿠키 검증"""
+    creator_client = TestClient(app)
+    invitee_client = TestClient(app)
     # 1. 세션 생성 (201 Created, Idempotency-Key 헤더, 쿠키 발급 확인)
     headers = {"Idempotency-Key": "test-uuid-1234"}
-    create_res = client.post("/api/v1/sessions", json={"nickname": "예랑이", "mode": "light"}, headers=headers)
+    create_res = creator_client.post("/api/v1/sessions", json={"nickname": "예랑이", "mode": "light"}, headers=headers)
     assert create_res.status_code == 201
     sess_data = create_res.json()
     assert sess_data["id"].startswith("sess_")
@@ -187,7 +190,7 @@ def test_gate1_session_and_result_contract():
 
     # 2. 초대 미리보기 조회 (최소 정보: mode, duration, expiresAt만 노출)
     inv_code = sess_data["invitationCode"]
-    inv_res = client.get(f"/api/v1/invitations/{inv_code}")
+    inv_res = invitee_client.get(f"/api/v1/invitations/{inv_code}")
     assert inv_res.status_code == 200
     inv_data = inv_res.json()
     assert set(inv_data.keys()) == {"mode", "duration", "expiresAt"}
@@ -196,60 +199,62 @@ def test_gate1_session_and_result_contract():
     assert "expiresAt" in inv_data
 
     # 유효하지 않거나 만료된 코드에 대해 중립적인 404 에러 반환 검증
-    bad_inv_res = client.get("/api/v1/invitations/INVALID_CODE")
+    bad_inv_res = invitee_client.get("/api/v1/invitations/INVALID_CODE")
     assert bad_inv_res.status_code == 404
     assert bad_inv_res.json()["error"]["code"] == "INVITATION_NOT_FOUND"
 
-    expired_inv_res = client.get("/api/v1/invitations/EXPIRED")
+    expired_inv_res = invitee_client.get("/api/v1/invitations/EXPIRED")
     assert expired_inv_res.status_code == 404
     assert expired_inv_res.json()["error"]["code"] == "INVITATION_NOT_FOUND"
 
     # 3. 초대 참여 (쿠키 발급)
-    join_res = client.post(f"/api/v1/invitations/{inv_code}/join", json={"nickname": "예신이"}, headers=headers)
+    join_res = invitee_client.post(f"/api/v1/invitations/{inv_code}/join", json={"nickname": "예신이"}, headers=headers)
     assert join_res.status_code == 200
     assert join_res.json()["myRole"] == "invitee"
     assert "mrs_participant" in join_res.cookies
 
     # 4. 가변 질문 입력 저장 (배열 구조: 0|1|2|3|null)
     input_payload = {
-        "answers": [0, 1, None, 3],
-        "guesses": [1, 1, 2, None]
+        "answers": [0, 1, None, 3, 2],
+        "guesses": [1, 1, 2, None, 0]
     }
-    save_res = client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=input_payload, headers=headers)
+    save_res = creator_client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=input_payload, headers=headers)
     assert save_res.status_code == 200
     save_data = save_res.json()
-    assert save_data["answers"] == [0, 1, None, 3]
-    assert save_data["guesses"] == [1, 1, 2, None]
+    assert save_data["answers"] == [0, 1, None, 3, 2]
+    assert save_data["guesses"] == [1, 1, 2, None, 0]
 
     # 5. 잘못된 답변 값(범위 밖 4 등) 전송 시 422 검증
     bad_input_payload = {
         "answers": [4, 1, 0]  # 4는 0|1|2|3 범위를 벗어남
     }
-    bad_res = client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=bad_input_payload)
+    bad_res = creator_client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=bad_input_payload)
     assert bad_res.status_code == 422
     assert bad_res.json()["error"]["code"] == "VALIDATION_ERROR"
 
     # 6. 세션 상태 조회 (최종 정리된 필드: meCompleted, partnerJoined, partnerCompleted, partnerNudgedAt, expiresAt)
-    status_res = client.get(f"/api/v1/sessions/{sess_data['id']}/status")
+    status_res = creator_client.get(f"/api/v1/sessions/{sess_data['id']}/status")
     assert status_res.status_code == 200
     status_data = status_res.json()
     expected_status_keys = {"meCompleted", "partnerJoined", "partnerCompleted", "partnerNudgedAt", "expiresAt"}
     assert set(status_data.keys()) == expected_status_keys
-    assert status_data["meCompleted"] is True
+    assert status_data["meCompleted"] is False
     assert status_data["partnerCompleted"] is False
 
     # 7. 최종 제출
-    submit_payload = {
-        "answers": [0, 1, 2, 3],
-        "guesses": [1, 1, 2, 0]
+    submit_input_payload = {
+        "answers": [0, 1, 2, 3, 0],
+        "guesses": [1, 1, 2, 0, 1]
     }
-    submit_res = client.post(f"/api/v1/sessions/{sess_data['id']}/me/submit", json=submit_payload, headers=headers)
+    creator_client.patch(f"/api/v1/sessions/{sess_data['id']}/me/input", json=submit_input_payload, headers=headers)
+    submit_res = creator_client.post(f"/api/v1/sessions/{sess_data['id']}/me/submit", headers=headers)
     assert submit_res.status_code == 200
     submit_data = submit_res.json()
-    assert set(submit_data.keys()) == expected_status_keys
+    assert submit_data["status"] == "submitted"
+    assert "completedAt" in submit_data
 
     # 8. 결과 조회 (waiting 응답의 키가 정확히 2개인지 검증: status, partnerCompleted)
-    result_res = client.get(f"/api/v1/sessions/{sess_data['id']}/result")
+    result_res = creator_client.get(f"/api/v1/sessions/{sess_data['id']}/result")
     assert result_res.status_code == 200
     res_json = result_res.json()
     assert set(res_json.keys()) == {"status", "partnerCompleted"}, f"waiting 응답 키는 정확히 2개여야 합니다: {res_json.keys()}"
@@ -333,6 +338,90 @@ def test_result_excludes_sensitive_questions():
     assert public_questions[0]["myAnswerLabel"] == "spending_style 공개 라벨"
     assert public_questions[1]["partnerAnswerLabel"] == "shared_expense 공개 라벨"
 
+
+def test_gate2_session_persistence_private_input_and_submit_lock():
+    """B3~B4: 세션 영속성, 참여자별 입력 격리, 제출 후 수정 잠금을 검증합니다."""
+    creator = TestClient(app)
+    partner = TestClient(app)
+    create_res = creator.post(
+        "/api/v1/sessions",
+        json={"nickname": "작성자", "mode": "light"},
+        headers={"Idempotency-Key": "gate2-create"},
+    )
+    assert create_res.status_code == 201
+    session_id = create_res.json()["id"]
+    invitation_code = create_res.json()["invitationCode"]
+
+    recovered = creator.get("/api/v1/me/session")
+    assert recovered.status_code == 200
+    assert recovered.json()["id"] == session_id
+
+    joined = partner.post(
+        f"/api/v1/invitations/{invitation_code}/join",
+        json={"nickname": "참여자"},
+    )
+    assert joined.status_code == 200
+
+    creator_answers = [0, 1, None, 3, 2]
+    partner_answers = [3, 2, 1, None, 0]
+    wrong_count = creator.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": [0], "guesses": [0]},
+    )
+    assert wrong_count.status_code == 422
+    assert wrong_count.json()["error"]["code"] == "QUESTION_COUNT_MISMATCH"
+    creator_save = creator.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": creator_answers, "guesses": [1, 0, 2, 3, None]},
+    )
+    partner_save = partner.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": partner_answers, "guesses": [0, 1, None, 3, 2]},
+    )
+    assert creator_save.status_code == 200
+    assert partner_save.status_code == 200
+    assert creator.get(f"/api/v1/sessions/{session_id}/me/input").json()["answers"] == creator_answers
+    assert partner.get(f"/api/v1/sessions/{session_id}/me/input").json()["answers"] == partner_answers
+
+    # 완전한 입력으로 업데이트 후 제출
+    creator_complete_answers = [0, 1, 2, 3, 2]
+    creator_complete_guesses = [1, 0, 2, 3, 1]
+    partner_complete_answers = [3, 2, 1, 0, 0]
+    partner_complete_guesses = [0, 1, 2, 3, 2]
+    creator.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": creator_complete_answers, "guesses": creator_complete_guesses},
+    )
+    partner.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": partner_complete_answers, "guesses": partner_complete_guesses},
+    )
+
+    submitted = creator.post(f"/api/v1/sessions/{session_id}/me/submit")
+    assert submitted.status_code == 200
+    assert submitted.json()["status"] == "submitted"
+    assert "completedAt" in submitted.json()
+
+    locked = creator.patch(
+        f"/api/v1/sessions/{session_id}/me/input",
+        json={"answers": [3, 3, 3, 3, 3], "guesses": [0, 0, 0, 0, 0]},
+    )
+    assert locked.status_code == 409
+    assert locked.json()["error"]["code"] == "SESSION_ALREADY_SUBMITTED"
+
+    partner_submitted = partner.post(f"/api/v1/sessions/{session_id}/me/submit")
+    assert partner_submitted.status_code == 200
+    assert partner_submitted.json()["status"] == "submitted"
+    assert "completedAt" in partner_submitted.json()
+
+    repository = main_module._session_repository
+    assert repository is not None
+    documents = repository._memory
+    stored = documents[session_id]
+    for participant in stored["participants"]:
+        assert participant["tokenHash"]
+        assert "token" not in participant
+
 def test_mutual_hit_count_requires_both_predictions_and_non_null_values():
     """A만 또는 B만 적중한 질문과 null 비교는 상호 적중에서 제외하는지 검증"""
     assert calculate_mutual_hit_count(
@@ -371,6 +460,7 @@ def test_openapi_schema_integrity():
     # 4. 응답에 항상 포함되는 필드의 required 계약 검증
     expected_required = {
         "InvitationResponse": ["mode", "duration", "expiresAt"],
+        "SubmitResponse": ["status", "completedAt"],
         "SessionStatusResponse": [
             "meCompleted",
             "partnerJoined",

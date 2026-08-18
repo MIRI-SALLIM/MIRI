@@ -33,17 +33,21 @@
             "type": "string"
           },
           "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "작성자 닉네임",
             "example": "예랑이",
-            "maxLength": 20,
-            "minLength": 1,
-            "title": "Nickname",
-            "type": "string"
+            "title": "Nickname"
           }
         },
-        "required": [
-          "nickname"
-        ],
         "title": "CreateSessionRequest",
         "type": "object"
       },
@@ -253,17 +257,21 @@
       "JoinInvitationRequest": {
         "properties": {
           "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "참여자 닉네임",
             "example": "예신이",
-            "maxLength": 20,
-            "minLength": 1,
-            "title": "Nickname",
-            "type": "string"
+            "title": "Nickname"
           }
         },
-        "required": [
-          "nickname"
-        ],
         "title": "JoinInvitationRequest",
         "type": "object"
       },
@@ -862,7 +870,8 @@
               0,
               1,
               null,
-              3
+              3,
+              2
             ],
             "items": {
               "anyOf": [
@@ -884,42 +893,37 @@
             "type": "array"
           },
           "guesses": {
-            "anyOf": [
-              {
-                "items": {
-                  "anyOf": [
-                    {
-                      "enum": [
-                        0,
-                        1,
-                        2,
-                        3
-                      ],
-                      "type": "integer"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "상대방 질문별 예측 인덱스 리스트 (0|1|2|3|null)",
             "example": [
               1,
               1,
               2,
-              null
+              null,
+              0
             ],
-            "title": "Guesses"
+            "items": {
+              "anyOf": [
+                {
+                  "enum": [
+                    0,
+                    1,
+                    2,
+                    3
+                  ],
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Guesses",
+            "type": "array"
           }
         },
         "required": [
-          "answers"
+          "answers",
+          "guesses"
         ],
         "title": "SaveInputRequest",
         "type": "object"
@@ -992,10 +996,17 @@
             "type": "boolean"
           },
           "nickname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "참여자 닉네임",
             "example": "예랑이",
-            "title": "Nickname",
-            "type": "string"
+            "title": "Nickname"
           },
           "role": {
             "description": "참여자 역할 (creator | invitee)",
@@ -1005,8 +1016,7 @@
           }
         },
         "required": [
-          "role",
-          "nickname"
+          "role"
         ],
         "title": "SessionParticipant",
         "type": "object"
@@ -1126,74 +1136,27 @@
         "title": "SessionStatusResponse",
         "type": "object"
       },
-      "SubmitInputRequest": {
+      "SubmitResponse": {
         "properties": {
-          "answers": {
-            "description": "본인 질문별 최종 답변 인덱스 리스트 (0|1|2|3|null)",
-            "example": [
-              0,
-              1,
-              2,
-              3
-            ],
-            "items": {
-              "anyOf": [
-                {
-                  "enum": [
-                    0,
-                    1,
-                    2,
-                    3
-                  ],
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "title": "Answers",
-            "type": "array"
+          "completedAt": {
+            "description": "제출 완료 일시 (ISO 8601)",
+            "example": "2026-08-14T12:00:00Z",
+            "title": "Completedat",
+            "type": "string"
           },
-          "guesses": {
-            "anyOf": [
-              {
-                "items": {
-                  "anyOf": [
-                    {
-                      "enum": [
-                        0,
-                        1,
-                        2,
-                        3
-                      ],
-                      "type": "integer"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "상대방 질문별 최종 예측 인덱스 리스트 (0|1|2|3|null)",
-            "example": [
-              1,
-              1,
-              2,
-              0
-            ],
-            "title": "Guesses"
+          "status": {
+            "const": "submitted",
+            "description": "제출 완료 상태 식별자",
+            "example": "submitted",
+            "title": "Status",
+            "type": "string"
           }
         },
         "required": [
-          "answers"
+          "status",
+          "completedAt"
         ],
-        "title": "SubmitInputRequest",
+        "title": "SubmitResponse",
         "type": "object"
       },
       "SurplusResult": {
@@ -1693,11 +1656,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JoinInvitationRequest"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/JoinInvitationRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Req"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1905,11 +1875,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateSessionRequest"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CreateSessionRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Req"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -2148,10 +2125,12 @@
         "operationId": "submit_my_input_api_v1_sessions__session_id__me_submit_post",
         "parameters": [
           {
+            "description": "세션 ID",
             "in": "path",
             "name": "session_id",
             "required": true,
             "schema": {
+              "description": "세션 ID",
               "title": "Session Id",
               "type": "string"
             }
@@ -2191,22 +2170,12 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmitInputRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionStatusResponse"
+                  "$ref": "#/components/schemas/SubmitResponse"
                 }
               }
             },
@@ -2222,6 +2191,16 @@
             },
             "description": "참여자 인증 실패"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "세션을 찾을 수 없음"
+          },
           "409": {
             "content": {
               "application/json": {
@@ -2231,6 +2210,16 @@
               }
             },
             "description": "이미 제출 완료된 상태"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "만료된 세션"
           },
           "422": {
             "content": {
@@ -2324,6 +2313,26 @@
               }
             },
             "description": "참여자 인증 실패"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "상대방에게 nudge를 보낼 수 없는 상태"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "만료된 세션"
           },
           "422": {
             "content": {

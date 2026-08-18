@@ -54,10 +54,8 @@ function renderLanding() {
   };
 }
 
-async function openNicknameDialog(user: ReturnType<typeof userEvent.setup>) {
+async function startSession(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "가볍게 맞춰보기" }));
-
-  return screen.getByRole("dialog", { name: "닉네임 입력" });
 }
 
 beforeEach(() => {
@@ -113,23 +111,10 @@ describe("LandingPage", () => {
     expect(screen.getByAltText("3분 모드 아이콘")).toBeInTheDocument();
   });
 
-  it("asks for a nickname before creating a session", async () => {
+  it("creates a light session with no name step and moves to the first question", async () => {
     const { user } = renderLanding();
 
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-
-    await openNicknameDialog(user);
-
-    expect(screen.getByLabelText("닉네임")).toHaveValue("");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("creates a light session and moves to the first question", async () => {
-    const { user } = renderLanding();
-
-    await openNicknameDialog(user);
-    await user.type(screen.getByLabelText("닉네임"), "예랑이");
-    await user.click(screen.getByRole("button", { name: "시작하기" }));
+    await startSession(user);
 
     expect(await screen.findByRole("heading", { name: "라이트 질문" })).toBeInTheDocument();
 
@@ -139,41 +124,28 @@ describe("LandingPage", () => {
     expect(request.headers.get("Idempotency-Key")).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     );
-    await expect(request.json()).resolves.toEqual({ mode: "light", nickname: "예랑이" });
+    // 무기명 진입: 본문은 mode 하나뿐이고 nickname 키 자체가 없다.
+    await expect(request.json()).resolves.toEqual({ mode: "light" });
   });
 
-  it("stores the public session id without the nickname", async () => {
+  it("never asks the visitor for a name", async () => {
     const { user } = renderLanding();
 
-    await openNicknameDialog(user);
-    await user.type(screen.getByLabelText("닉네임"), "예랑이");
-    await user.click(screen.getByRole("button", { name: "시작하기" }));
+    await startSession(user);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("닉네임")).not.toBeInTheDocument();
+  });
+
+  it("stores only the public session id", async () => {
+    const { user } = renderLanding();
+
+    await startSession(user);
 
     await waitFor(() => expect(sessionStorage.getItem("activeSessionId")).toBe("session-a"));
     expect(storageKeys(sessionStorage)).toEqual(["activeSessionId"]);
     expect(storageKeys(localStorage)).toEqual([]);
-  });
-
-  it("blocks an empty nickname", async () => {
-    const { user } = renderLanding();
-
-    await openNicknameDialog(user);
-    await user.click(screen.getByRole("button", { name: "시작하기" }));
-
-    expect(await screen.findByText("닉네임을 입력해 주세요.")).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog", { name: "닉네임 입력" })).toBeInTheDocument();
-  });
-
-  it("blocks a nickname longer than 20 characters", async () => {
-    const { user } = renderLanding();
-
-    await openNicknameDialog(user);
-    await user.type(screen.getByLabelText("닉네임"), "가".repeat(21));
-    await user.click(screen.getByRole("button", { name: "시작하기" }));
-
-    expect(await screen.findByText("닉네임은 20자까지 쓸 수 있어요.")).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("keeps the visitor on the landing page when the session request fails", async () => {
@@ -183,9 +155,7 @@ describe("LandingPage", () => {
 
     const { user } = renderLanding();
 
-    await openNicknameDialog(user);
-    await user.type(screen.getByLabelText("닉네임"), "예랑이");
-    await user.click(screen.getByRole("button", { name: "시작하기" }));
+    await startSession(user);
 
     expect(
       await screen.findByText("세션을 시작하지 못했어요. 잠시 후 다시 시도해 주세요."),

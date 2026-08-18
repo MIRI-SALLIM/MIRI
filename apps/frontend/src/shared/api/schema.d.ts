@@ -295,7 +295,7 @@ export interface components {
              * @description 작성자 닉네임
              * @example 예랑이
              */
-            nickname: string;
+            nickname?: string | null;
         };
         /** ErrorDetail */
         ErrorDetail: {
@@ -422,7 +422,7 @@ export interface components {
              * @description 참여자 닉네임
              * @example 예신이
              */
-            nickname: string;
+            nickname?: string | null;
         };
         /** LightComparisonResultData */
         LightComparisonResultData: {
@@ -747,7 +747,8 @@ export interface components {
              *       0,
              *       1,
              *       null,
-             *       3
+             *       3,
+             *       2
              *     ]
              */
             answers: ((0 | 1 | 2 | 3) | null)[];
@@ -758,10 +759,11 @@ export interface components {
              *       1,
              *       1,
              *       2,
-             *       null
+             *       null,
+             *       0
              *     ]
              */
-            guesses?: ((0 | 1 | 2 | 3) | null)[] | null;
+            guesses: ((0 | 1 | 2 | 3) | null)[];
         };
         /** ScaleConfig */
         ScaleConfig: {
@@ -818,7 +820,7 @@ export interface components {
              * @description 참여자 닉네임
              * @example 예랑이
              */
-            nickname: string;
+            nickname?: string | null;
             /**
              * Role
              * @description 참여자 역할 (creator | invitee)
@@ -906,30 +908,21 @@ export interface components {
              */
             partnerNudgedAt: string | null;
         };
-        /** SubmitInputRequest */
-        SubmitInputRequest: {
+        /** SubmitResponse */
+        SubmitResponse: {
             /**
-             * Answers
-             * @description 본인 질문별 최종 답변 인덱스 리스트 (0|1|2|3|null)
-             * @example [
-             *       0,
-             *       1,
-             *       2,
-             *       3
-             *     ]
+             * Completedat
+             * @description 제출 완료 일시 (ISO 8601)
+             * @example 2026-08-14T12:00:00Z
              */
-            answers: ((0 | 1 | 2 | 3) | null)[];
+            completedAt: string;
             /**
-             * Guesses
-             * @description 상대방 질문별 최종 예측 인덱스 리스트 (0|1|2|3|null)
-             * @example [
-             *       1,
-             *       1,
-             *       2,
-             *       0
-             *     ]
+             * Status
+             * @description 제출 완료 상태 식별자
+             * @example submitted
+             * @constant
              */
-            guesses?: ((0 | 1 | 2 | 3) | null)[] | null;
+            status: "submitted";
         };
         /** SurplusResult */
         SurplusResult: {
@@ -1271,9 +1264,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["JoinInvitationRequest"];
+                "application/json": components["schemas"]["JoinInvitationRequest"] | null;
             };
         };
         responses: {
@@ -1416,9 +1409,9 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["CreateSessionRequest"];
+                "application/json": components["schemas"]["CreateSessionRequest"] | null;
             };
         };
         responses: {
@@ -1569,17 +1562,14 @@ export interface operations {
                 "Idempotency-Key"?: string | null;
             };
             path: {
+                /** @description 세션 ID */
                 session_id: string;
             };
             cookie?: {
                 mrs_participant?: string | null;
             };
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmitInputRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1587,7 +1577,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionStatusResponse"];
+                    "application/json": components["schemas"]["SubmitResponse"];
                 };
             };
             /** @description 참여자 인증 실패 */
@@ -1599,8 +1589,26 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description 세션을 찾을 수 없음 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description 이미 제출 완료된 상태 */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 만료된 세션 */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1647,6 +1655,24 @@ export interface operations {
             };
             /** @description 참여자 인증 실패 */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 상대방에게 nudge를 보낼 수 없는 상태 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 만료된 세션 */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -51,4 +51,23 @@ describe("ShareCard", () => {
     expect(screen.getByText("미리살림")).toBeInTheDocument();
     expect(card.textContent).not.toMatch(/금액|소득|부채|저축액/i);
   });
+
+  it("uses a compact square layout so the fixed card can contain all content", () => {
+    render(<ShareCard model={squareModel} />);
+
+    const card = getCard();
+
+    expect(card).toHaveAttribute("data-layout", "compact");
+    expect(card).toHaveClass("gap-2", "p-4");
+    expect(screen.getByText("나의 유형").parentElement).toHaveClass("p-3");
+    expect(screen.getByText("파트너 유형").parentElement).toHaveClass("p-3");
+    expect(screen.getByText("4 / 7")).toHaveClass("text-3xl");
+  });
+
+  it("uses an accessible muted token for meaningful supporting copy", () => {
+    render(<ShareCard model={portraitModel} />);
+
+    expect(screen.getByText("3분 모드 · 함께 공개")).toHaveClass("text-ink-muted");
+    expect(screen.getByText("돈 이야기를, 조금 더 편안하게")).toHaveClass("text-ink-muted");
+  });
 });

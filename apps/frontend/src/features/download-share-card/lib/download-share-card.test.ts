@@ -24,10 +24,16 @@ const squareModel: ShareCardModel = {
   ratio: "square",
 };
 
+let resolveFonts: (() => void) | undefined;
+
 function installFontReadiness() {
+  const ready = new Promise<void>((resolve) => {
+    resolveFonts = resolve;
+  });
+
   Object.defineProperty(document, "fonts", {
     configurable: true,
-    value: { ready: Promise.resolve() },
+    value: { ready },
   });
 }
 
@@ -38,6 +44,8 @@ describe("downloadShareCard", () => {
   });
 
   afterEach(() => {
+    resolveFonts?.();
+    resolveFonts = undefined;
     vi.mocked(toPng).mockReset();
     document.body.replaceChildren();
   });
@@ -53,7 +61,12 @@ describe("downloadShareCard", () => {
       return document.createElementNS("http://www.w3.org/1999/xhtml", tagName);
     });
 
-    await downloadShareCard(node, portraitModel);
+    const downloadPromise = downloadShareCard(node, portraitModel);
+
+    await Promise.resolve();
+    expect(toPng).not.toHaveBeenCalled();
+    resolveFonts?.();
+    await downloadPromise;
 
     expect(toPng).toHaveBeenCalledWith(
       node,
@@ -83,7 +96,9 @@ describe("downloadShareCard", () => {
       return document.createElementNS("http://www.w3.org/1999/xhtml", tagName);
     });
 
-    await downloadShareCard(node, squareModel);
+    const downloadPromise = downloadShareCard(node, squareModel);
+    resolveFonts?.();
+    await downloadPromise;
 
     expect(toPng).toHaveBeenCalledWith(
       node,

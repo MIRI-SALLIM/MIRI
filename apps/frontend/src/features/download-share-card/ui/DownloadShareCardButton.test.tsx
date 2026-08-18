@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ShareCardModel } from "@/entities/share-card";
 
@@ -22,6 +22,10 @@ const model: ShareCardModel = {
 };
 
 describe("DownloadShareCardButton", () => {
+  beforeEach(() => {
+    vi.mocked(downloadShareCard).mockReset();
+  });
+
   it("disables itself while a card is being rendered", async () => {
     let resolveDownload: (() => void) | undefined;
     vi.mocked(downloadShareCard).mockImplementation(
@@ -48,7 +52,8 @@ describe("DownloadShareCardButton", () => {
 
   it("shows a role alert after a failed download and remains on the page", async () => {
     vi.mocked(downloadShareCard).mockRejectedValueOnce(new Error("render failed"));
-    const cardRef = createRef<HTMLDivElement>();
+    const cardNode = document.createElement("div");
+    const cardRef = { current: cardNode };
     const initialPath = window.location.pathname;
 
     render(<DownloadShareCardButton cardRef={cardRef} model={model} />);
@@ -57,8 +62,21 @@ describe("DownloadShareCardButton", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "이미지를 저장하지 못했어요. 다시 시도해 주세요.",
     );
+    expect(downloadShareCard).toHaveBeenCalledWith(cardNode, model);
     expect(window.location.pathname).toBe(initialPath);
     expect(screen.getByRole("button", { name: "이미지 저장" })).not.toBeDisabled();
+  });
+
+  it("shows the same alert when the card ref has no node", async () => {
+    const cardRef = createRef<HTMLDivElement>();
+
+    render(<DownloadShareCardButton cardRef={cardRef} model={model} />);
+    fireEvent.click(screen.getByRole("button", { name: "이미지 저장" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "이미지를 저장하지 못했어요. 다시 시도해 주세요.",
+    );
+    expect(downloadShareCard).not.toHaveBeenCalled();
   });
 
   it("passes the card node and privacy-safe model to the renderer", async () => {

@@ -5,16 +5,6 @@ import { describe, expect, it } from "vitest";
 
 import { AppRoutes } from "./AppRoutes";
 
-const routeCases = [
-  ["/", "미리살림 랜딩"],
-  ["/light/1", "라이트 질문"],
-  ["/done", "제출 완료"],
-  ["/invite/INV-A", "초대 참여"],
-  ["/waiting/session-a", "상대방을 기다리는 중"],
-  ["/result/light/session-a", "라이트 결과"],
-  ["/result/light/session-a/share", "결과 공유"],
-] as const;
-
 function renderRoute(path: string) {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
@@ -28,6 +18,16 @@ function renderRoute(path: string) {
     </QueryClientProvider>,
   );
 }
+
+const routeCases = [
+  ["/", "돈 이야기, 다투기 전에 맞춰봐요"],
+  ["/light/1", "라이트 질문"],
+  ["/done", "제출 완료"],
+  ["/invite/INV-A", "초대 참여"],
+  ["/waiting/session-a", "상대방을 기다리는 중"],
+  ["/result/light/session-a", "라이트 결과"],
+  ["/result/light/session-a/share", "결과 공유"],
+] as const;
 
 describe("AppRoutes", () => {
   it.each(routeCases)("renders the matching lazy page for %s", async (path, heading) => {

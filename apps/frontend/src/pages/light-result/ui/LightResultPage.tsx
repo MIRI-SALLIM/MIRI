@@ -7,7 +7,7 @@ import { ResultComparison } from "@/widgets/result-comparison";
 import { ResultSummary } from "@/widgets/result-summary";
 import { ResultTopics } from "@/widgets/result-topics";
 
-const pageClassName = "mx-auto flex max-w-4xl flex-col gap-12 px-5 py-14 sm:px-8 sm:py-20";
+const pageClassName = "mx-auto flex w-full max-w-4xl flex-col gap-12 px-5 py-14 sm:px-8 sm:py-20";
 
 function ResultError({ error }: { error: unknown }) {
   const message = error instanceof ApiError && error.kind === "expired"

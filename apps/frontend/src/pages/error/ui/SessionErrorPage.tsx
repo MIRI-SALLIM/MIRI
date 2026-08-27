@@ -43,7 +43,7 @@ export function SessionErrorPage({ kind = "unknown" }: SessionErrorPageProps) {
   const { description, title } = copy[kind];
 
   return (
-    <section className="mx-auto flex max-w-xl flex-col gap-3 px-5 py-16 sm:px-8">
+    <section className="mx-auto flex w-full max-w-xl flex-col gap-3 px-5 py-16 sm:px-8">
       <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">{title}</h1>
       <p className="text-ink-muted">{description}</p>
     </section>

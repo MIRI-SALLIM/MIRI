@@ -14,7 +14,7 @@ export function DonePage() {
   const sessionId = storedSessionId ?? sessionQuery.data?.id;
 
   return (
-    <section className="mx-auto flex max-w-3xl flex-col gap-8 px-5 py-14 sm:px-8 sm:py-20">
+    <section className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-14 sm:px-8 sm:py-20">
       <div className="flex flex-col gap-3">
         <p className="text-sm font-bold text-green-strong">3분 모드</p>
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">제출 완료</h1>

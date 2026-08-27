@@ -9,7 +9,7 @@ import {
 } from "@/features/download-share-card";
 import { ShareCard } from "@/widgets/share-card";
 
-const pageClassName = "mx-auto flex max-w-3xl flex-col gap-8 px-5 py-14 sm:px-8 sm:py-20";
+const pageClassName = "mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-14 sm:px-8 sm:py-20";
 
 function ShareError() {
   return (

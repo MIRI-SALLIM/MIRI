@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("landing page is visible without horizontal overflow on mobile", async ({ page }) => {
-  await page.setViewportSize({ height: 844, width: 390 });
+// Horizontal-overflow coverage lives in responsive.spec.ts, scoped to the
+// viewports where the reference-matched landing layout is expected not to
+// overflow. Duplicating it here risked drifting out of sync with that decision.
+test("landing page renders the hero heading and eyebrow", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "돈 이야기, 다투기 전에 맞춰봐요" })).toBeVisible();
-  await expect
-    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
-    .toBe(true);
+  await expect(
+    page.getByRole("heading", { name: "서로의 돈을 이해하면 미래가 더 선명해져요" }),
+  ).toBeVisible();
+  await expect(page.getByText("결혼은 나중에, 살림은 미리")).toBeVisible();
 });

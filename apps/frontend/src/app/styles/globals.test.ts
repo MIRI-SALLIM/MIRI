@@ -27,10 +27,17 @@ describe("전역 접근성 토큰", () => {
     expect(stylesheet).not.toContain("@tailwind base");
     expect(stylesheet).toContain("@theme");
     expect(stylesheet).toContain("--color-canvas: #FCFCFB");
+    expect(stylesheet).toContain("--color-green-hover: #2F8460");
+    expect(stylesheet).toContain("--color-border-soft: #F0F0EE");
+    expect(stylesheet).toContain("--color-arrow: #D8D8D6");
     expect(stylesheet).toContain("--color-green-strong: #237A56");
     expect(stylesheet).toContain("--radius-card: 20px");
     expect(stylesheet).toContain("--radius-control: 14px");
     expect(stylesheet).toContain("--animate-fadeup: fadeup 420ms ease-out both");
+  });
+
+  it("레퍼런스 랜딩과 같은 글자 렌더링 설정을 쓴다", () => {
+    expect(stylesheet).toContain("-webkit-font-smoothing: antialiased");
   });
 
   it("포커스 링은 밝은 배경에서 3:1 이상의 대비를 유지한다", () => {

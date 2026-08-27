@@ -8,14 +8,18 @@
   --color-ink-muted: #666666;
   --color-ink-subtle: #999999;
   --color-border: #E8E8E8;
+  --color-border-soft: #F0F0EE;
   --color-green: #43A77B;
+  --color-green-hover: #2F8460;
   --color-green-strong: #237A56;
   --color-green-tint: #EAF7F1;
   --color-purple: #8A6FD1;
   --color-purple-strong: #6848AE;
   --color-purple-tint: #F1EDFC;
+  --color-arrow: #D8D8D6;
   --radius-card: 20px;
   --radius-control: 14px;
+  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
   --shadow-focus: 0 0 0 3px rgb(67 167 123 / 28%);
   --animate-fadeup: fadeup 420ms ease-out both;
   --font-sans: "Pretendard Variable", Pretendard, sans-serif;
@@ -39,6 +43,7 @@
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
   word-break: keep-all;
 }
 

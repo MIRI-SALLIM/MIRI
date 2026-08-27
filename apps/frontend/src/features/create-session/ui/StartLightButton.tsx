@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError } from "@/shared/api";
@@ -12,7 +13,7 @@ import {
 
 export interface StartLightButtonProps {
   className?: string;
-  label?: string;
+  label?: ReactNode;
 }
 
 function toMessage(error: unknown): string {

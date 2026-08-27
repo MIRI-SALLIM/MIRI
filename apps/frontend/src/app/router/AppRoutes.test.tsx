@@ -20,8 +20,8 @@ function renderRoute(path: string) {
 }
 
 const routeCases = [
-  ["/", "돈 이야기, 다투기 전에 맞춰봐요"],
-  ["/light/1", "라이트 질문"],
+  ["/", "서로의 돈을 이해하면 미래가 더 선명해져요"],
+  ["/light/1", "가볍게 맞춰보기"],
   ["/done", "제출 완료"],
   ["/invite/INV-A", "초대 참여"],
   ["/waiting/session-a", "상대방을 기다리는 중"],

@@ -150,13 +150,13 @@ describe("LightFormPage", () => {
     expect(await screen.findByText("1 / 3")).toBeInTheDocument();
     expect(screen.queryByText(/\/5/)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음 질문" }));
     expect(await screen.findByText("2 / 3")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음 질문" }));
     expect(await screen.findByText("3 / 3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "입력 완료하기" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "다음" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다음 질문" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "이전" }));
     const selfAnswers = screen.getByRole("group", { name: "내 답" });
@@ -198,9 +198,81 @@ describe("LightFormPage", () => {
     expect(guessChoice).toHaveAttribute("aria-pressed", "true");
     expect(await screen.findByText("저장됨")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "내 답 건너뛰기" }));
+    // 선택 해제는 고른 칩을 다시 눌러서 한다.
+    await user.click(selfChoice);
     expect(selfChoice).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "이전" })).toBeInTheDocument();
+  });
+
+  it("autosaves the selected answer and partner guess together", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    const { user } = renderLightForm();
+    await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
+
+    await user.click(
+      within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+        name: "첫 번째 선택",
+      }),
+    );
+    await user.click(
+      within(screen.getByRole("group", { name: "상대 예측" })).getByRole("button", {
+        name: "두 번째 선택",
+      }),
+    );
+
+    await waitFor(async () => {
+      const patchCalls = fetchMock.mock.calls.filter((call) => {
+        const request = requestFromCall(call);
+        return request.method === "PATCH";
+      });
+
+      expect(patchCalls).not.toHaveLength(0);
+      await expect(requestFromCall(patchCalls.at(-1)!).json()).resolves.toEqual({
+        answers: [0, null, null],
+        guesses: [1, null, null],
+      });
+    });
+  });
+
+  it("preserves earlier answers and guesses while navigating between questions", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    const { user } = renderLightForm();
+    await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
+
+    await user.click(
+      within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+        name: "첫 번째 선택",
+      }),
+    );
+    await user.click(
+      within(screen.getByRole("group", { name: "상대 예측" })).getByRole("button", {
+        name: "두 번째 선택",
+      }),
+    );
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some((call) => requestFromCall(call).method === "PATCH")).toBe(true);
+    });
+
+    await user.click(screen.getByRole("button", { name: "다음 질문" }));
+    await user.click(
+      within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+        name: "세 번째 선택",
+      }),
+    );
+    await user.click(
+      within(screen.getByRole("group", { name: "상대 예측" })).getByRole("button", {
+        name: "네 번째 선택",
+      }),
+    );
+
+    await waitFor(async () => {
+      const patchCalls = fetchMock.mock.calls.filter((call) => requestFromCall(call).method === "PATCH");
+      expect(patchCalls.length).toBeGreaterThan(1);
+      await expect(requestFromCall(patchCalls.at(-1)!).json()).resolves.toEqual({
+        answers: [0, 0, null],
+        guesses: [1, 1, null],
+      });
+    });
   });
 
   it("hydrates from the active session API without storing answers or guesses", async () => {

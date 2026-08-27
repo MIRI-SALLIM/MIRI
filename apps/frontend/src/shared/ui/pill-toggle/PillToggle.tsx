@@ -8,18 +8,24 @@ export interface PillToggleProps
   children: ReactNode;
   onPressedChange: (pressed: boolean) => void;
   pressed: boolean;
+  size?: "md" | "sm";
   tone?: "green" | "purple";
 }
 
 const toneStyles = {
   green: {
-    idle: "border-border bg-card text-ink-muted hover:border-green/50",
-    pressed: "border-green bg-green-tint text-green-strong",
+    idle: "border-border bg-card text-ink-muted hover:border-green",
+    pressed: "border-green bg-green-tint text-green",
   },
   purple: {
-    idle: "border-border bg-card text-ink-muted hover:border-purple/50",
-    pressed: "border-purple bg-purple-tint text-purple-strong",
+    idle: "border-border bg-card text-ink-muted hover:border-purple",
+    pressed: "border-purple bg-purple-tint text-purple",
   },
+} as const;
+
+const sizeStyles = {
+  md: "min-h-12 px-[18px] text-[15px]",
+  sm: "min-h-11 px-4 text-[14.5px]",
 } as const;
 
 export function PillToggle({
@@ -27,6 +33,7 @@ export function PillToggle({
   className = "",
   onPressedChange,
   pressed,
+  size = "md",
   tone = "green",
   type = "button",
   ...buttonProps
@@ -37,7 +44,7 @@ export function PillToggle({
     <button
       {...buttonProps}
       aria-pressed={pressed}
-      className={`inline-flex min-h-11 items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 ${stateStyle} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full border font-medium leading-[normal] transition-colors duration-[160ms] ease-smooth focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 ${sizeStyles[size]} ${stateStyle} ${className}`}
       onClick={() => onPressedChange(!pressed)}
       type={type}
     >

@@ -8,17 +8,9 @@ async function expectNoHorizontalOverflow(page: Page): Promise<void> {
     .toBe(true);
 }
 
-test("landing and light form fit without horizontal overflow", async ({ page }, testInfo) => {
+test("landing and light form fit without horizontal overflow", async ({ page }) => {
   await page.goto("/");
-
-  // The landing layout matches the reference design pixel-for-pixel, including its
-  // fixed-minimum grid tracks (400px mode cards, 380px hero columns). Below ~424px
-  // those tracks force the same horizontal scroll the reference itself has, so this
-  // assertion is scoped to viewports where the reference does not overflow.
-  if (testInfo.project.name !== "mobile-chromium") {
-    await expectNoHorizontalOverflow(page);
-  }
-
+  await expectNoHorizontalOverflow(page);
   await startLightSession(page);
   await expectNoHorizontalOverflow(page);
 });

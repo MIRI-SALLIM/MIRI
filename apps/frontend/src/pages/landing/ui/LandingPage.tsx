@@ -117,7 +117,7 @@ function CardCheck({ tone }: { tone: "green" | "purple" }) {
     <span
       aria-hidden="true"
       className={`flex size-[19px] shrink-0 items-center justify-center rounded-full ${
-        tone === "green" ? "bg-green" : "bg-purple"
+        tone === "green" ? "bg-green-strong" : "bg-purple-strong"
       }`}
     >
       <svg fill="none" height="11" viewBox="0 0 24 24" width="11">
@@ -219,14 +219,14 @@ function ModeCard({ art, cta, points, subtitle, time, title, tone }: ModeCardPro
         <div className="min-w-0 flex-auto">
           <span
             className={`inline-block rounded-full px-3 py-[5px] text-[13px] font-semibold ${
-              isGreen ? "bg-green-tint text-green" : "bg-purple-tint text-purple"
+              isGreen ? "bg-green-tint text-green-strong" : "bg-purple-tint text-purple-strong"
             }`}
           >
             {time}
           </span>
           <h2
             className={`mt-3.5 whitespace-nowrap text-[clamp(22px,1.9vw,26px)] font-extrabold tracking-[-0.02em] ${
-              isGreen ? "text-green" : "text-purple"
+              isGreen ? "text-green-strong" : "text-purple-strong"
             }`}
           >
             {title}
@@ -274,11 +274,11 @@ export function LandingPage() {
     <div className="mx-auto w-full max-w-[1200px] px-6 [line-height:normal]" id="top">
       <section
         aria-labelledby="hero-title"
-        className="grid animate-fadeup grid-cols-[repeat(auto-fit,minmax(380px,1fr))] items-center gap-10 pb-[clamp(14px,2.51vh,44px)] pt-[clamp(16px,3.2vh,56px)]"
+        className="grid animate-fadeup grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] items-center gap-10 pb-[clamp(14px,2.51vh,44px)] pt-[clamp(16px,3.2vh,56px)]"
         id="about"
       >
         <div>
-          <p className="mb-[clamp(10px,1.03vh,18px)] text-base font-semibold leading-[normal] tracking-[-0.01em] text-green">
+          <p className="mb-[clamp(10px,1.03vh,18px)] text-base font-semibold leading-[normal] tracking-[-0.01em] text-green-strong">
             결혼은 나중에, 살림은 미리
           </p>
           <h1
@@ -288,7 +288,7 @@ export function LandingPage() {
             서로의 돈을 이해하면
             <br />
             {/* 줄 시작 공백은 렌더링에서 제거된다. 접근성 이름의 단어 경계를 위해 둔다. */}{" "}
-            <span className="text-green">미래</span>가 더 선명해져요
+            <span className="text-green-strong">미래</span>가 더 선명해져요
           </h1>
           <p className="mt-[clamp(12px,1.26vh,22px)] text-[clamp(15.5px,1.3vw,17.5px)] leading-[1.7] text-ink-muted">
             두 사람이 함께 살기 전에,
@@ -330,7 +330,7 @@ export function LandingPage() {
 
       <section
         aria-label="두 가지 모드 선택"
-        className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] items-stretch gap-6 pb-[clamp(18px,3.66vh,64px)]"
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,400px),1fr))] items-stretch gap-6 pb-[clamp(18px,3.66vh,64px)]"
       >
         <ModeCard
           art={
@@ -342,7 +342,7 @@ export function LandingPage() {
           }
           cta={
             <StartLightButton
-              className={`${ctaClassName} !bg-green hover:!brightness-[.94] active:!translate-y-px`}
+              className={`${ctaClassName} !bg-green-strong hover:!brightness-[.94] active:!translate-y-px`}
               label={
                 <>
                   가볍게 맞춰보기 시작하기
@@ -361,7 +361,7 @@ export function LandingPage() {
         <ModeCard
           art={<DeepModeArt />}
           cta={
-            <Button className={`${ctaClassName} !bg-purple`} disabled fullWidth>
+            <Button className={`${ctaClassName} !bg-purple-strong`} disabled fullWidth>
               제대로 계산해보기 시작하기
               <CtaArrow />
             </Button>

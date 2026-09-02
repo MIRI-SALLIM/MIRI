@@ -36,7 +36,7 @@ export function LightQuestionCard({
 
   return (
     <section className="mt-[clamp(9px,1.26vh,22px)] rounded-[22px] border border-border bg-card px-[clamp(22px,3vw,34px)] py-[clamp(14px,1.94vh,34px)]">
-      <p className="text-[13.5px] font-semibold leading-[normal] text-green">{question.category}</p>
+      <p className="text-[13.5px] font-semibold leading-[normal] text-green-strong">{question.category}</p>
       <h2 className="mt-2 text-[clamp(19px,2.6vh,23px)] font-extrabold leading-[1.4] tracking-[-0.02em] text-ink">
         {question.text}
       </h2>

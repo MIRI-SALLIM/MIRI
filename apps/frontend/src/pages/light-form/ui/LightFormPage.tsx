@@ -198,7 +198,7 @@ export function LightFormPage() {
     <section className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-center px-6 pb-[clamp(10px,2vh,48px)] pt-[clamp(9px,1.5vh,36px)] [line-height:normal]">
       <div className="flex flex-wrap items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-green-tint px-3 py-[5px] text-[13px] font-semibold text-green">
+          <span className="rounded-full bg-green-tint px-3 py-[5px] text-[13px] font-semibold text-green-strong">
             3분
           </span>
           <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">가볍게 맞춰보기</h1>
@@ -238,7 +238,7 @@ export function LightFormPage() {
               {Array.from({ length: questionCount }, (_, index) => (
                 <span
                   className={`h-[5px] flex-1 rounded-full ${
-                    index <= boundedStep ? "bg-green" : "bg-[#EDEDEB]"
+                    index <= boundedStep ? "bg-green-strong" : "bg-[#EDEDEB]"
                   }`}
                   key={index}
                 />
@@ -271,7 +271,7 @@ export function LightFormPage() {
                   />
                 ) : (
                   <Button
-                    className="!min-h-[52px] !flex-[1_1_200px] !gap-2.5 !rounded-[14px] !border-transparent !bg-green !px-5 !py-0 !text-[16.5px] !font-bold !text-white hover:!brightness-[.94] active:!translate-y-px"
+                    className="!min-h-[52px] !flex-[1_1_200px] !gap-2.5 !rounded-[14px] !border-transparent !bg-green-strong !px-5 !py-0 !text-[16.5px] !font-bold !text-white hover:!brightness-[.94] active:!translate-y-px"
                     onClick={() => goToStep(boundedStep + 1)}
                   >
                     다음 질문

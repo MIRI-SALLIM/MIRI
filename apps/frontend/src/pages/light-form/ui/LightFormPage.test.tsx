@@ -155,7 +155,7 @@ describe("LightFormPage", () => {
 
     await user.click(screen.getByRole("button", { name: "다음 질문" }));
     expect(await screen.findByText("3 / 3")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "입력 완료하기" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "입력 완료하기" })).toHaveClass("!bg-green-strong");
     expect(screen.queryByRole("button", { name: "다음 질문" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "이전" }));
@@ -184,6 +184,8 @@ describe("LightFormPage", () => {
     sessionStorage.setItem("activeSessionId", "session-a");
     const { user } = renderLightForm();
     await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
+
+    expect(screen.getByText("가치관")).toHaveClass("text-green-strong");
 
     const selfAnswers = screen.getByRole("group", { name: "내 답" });
     const guesses = screen.getByRole("group", { name: "상대 예측" });

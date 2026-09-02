@@ -11,12 +11,7 @@ import {
 async function expectNoSeriousOrCriticalViolations(page: Page): Promise<void> {
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => document.fonts.ready);
-  // The landing/light-form palette matches the reference design's literal brand
-  // colors (#43A77B, #8A6FD1) verbatim by explicit product decision, including on
-  // text and white-on-green buttons. That is a known, permanent color-contrast
-  // shortfall against WCAG AA, not a regression — every other axe rule (labels,
-  // roles, structure, keyboard) still gates this test.
-  const results = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
+  const results = await new AxeBuilder({ page }).analyze();
   const blockingViolations = results.violations.filter(
     ({ impact }) => impact === "serious" || impact === "critical",
   );

@@ -167,16 +167,17 @@ test("share ratio controls expose pressed state to the keyboard", async ({ brows
 
     const squareRatio = pageA.getByRole("button", { name: "정사각형 1:1" });
     const portraitRatio = pageA.getByRole("button", { name: "세로 9:16" });
-    await tabUntilFocused(pageA, portraitRatio);
-    await expect(portraitRatio).toBeFocused();
-    await pageA.keyboard.press("Space");
-    await expect(portraitRatio).toHaveAttribute("aria-pressed", "true");
-
     await tabUntilFocused(pageA, squareRatio);
     await expect(squareRatio).toBeFocused();
     await pageA.keyboard.press("Space");
     await expect(squareRatio).toHaveAttribute("aria-pressed", "true");
     await expect(portraitRatio).toHaveAttribute("aria-pressed", "false");
+
+    await tabUntilFocused(pageA, portraitRatio);
+    await expect(portraitRatio).toBeFocused();
+    await pageA.keyboard.press("Enter");
+    await expect(portraitRatio).toHaveAttribute("aria-pressed", "true");
+    await expect(squareRatio).toHaveAttribute("aria-pressed", "false");
   } finally {
     await contextA.close();
     await contextB.close();

@@ -25,7 +25,7 @@ describe("Vercel deployment configuration", () => {
     expect(config.rewrites).toEqual([
       {
         source: "/api/(.*)",
-        destination: `${productionBackendOrigin}/api/`,
+        destination: `${productionBackendOrigin}/api/$1`,
       },
       {
         source: "/(.*)",

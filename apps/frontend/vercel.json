@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://mirisalim-backend-production.up.railway.app/api/"
+      "destination": "https://mirisalim-backend-production.up.railway.app/api/$1"
     },
     {
       "source": "/(.*)",

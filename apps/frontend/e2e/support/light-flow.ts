@@ -9,6 +9,21 @@ import {
 
 const ASSERTION_TIMEOUT = 10_000;
 
+async function waitForLightForm(page: Page): Promise<void> {
+  await expect(page.getByRole("heading", { name: "가볍게 맞춰보기" })).toBeVisible({
+    timeout: ASSERTION_TIMEOUT,
+  });
+  await expect(page.getByRole("progressbar", { name: "진행률" })).toBeVisible({
+    timeout: ASSERTION_TIMEOUT,
+  });
+  await expect(page.getByRole("group", { name: "내 답", exact: true })).toBeVisible({
+    timeout: ASSERTION_TIMEOUT,
+  });
+  await expect(page.getByRole("group", { name: "상대 예측", exact: true })).toBeVisible({
+    timeout: ASSERTION_TIMEOUT,
+  });
+}
+
 async function chooseOption(group: Locator, groupName: string, optionIndex: number): Promise<void> {
   // 그룹 안에는 선택지 칩만 남는다. 건너뛰기는 카드 하단 내비게이션으로 옮겼다.
   const optionButtons = group.getByRole("button");
@@ -72,17 +87,13 @@ function matchesInputSave(
 
 export async function startLightSession(page: Page): Promise<void> {
   await page.getByRole("button", { name: "가볍게 맞춰보기 시작하기" }).click();
-  await expect(page.getByRole("heading", { name: "가볍게 맞춰보기" })).toBeVisible({
-    timeout: ASSERTION_TIMEOUT,
-  });
+  await waitForLightForm(page);
 }
 
 export async function joinInvitation(page: Page, invitationUrl: string): Promise<void> {
   await page.goto(invitationUrl);
   await page.getByRole("button", { name: "참여하고 시작하기" }).click();
-  await expect(page.getByRole("heading", { name: "가볍게 맞춰보기" })).toBeVisible({
-    timeout: ASSERTION_TIMEOUT,
-  });
+  await waitForLightForm(page);
 }
 
 export async function answerEveryQuestion(

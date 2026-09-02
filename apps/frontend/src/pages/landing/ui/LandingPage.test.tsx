@@ -134,6 +134,42 @@ describe("LandingPage", () => {
     ).toBeDisabled();
   });
 
+  it("uses accessible brand foregrounds and CTA backgrounds", () => {
+    renderLanding();
+
+    expect(screen.getByText("결혼은 나중에, 살림은 미리")).toHaveClass("text-green-strong");
+    expect(screen.getByText("미래", { exact: true })).toHaveClass("text-green-strong");
+
+    const lightCard = modeCard("가볍게 맞춰보기");
+    expect(within(lightCard).getByText("3분")).toHaveClass("text-green-strong");
+    expect(within(lightCard).getByRole("heading", { name: "가볍게 맞춰보기" })).toHaveClass(
+      "text-green-strong",
+    );
+    expect(within(lightCard).getByRole("button", { name: "가볍게 맞춰보기 시작하기" })).toHaveClass(
+      "!bg-green-strong",
+    );
+
+    const deepCard = modeCard("제대로 계산해보기");
+    expect(within(deepCard).getByText("15분")).toHaveClass("text-purple-strong");
+    expect(within(deepCard).getByRole("heading", { name: "제대로 계산해보기" })).toHaveClass(
+      "text-purple-strong",
+    );
+    expect(within(deepCard).getByRole("button", { name: "제대로 계산해보기 시작하기" })).toHaveClass(
+      "!bg-purple-strong",
+    );
+  });
+
+  it("allows landing grids to shrink below their desktop card widths", () => {
+    const { container } = renderLanding();
+
+    expect(container.querySelector("#about")).toHaveClass(
+      "grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))]",
+    );
+    expect(container.querySelector('section[aria-label="두 가지 모드 선택"]')).toHaveClass(
+      "grid-cols-[repeat(auto-fit,minmax(min(100%,400px),1fr))]",
+    );
+  });
+
   it("lists the four usage steps with chevrons between them", () => {
     renderLanding();
 

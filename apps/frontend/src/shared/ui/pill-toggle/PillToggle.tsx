@@ -15,11 +15,11 @@ export interface PillToggleProps
 const toneStyles = {
   green: {
     idle: "border-border bg-card text-ink-muted hover:border-green",
-    pressed: "border-green bg-green-tint text-green",
+    pressed: "border-green-strong bg-green-tint text-green-strong",
   },
   purple: {
     idle: "border-border bg-card text-ink-muted hover:border-purple",
-    pressed: "border-purple bg-purple-tint text-purple",
+    pressed: "border-purple-strong bg-purple-tint text-purple-strong",
   },
 } as const;
 

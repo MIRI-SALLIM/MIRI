@@ -5,6 +5,8 @@ import { defineConfig } from "@playwright/test";
 
 const frontendDirectory = path.dirname(fileURLToPath(import.meta.url));
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL;
+const isProductionSmokeRun = process.argv.some((argument) => argument.endsWith("production-smoke.spec.ts"));
+const shouldUseManagedWebServers = !externalBaseURL && !isProductionSmokeRun;
 const useMongo = process.env.MIRISALLIM_E2E_USE_MONGO === "1";
 const localBackendEnvironment = {
   ...process.env,
@@ -33,9 +35,8 @@ export default defineConfig({
     trace: "retain-on-failure",
     video: "retain-on-failure",
   },
-  webServer: externalBaseURL
-    ? undefined
-    : [
+  webServer: shouldUseManagedWebServers
+    ? [
         {
           command: "python -m uvicorn main:app --host 127.0.0.1 --port 8000",
           cwd: path.resolve(frontendDirectory, "../backend"),
@@ -57,5 +58,6 @@ export default defineConfig({
           timeout: 120_000,
           url: "http://127.0.0.1:4173/",
         },
-      ],
+      ]
+    : undefined,
 });

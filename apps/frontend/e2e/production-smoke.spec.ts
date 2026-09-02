@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { expect, test, type BrowserContext, type Locator, type Page } from "@playwright/test";
 
 import {
   answerEveryQuestion,
@@ -105,6 +105,12 @@ function expectPrivacySafeStorage(page: Page): Promise<void> {
   });
 }
 
+async function hasSensitiveShareCardText(card: Locator): Promise<boolean> {
+  return card.evaluate((element) =>
+    /(?:소득|부채|저축액|대출|\d[\d,]*\s*(?:만원|만 원|원))/i.test(element.textContent ?? ""),
+  );
+}
+
 test.describe("production smoke", () => {
   test.skip(
     !productionSmokeEnabled,
@@ -191,9 +197,19 @@ test.describe("production smoke", () => {
       await expectPrivacySafeStorage(pageA);
 
       await answerEveryQuestion(pageB, 1, 1);
-      await submitLightForm(pageB);
+      const bSubmitResponse = pageB.waitForResponse(
+        (response) =>
+          response.ok() &&
+          response.request().method() === "POST" &&
+          response.url().endsWith("/me/submit"),
+        { timeout: ASSERTION_TIMEOUT },
+      );
+      const bSubmitForm = submitLightForm(pageB);
+      const bSubmitResponseReceived = await bSubmitResponse;
       const revealDeadline = Date.now() + REVEAL_DEADLINE_MS;
       const timeoutUntilRevealDeadline = (): number => Math.max(1, revealDeadline - Date.now());
+      expect(bSubmitResponseReceived.ok()).toBe(true);
+      await bSubmitForm;
       await pageB.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
       await expect(pageB.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible({
         timeout: timeoutUntilRevealDeadline(),
@@ -229,8 +245,8 @@ test.describe("production smoke", () => {
       });
       const shareCard = pageA.getByTestId("share-card");
       await expect(shareCard).toBeVisible({ timeout: ASSERTION_TIMEOUT });
-      const shareCardText = await shareCard.innerText();
-      expect(shareCardText).not.toMatch(/(?:소득|부채|저축액|대출|\d[\d,]*\s*(?:만원|만 원|원))/i);
+      const shareCardContainsSensitiveText = await hasSensitiveShareCardText(shareCard);
+      expect(shareCardContainsSensitiveText).toBe(false);
 
       const squareRatio = pageA.getByRole("button", { name: "정사각형 1:1" });
       await squareRatio.click();

@@ -8,8 +8,40 @@ import {
   submitLightForm,
 } from "./support/light-flow";
 
-const productionSmokeEnabled = process.env.RUN_PRODUCTION_SMOKE === "1";
+const productionSmokeEnabled = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 const ASSERTION_TIMEOUT = 10_000;
+const REVEAL_DEADLINE_MS = 3_000;
+
+test.use({ screenshot: "off", trace: "off", video: "off" });
+
+const SENSITIVE_WAITING_KEY_PATTERN = /answers|guesses|result|type|score|nickname|participant.?token/i;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isWaitingGateResponseBody(body: unknown): boolean {
+  if (!isRecord(body)) {
+    return false;
+  }
+
+  const keys = Object.keys(body).sort();
+  return (
+    keys.length === 2 &&
+    keys[0] === "partnerCompleted" &&
+    keys[1] === "status" &&
+    body.partnerCompleted === false &&
+    body.status === "waiting"
+  );
+}
+
+function containsSensitiveWaitingKeys(body: unknown): boolean {
+  if (!isRecord(body)) {
+    return true;
+  }
+
+  return Object.keys(body).some((key) => SENSITIVE_WAITING_KEY_PATTERN.test(key));
+}
 
 function expectSecurityHeaders(response: { headers(): Record<string, string> }): void {
   const headers = response.headers();
@@ -76,7 +108,7 @@ function expectPrivacySafeStorage(page: Page): Promise<void> {
 test.describe("production smoke", () => {
   test.skip(
     !productionSmokeEnabled,
-    "Set RUN_PRODUCTION_SMOKE=1 and PLAYWRIGHT_BASE_URL to run the production smoke test.",
+    "Set PLAYWRIGHT_BASE_URL to run the production smoke test.",
   );
 
   test("serves the privacy-safe light flow with the expected security headers", async ({ browser }) => {
@@ -147,10 +179,9 @@ test.describe("production smoke", () => {
       await expectNoBlockingAxeViolations(pageA);
 
       await pageA.goto(`/result/light/${session.id}`);
-      const waitingResultBody = (await (await waitingResultResponse).json()) as Record<string, unknown>;
-      expect(Object.keys(waitingResultBody).sort()).toEqual(["partnerCompleted", "status"]);
-      expect(waitingResultBody).toEqual({ partnerCompleted: false, status: "waiting" });
-      expect(JSON.stringify(waitingResultBody)).not.toMatch(/answers|guesses|result|type|score/i);
+      const waitingResultBody = await (await waitingResultResponse).json();
+      expect(isWaitingGateResponseBody(waitingResultBody)).toBe(true);
+      expect(containsSensitiveWaitingKeys(waitingResultBody)).toBe(false);
 
       const partnerAnswerIsVisible = await pageA.evaluate((sentinel) => {
         const visibleText = document.body.innerText;
@@ -161,24 +192,30 @@ test.describe("production smoke", () => {
 
       await answerEveryQuestion(pageB, 1, 1);
       await submitLightForm(pageB);
+      const revealDeadline = Date.now() + REVEAL_DEADLINE_MS;
+      const timeoutUntilRevealDeadline = (): number => Math.max(1, revealDeadline - Date.now());
       await pageB.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
       await expect(pageB.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible({
-        timeout: ASSERTION_TIMEOUT,
+        timeout: timeoutUntilRevealDeadline(),
       });
 
       const resultLinkA = pageA.getByRole("link", { name: "결과 보기" });
       const resultLinkB = pageB.getByRole("link", { name: "결과 보기" });
-      await expect(resultLinkA).toBeVisible({ timeout: 15_000 });
-      await expect(resultLinkB).toBeVisible({ timeout: 15_000 });
+      await Promise.all([
+        expect(resultLinkA).toBeVisible({ timeout: timeoutUntilRevealDeadline() }),
+        expect(resultLinkB).toBeVisible({ timeout: timeoutUntilRevealDeadline() }),
+      ]);
+      expect(Date.now()).toBeLessThanOrEqual(revealDeadline);
       await Promise.all([resultLinkA.click(), resultLinkB.click()]);
       await Promise.all([
         expect(pageA.getByRole("heading", { name: "라이트 결과" })).toBeVisible({
-          timeout: ASSERTION_TIMEOUT,
+          timeout: timeoutUntilRevealDeadline(),
         }),
         expect(pageB.getByRole("heading", { name: "라이트 결과" })).toBeVisible({
-          timeout: ASSERTION_TIMEOUT,
+          timeout: timeoutUntilRevealDeadline(),
         }),
       ]);
+      expect(Date.now()).toBeLessThanOrEqual(revealDeadline);
 
       const scoreA = await pageA.getByText(/^\d+ \/ \d+$/).first().innerText();
       const scoreB = await pageB.getByText(/^\d+ \/ \d+$/).first().innerText();

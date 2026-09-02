@@ -123,9 +123,7 @@ non-sensitive data:
 
 ```powershell
 $env:PLAYWRIGHT_BASE_URL = "https://<confirmed-frontend-origin>"
-$env:RUN_PRODUCTION_SMOKE = "1"
-npx playwright test e2e/production-smoke.spec.ts
-Remove-Item Env:RUN_PRODUCTION_SMOKE
+npx.cmd playwright test e2e/production-smoke.spec.ts
 Remove-Item Env:PLAYWRIGHT_BASE_URL
 ```
 
@@ -135,6 +133,10 @@ availability, share preview ratio selection, PNG download, serious/critical
 axe violations including color contrast, and the four required security
 headers. A successful local or preview run does not prove that the deployed
 frontend is connected to the intended production MongoDB-backed backend.
+Because the flow contains participant data, production smoke disables trace,
+screenshot, and video retention even on failure. Keep evidence limited to
+command exit codes, test counts, the redacted production host, status codes,
+and security-header names.
 
 ## Rollback
 

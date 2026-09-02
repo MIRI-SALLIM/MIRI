@@ -1,7 +1,8 @@
 from datetime import timedelta, timezone
 
-import main as main_module
 from fastapi.testclient import TestClient
+
+import main as main_module
 from main import app
 
 

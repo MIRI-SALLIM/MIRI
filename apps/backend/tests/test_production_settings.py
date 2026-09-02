@@ -2,7 +2,6 @@ import pytest
 
 import main
 
-
 VALID_ORIGINS = ["https://mirisalim.vercel.app"]
 VALID_PEPPER = "p" * 32
 

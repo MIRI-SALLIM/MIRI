@@ -3,13 +3,14 @@ import os
 import uuid
 from typing import Any
 
-import main as main_module
 import pytest
 from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
-from main import app
 from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
+
+import main as main_module
+from main import app
 from services.session_repository import (
     SessionRepository,
     digest_participant_token,

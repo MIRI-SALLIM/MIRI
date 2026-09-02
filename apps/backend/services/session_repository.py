@@ -8,8 +8,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from pymongo import ReturnDocument
-from schemas import LightComparisonResultData
 
+from schemas import LightComparisonResultData
 from services.light_result import (
     calculate_light_canonical_result,
     project_result_for_viewer,

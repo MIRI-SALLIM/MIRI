@@ -2,13 +2,14 @@ import asyncio
 import os
 import uuid
 
-import main as main_module
 import pytest
 from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
-from main import app
 from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
+
+import main as main_module
+from main import app
 from services.light_result import (
     calculate_light_canonical_result,
     calculate_mutual_hit_count,

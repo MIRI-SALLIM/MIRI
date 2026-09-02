@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from fastapi import (
@@ -65,13 +66,82 @@ load_dotenv()
 # 환경 설정 및 상수
 # ==========================================
 
+DEVELOPMENT_PARTICIPANT_TOKEN_PEPPER = "mirisalim_dev_pepper_secret_2026"
+DEVELOPMENT_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
+def _parse_origins(raw: str) -> list[str]:
+    return list(dict.fromkeys(item.strip() for item in raw.split(",") if item.strip()))
+
+
+def _is_https_origin(value: str) -> bool:
+    parsed = urlsplit(value)
+    return bool(
+        parsed.scheme == "https"
+        and parsed.netloc
+        and parsed.path in ("", "/")
+        and not parsed.query
+        and not parsed.fragment
+        and parsed.username is None
+        and parsed.password is None
+    )
+
+
+def _validate_production_settings(
+    environment: str,
+    mongodb_uri: str | None,
+    pepper: str,
+    ttl_days_raw: str,
+    origins: list[str],
+) -> int:
+    try:
+        ttl_days = int(ttl_days_raw)
+    except ValueError as exc:
+        raise RuntimeError("Invalid production setting: SESSION_TTL_DAYS") from exc
+
+    if ttl_days <= 0:
+        raise RuntimeError("Invalid production setting: SESSION_TTL_DAYS")
+
+    if environment.lower() not in ("production", "prod"):
+        return ttl_days
+    if not mongodb_uri:
+        raise RuntimeError("Missing production setting: MONGODB_URI")
+    if pepper == DEVELOPMENT_PARTICIPANT_TOKEN_PEPPER or len(pepper) < 32:
+        raise RuntimeError("Invalid production setting: PARTICIPANT_TOKEN_PEPPER")
+    if not origins or any(not _is_https_origin(origin) for origin in origins):
+        raise RuntimeError("Invalid production setting: ALLOWED_ORIGINS")
+    return ttl_days
+
+
+def _cors_origins(environment: str, configured_origins: list[str]) -> list[str]:
+    if environment.lower() in ("production", "prod"):
+        return configured_origins
+    return list(dict.fromkeys(DEVELOPMENT_ORIGINS + configured_origins))
+
+
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 IS_PRODUCTION = ENVIRONMENT.lower() in ("production", "prod")
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE") or os.getenv("MONGODB_DB_NAME") or "mirisalim"
-PARTICIPANT_TOKEN_PEPPER = os.getenv("PARTICIPANT_TOKEN_PEPPER", "mirisalim_dev_pepper_secret_2026")
-SESSION_TTL_DAYS = int(os.getenv("SESSION_TTL_DAYS", "7"))
+PARTICIPANT_TOKEN_PEPPER = os.getenv(
+    "PARTICIPANT_TOKEN_PEPPER", DEVELOPMENT_PARTICIPANT_TOKEN_PEPPER
+)
+_CONFIGURED_ORIGINS = _parse_origins(
+    os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS") or ""
+)
+SESSION_TTL_DAYS = _validate_production_settings(
+    ENVIRONMENT,
+    MONGODB_URI,
+    PARTICIPANT_TOKEN_PEPPER,
+    os.getenv("SESSION_TTL_DAYS", "7"),
+    _CONFIGURED_ORIGINS,
+)
 
 PARTICIPANT_COOKIE_NAME = "mrs_participant"
 
@@ -92,19 +162,7 @@ app = FastAPI(
 cookie_sec = APIKeyCookie(name=PARTICIPANT_COOKIE_NAME, auto_error=False, description="참여자 인증 쿠키")
 
 # CORS 설정
-default_origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://mirisalim-backend.onrender.com",
-]
-env_origins = [
-    o.strip() for o in (
-        os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS") or ""
-    ).split(",") if o.strip()
-]
-origins = list(dict.fromkeys(default_origins + env_origins))
+origins = _cors_origins(ENVIRONMENT, _CONFIGURED_ORIGINS)
 
 app.add_middleware(
     CORSMiddleware,

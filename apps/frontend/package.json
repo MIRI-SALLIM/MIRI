@@ -11,7 +11,8 @@
     "build": "tsc --noEmit && vite build",
     "api:generate": "node scripts/generate-api-types.js",
     "api:check": "npm run api:generate && git diff --exit-code -- src/shared/api/schema.d.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test e2e/smoke.spec.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",

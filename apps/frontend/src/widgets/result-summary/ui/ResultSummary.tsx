@@ -20,8 +20,8 @@ function TypeCard({ label, tone, type }: { label: string; tone: "green" | "purpl
       <h3 className="text-lg font-extrabold tracking-[-0.02em] text-ink">{type.typeName}</h3>
       <p className="text-sm leading-relaxed text-ink-muted">{type.typeDescription}</p>
       <div className="flex flex-col gap-1 border-t border-border pt-3">
-        <p className="text-xs font-bold text-ink-subtle">{type.timeLabel}</p>
-        <p className="text-xs font-bold text-ink-subtle">{type.mgmtLabel}</p>
+        <p className="text-xs font-bold text-ink-muted">{type.timeLabel}</p>
+        <p className="text-xs font-bold text-ink-muted">{type.mgmtLabel}</p>
       </div>
     </article>
   );

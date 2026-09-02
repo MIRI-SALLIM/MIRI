@@ -132,6 +132,12 @@ describe("LightResultPage", () => {
 
     expect(screen.getByText("함께 모으는 동반자형")).toBeInTheDocument();
     expect(screen.getByText("각자 계획하는 동반자형")).toBeInTheDocument();
+    screen.getAllByText("미래대비형").forEach((element) => {
+      expect(element).toHaveClass("text-ink-muted");
+    });
+    screen.getAllByText("공동관리형").forEach((element) => {
+      expect(element).toHaveClass("text-ink-muted");
+    });
     expect(screen.getByText(partnerAnswer)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "결과 공유" })).toHaveAttribute(
       "href",

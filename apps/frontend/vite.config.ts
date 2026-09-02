@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { loadEnv } from "vite";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const rootDirectory = fileURLToPath(new URL(".", import.meta.url));
 
@@ -32,6 +32,11 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: ["./src/shared/config/test-setup.ts"],
       css: true,
+      exclude: [...configDefaults.exclude, "e2e/**"],
+      fileParallelism: false,
+      pool: "forks",
+      maxWorkers: 1,
+      minWorkers: 1,
       restoreMocks: true,
     },
   };

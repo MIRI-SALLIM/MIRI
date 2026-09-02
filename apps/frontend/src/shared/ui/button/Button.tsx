@@ -22,7 +22,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-control border px-5 py-3 text-base font-bold transition-colors focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles[variant]} ${fullWidth ? "w-full" : ""} ${className}`}
+      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-control border px-5 py-3 text-base font-bold transition-[color,background-color,border-color,filter,translate,transform] duration-[160ms] ease-smooth focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles[variant]} ${fullWidth ? "w-full" : ""} ${className}`}
       type={type}
       {...buttonProps}
     >

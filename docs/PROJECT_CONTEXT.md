@@ -4,10 +4,12 @@
 
 ## 먼저 읽을 문서
 
-1. [프론트엔드 개발 시작 프롬프트](handoffs/2026-08-10-mirisallim-frontend-start-prompt.md)
-2. [3분 모드 프로덕션 수직 슬라이스 설계](superpowers/specs/2026-08-05-mirisallim-light-vertical-slice-design.md)
-3. [프론트엔드 구현 계획](superpowers/plans/2026-08-06-mirisallim-light-frontend.md)
-4. [프론트엔드·백엔드 조정 계획](superpowers/plans/2026-08-06-mirisallim-light-coordination.md)
+1. [프론트엔드 F8 재개 handoff](handoffs/2026-08-18-mirisallim-frontend-f8-continuation.md)
+2. [프론트엔드 개발 시작 프롬프트](handoffs/2026-08-10-mirisallim-frontend-start-prompt.md)
+3. [3분 모드 프로덕션 수직 슬라이스 설계](superpowers/specs/2026-08-05-mirisallim-light-vertical-slice-design.md)
+4. [F8 릴리스 준비 구현 계획](superpowers/plans/2026-08-18-mirisallim-light-release-readiness.md)
+5. [프론트엔드 구현 계획](superpowers/plans/2026-08-06-mirisallim-light-frontend.md)
+6. [프론트엔드·백엔드 조정 계획](superpowers/plans/2026-08-06-mirisallim-light-coordination.md)
 
 필요할 때 [수직 슬라이스 전체 계획](superpowers/plans/2026-08-06-mirisallim-light-vertical-slice.md)과 [백엔드 구현 계획](superpowers/plans/2026-08-06-mirisallim-light-backend.md)을 참고합니다.
 

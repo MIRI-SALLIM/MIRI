@@ -69,7 +69,7 @@ export function InvitePage() {
   });
 
   return (
-    <section className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-16 sm:px-8">
+    <section className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-16 sm:px-8">
       <div className="flex flex-col gap-3">
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">초대 참여</h1>
         <p className="text-base leading-relaxed text-ink-muted">

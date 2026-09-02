@@ -31,9 +31,9 @@ export default defineConfig({
   testDir: "e2e",
   use: {
     baseURL: externalBaseURL ?? "http://127.0.0.1:4173",
-    screenshot: "only-on-failure",
-    trace: "retain-on-failure",
-    video: "retain-on-failure",
+    screenshot: process.env.CI ? "off" : "only-on-failure",
+    trace: process.env.CI ? "off" : "retain-on-failure",
+    video: process.env.CI ? "off" : "retain-on-failure",
   },
   webServer: shouldUseManagedWebServers
     ? [

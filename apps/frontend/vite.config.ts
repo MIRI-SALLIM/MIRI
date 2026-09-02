@@ -33,6 +33,10 @@ export default defineConfig(({ mode }) => {
       setupFiles: ["./src/shared/config/test-setup.ts"],
       css: true,
       exclude: [...configDefaults.exclude, "e2e/**"],
+      fileParallelism: false,
+      pool: "forks",
+      maxWorkers: 1,
+      minWorkers: 1,
       restoreMocks: true,
     },
   };

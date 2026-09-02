@@ -1,11 +1,13 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const summaryPath = resolve("ci-artifacts/failure-summary.txt");
+const frontendDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const summaryPath = resolve(frontendDirectory, "ci-artifacts/failure-summary.txt");
 
 await Promise.all([
-  rm(resolve("playwright-report"), { force: true, recursive: true }),
-  rm(resolve("test-results"), { force: true, recursive: true }),
+  rm(resolve(frontendDirectory, "playwright-report"), { force: true, recursive: true }),
+  rm(resolve(frontendDirectory, "test-results"), { force: true, recursive: true }),
 ]);
 
 await mkdir(dirname(summaryPath), { recursive: true });

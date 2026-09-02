@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => {
       css: true,
       exclude: [...configDefaults.exclude, "e2e/**"],
       fileParallelism: false,
+      pool: "forks",
       maxWorkers: 1,
       minWorkers: 1,
       restoreMocks: true,

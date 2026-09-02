@@ -111,6 +111,24 @@ async function hasSensitiveShareCardText(card: Locator): Promise<boolean> {
   );
 }
 
+function isShareCardVisible(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>('[data-testid="share-card"]');
+    if (!card) {
+      return false;
+    }
+
+    const style = window.getComputedStyle(card);
+    return style.display !== "none" && style.visibility !== "hidden" && card.getClientRects().length > 0;
+  });
+}
+
+function hasShareCardRatio(page: Page): Promise<boolean> {
+  return page.evaluate(
+    () => document.querySelector<HTMLElement>('[data-testid="share-card"]')?.dataset.ratio === "square",
+  );
+}
+
 test.describe("production smoke", () => {
   test.skip(
     !productionSmokeEnabled,
@@ -244,14 +262,16 @@ test.describe("production smoke", () => {
         timeout: ASSERTION_TIMEOUT,
       });
       const shareCard = pageA.getByTestId("share-card");
-      await expect(shareCard).toBeVisible({ timeout: ASSERTION_TIMEOUT });
+      const shareCardIsVisible = await isShareCardVisible(pageA);
+      expect(shareCardIsVisible).toBe(true);
       const shareCardContainsSensitiveText = await hasSensitiveShareCardText(shareCard);
       expect(shareCardContainsSensitiveText).toBe(false);
 
       const squareRatio = pageA.getByRole("button", { name: "정사각형 1:1" });
       await squareRatio.click();
       await expect(squareRatio).toHaveAttribute("aria-pressed", "true");
-      await expect(shareCard).toHaveAttribute("data-ratio", "square");
+      const shareCardHasSquareRatio = await hasShareCardRatio(pageA);
+      expect(shareCardHasSquareRatio).toBe(true);
       await expectNoBlockingAxeViolations(pageA);
 
       const download = pageA.waitForEvent("download", { timeout: ASSERTION_TIMEOUT });

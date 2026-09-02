@@ -77,6 +77,14 @@ describe("production smoke release policy", () => {
     expect(productionSmokeSource).toContain("expect(shareCardContainsSensitiveText).toBe(false);");
     expect(productionSmokeSource).not.toContain("const shareCardText =");
     expect(productionSmokeSource).not.toContain("shareCard.innerText()");
+    expect(productionSmokeSource).toContain("function isShareCardVisible(page: Page): Promise<boolean>");
+    expect(productionSmokeSource).toContain("const shareCardIsVisible = await isShareCardVisible(pageA);");
+    expect(productionSmokeSource).toContain("expect(shareCardIsVisible).toBe(true);");
+    expect(productionSmokeSource).toContain("function hasShareCardRatio(page: Page): Promise<boolean>");
+    expect(productionSmokeSource).toContain("const shareCardHasSquareRatio = await hasShareCardRatio(pageA);");
+    expect(productionSmokeSource).toContain("expect(shareCardHasSquareRatio).toBe(true);");
+    expect(productionSmokeSource).not.toContain("expect(shareCard).toBeVisible");
+    expect(productionSmokeSource).not.toContain("expect(shareCard).toHaveAttribute");
   });
 
   it("does not start managed local servers for a no-URL production smoke listing", () => {

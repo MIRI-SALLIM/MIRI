@@ -81,18 +81,14 @@ jobs:
       - name: Run end-to-end tests
         run: npm --workspace @mirisallim/frontend run test:e2e
 
-      - name: Upload Playwright report on failure
+      - name: Sanitize Playwright failure evidence
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: apps/frontend/playwright-report
-          retention-days: 7
+        run: node apps/frontend/scripts/sanitize-playwright-artifacts.mjs
 
-      - name: Upload Playwright test results on failure
+      - name: Upload sanitized Playwright evidence on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-test-results
-          path: apps/frontend/test-results
+          name: playwright-failure-evidence
+          path: apps/frontend/ci-artifacts/failure-summary.txt
           retention-days: 7

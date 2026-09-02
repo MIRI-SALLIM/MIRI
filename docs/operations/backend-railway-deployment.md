@@ -1,6 +1,6 @@
 # 미리살림 백엔드 Railway 배포 런북
 
-이 문서는 Railway 계정이 전혀 없는 상태에서 `hotpringles/MIRI`의 FastAPI 백엔드를 Railway에 배포하고 MongoDB Atlas 및 Vercel과 연결하는 절차다.
+이 문서는 Railway 계정이 전혀 없는 상태에서 `MIRI-SALLIM/MIRI`의 FastAPI 백엔드를 Railway에 배포하고 MongoDB Atlas 및 Vercel과 연결하는 절차다.
 
 ## 0. 소유자 작업과 비밀값 경계
 
@@ -15,8 +15,8 @@
 
 | 항목 | 값 |
 | --- | --- |
-| GitHub repository | `hotpringles/MIRI` |
-| Source branch | `codex/deploy-railway` |
+| GitHub repository | `MIRI-SALLIM/MIRI` |
+| Source branch | `fix/gate1-openapi-contract` |
 | Root Directory | `/apps/backend` |
 | Builder | 저장소의 `Dockerfile` 자동 감지 |
 | Runtime | Python 3.11 / Uvicorn |
@@ -29,7 +29,7 @@ GitHub의 `Backend CI`가 성공한 commit만 배포한다. CI는 Ruff, mypy, py
 2. GitHub 계정으로 가입하고 Railway 약관을 직접 확인해 동의한다.
 3. Railway가 표시하는 Trial verification 결과가 `Full Trial`인지 `Limited Trial`인지 확인한다.
 4. [Railway 새 프로젝트](https://railway.com/new)에서 `Deploy from GitHub repo`를 선택한다.
-5. GitHub 앱 권한을 요청하면 가능하면 `Only select repositories`를 선택하고 `hotpringles/MIRI`만 허용한다.
+5. GitHub 앱 권한을 요청하면 가능하면 `Only select repositories`를 선택하고 `MIRI-SALLIM/MIRI`만 허용한다.
 6. 저장소를 선택한 뒤 즉시 배포하는 대신 `Add Variables`를 선택한다.
 
 신규 Trial은 계정 검증 결과에 따라 네트워크 기능이 제한될 수 있다. Limited Trial에서도 코드 배포는 가능하지만 outbound network 제한으로 Atlas 연결이 실패할 수 있다. 이 경우 먼저 `/health` 결과와 Railway 로그로 제한 여부를 확인하며, 사용자 승인 없이 Hobby로 전환하지 않는다. 세부 제한은 [Railway Free Trial 공식 문서](https://docs.railway.com/pricing/free-trial)를 기준으로 확인한다.
@@ -53,8 +53,8 @@ Railway project canvas에서 생성된 service를 열고 다음을 설정한다.
 
 | 설정 | 값 |
 | --- | --- |
-| Source repository | `hotpringles/MIRI` |
-| Source branch | `codex/deploy-railway` |
+| Source repository | `MIRI-SALLIM/MIRI` |
+| Source branch | `fix/gate1-openapi-contract` |
 | Root Directory | `/apps/backend` |
 | Healthcheck Path | `/health` |
 | Healthcheck Timeout | `300` seconds |

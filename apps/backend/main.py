@@ -38,6 +38,7 @@ from deep.errors import DeepError
 from deep.router import account_router as deep_account_router
 from deep.router import error_response as deep_error_response
 from deep.router import router as deep_router
+from deep.v3_router import router as deep_v3_router
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -175,6 +176,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(reviewer_router)
 app.include_router(deep_router)
+app.include_router(deep_v3_router)
 app.include_router(deep_account_router)
 
 

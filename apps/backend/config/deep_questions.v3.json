@@ -1,0 +1,99 @@
+{
+  "version": "deep-v3",
+  "scale": {
+    "min": 1,
+    "max": 5
+  },
+  "questions": [
+    {
+      "id": "D1",
+      "area": "savings",
+      "category": "savings",
+      "reverse": false,
+      "text": "쓰고 남은 돈을 저축한다 ↔ 저축할 돈을 먼저 떼어 둔다",
+      "left": "쓰고 남은 돈을 저축한다",
+      "right": "저축할 돈을 먼저 떼어 둔다"
+    },
+    {
+      "id": "D2",
+      "area": "savings",
+      "category": "savings",
+      "reverse": true,
+      "text": "목표 금액과 시기를 정해서 모은다 ↔ 상황에 따라 금액과 시기를 조정한다",
+      "left": "목표 금액과 시기를 정해서 모은다",
+      "right": "상황에 따라 금액과 시기를 조정한다"
+    },
+    {
+      "id": "D3",
+      "area": "spending",
+      "category": "spending",
+      "reverse": false,
+      "text": "원하는 것이 생기면 빠르게 구매한다 ↔ 충분히 비교하고 고민한 뒤 구매한다",
+      "left": "원하는 것이 생기면 빠르게 구매한다",
+      "right": "충분히 비교하고 고민한 뒤 구매한다"
+    },
+    {
+      "id": "D4",
+      "area": "spending",
+      "category": "spending",
+      "reverse": false,
+      "text": "경조사·선물에는 넉넉히 쓰고 싶다 ↔ 정한 예산 안에서 최소한으로 쓰고 싶다",
+      "left": "경조사·선물에는 넉넉히 쓰고 싶다",
+      "right": "정한 예산 안에서 최소한으로 쓰고 싶다"
+    },
+    {
+      "id": "D5",
+      "area": "investment",
+      "category": "investment",
+      "reverse": false,
+      "text": "손실 가능성이 있어도 높은 수익을 추구한다 ↔ 수익이 적더라도 원금 보존을 우선한다",
+      "left": "손실 가능성이 있어도 높은 수익을 추구한다",
+      "right": "수익이 적더라도 원금 보존을 우선한다"
+    },
+    {
+      "id": "D6",
+      "area": "debt",
+      "category": "debt",
+      "reverse": false,
+      "text": "필요하면 대출을 활용할 수 있다 ↔ 대출은 최대한 피하고 싶다",
+      "left": "필요하면 대출을 활용할 수 있다",
+      "right": "대출은 최대한 피하고 싶다"
+    },
+    {
+      "id": "D7",
+      "area": "jointManagement",
+      "category": "jointManagement",
+      "reverse": true,
+      "text": "함께 살면 수입과 지출을 통합 관리하고 싶다 ↔ 각자 관리하고 공동비만 분담하고 싶다",
+      "left": "함께 살면 수입과 지출을 통합 관리하고 싶다",
+      "right": "각자 관리하고 공동비만 분담하고 싶다"
+    },
+    {
+      "id": "D8",
+      "area": "jointManagement",
+      "category": "jointManagement",
+      "reverse": true,
+      "text": "개인 지출 내역까지 서로 공유하고 싶다 ↔ 개인 지출은 각자의 영역으로 두고 싶다",
+      "left": "개인 지출 내역까지 서로 공유하고 싶다",
+      "right": "개인 지출은 각자의 영역으로 두고 싶다"
+    },
+    {
+      "id": "D9",
+      "area": "investment",
+      "category": "investment",
+      "reverse": false,
+      "text": "여유자금이 생기면 투자할 곳부터 알아본다 ↔ 일단 예적금에 두고 생각한다",
+      "left": "여유자금이 생기면 투자할 곳부터 알아본다",
+      "right": "일단 예적금에 두고 생각한다"
+    },
+    {
+      "id": "D10",
+      "area": "debt",
+      "category": "debt",
+      "reverse": false,
+      "text": "큰 지출에는 대출을 이용하는 방법도 고려한다 ↔ 지금 가진 돈 안에서 해결한다",
+      "left": "큰 지출에는 대출을 이용하는 방법도 고려한다",
+      "right": "지금 가진 돈 안에서 해결한다"
+    }
+  ]
+}

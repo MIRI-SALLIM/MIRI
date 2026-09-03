@@ -16,7 +16,7 @@ class DeepService:
         partner_id = next(user for user in agreement["participants"] if user != user_id)
         return {key: agreement[key] for key in ("id", "version", "round", "text", "reviewOn", "status")} | {
             "myConfirmed": user_id in agreement["confirmations"], "partnerConfirmed": partner_id in agreement["confirmations"],
-        }
+        } | ({key: agreement[key] for key in ("terms", "planVersion", "sourceReportId")} if "terms" in agreement else {})
 
     @staticmethod
     def session_response(document: dict[str, Any], user_id: str) -> dict[str, Any]:

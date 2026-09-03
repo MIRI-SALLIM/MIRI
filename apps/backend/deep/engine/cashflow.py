@@ -14,7 +14,7 @@ def monthly_surplus(
     return income - fixed - housing - existing_debt - new_debt - won(Decimal(variable) * multiplier)
 
 
-def calculate_cashflow(a: DeepInput, b: DeepInput, plan: SharedPlan) -> dict[str, Any]:
+def calculate_cashflow(a: DeepInput, b: DeepInput, plan: SharedPlan, *, variable_multiplier: Decimal | None = None) -> dict[str, Any]:
     evidence = Evidence()
     incomes: list[int | None] = []
     fixed: list[int | None] = []
@@ -59,9 +59,9 @@ def calculate_cashflow(a: DeepInput, b: DeepInput, plan: SharedPlan) -> dict[str
         cohabiting = None
     scenario_variable = None
     if cohabiting is not None and variable_sum is not None:
-        multiplier = Decimal(1) if cohabiting else Decimal(load_rules("deep-rules-v1")["cohabitationMultiplier"])
+        multiplier = (Decimal(1) if cohabiting else Decimal(load_rules("deep-rules-v1")["cohabitationMultiplier"])) if variable_multiplier is None else variable_multiplier
         scenario_variable = won(Decimal(variable_sum) * multiplier)
-        if not cohabiting:
+        if not cohabiting and variable_multiplier is None:
             evidence.assumptions.append("합가 후 비주거 변동비에 추정 계수 0.85 적용")
     scenario = None
     if all(value is not None for value in (income, fixed_sum, scenario_variable, housing, existing_debt, new_debt)):

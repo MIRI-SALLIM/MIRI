@@ -58,6 +58,10 @@ def unavailable(reason: str) -> dict[str, Any]:
 def build_report(snapshot: dict[str, Any]) -> dict[str, Any]:
     if not can_publish(snapshot, datetime.now(timezone.utc)):
         raise DeepError("PUBLICATION_NOT_READY")
+    if snapshot["questionVersion"] == "deep-v3":
+        from deep.v3_report import build_v3_report
+
+        return build_v3_report(snapshot)
     if snapshot["questionVersion"] != "deep-v2" or snapshot["ruleVersion"] != "deep-rules-v1":
         raise DeepError("REPORT_VERSION_UNSUPPORTED", 503)
     copy = load_copy(snapshot["copyVersion"])

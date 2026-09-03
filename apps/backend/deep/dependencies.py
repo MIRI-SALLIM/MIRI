@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -35,3 +36,17 @@ async def get_deep_service(
 
 
 ServiceDependency = Annotated[DeepService, Depends(get_deep_service)]
+
+
+async def require_session_version(request: Request, principal: PrincipalDependency, service: ServiceDependency) -> None:
+    session_id = request.path_params.get("session_id")
+    if session_id is None:
+        return
+    if request.method == "POST" and request.url.path.endswith("/withdraw"):
+        actual = await service.repo.version_for_cleanup(session_id, principal.user_id)
+    else:
+        document = await service.repo.get_for_member(session_id, principal.user_id, datetime.now(timezone.utc))
+        actual = document["questionVersion"]
+    expected = "deep-v3" if request.url.path.startswith("/api/v1/deep/v3/") else "deep-v2"
+    if actual != expected:
+        raise DeepError("NOT_FOUND", 404)

@@ -10,7 +10,7 @@ QUESTION_IDS = tuple(f"D{i}" for i in range(1, 11))
 
 def validate_questions(data: dict[str, Any], version: str) -> None:
     questions = data.get("questions", [])
-    expected_ids = set(QUESTION_IDS if version == "deep-v2" else QUESTION_IDS[:8])
+    expected_ids = set(QUESTION_IDS if version in {"deep-v2", "deep-v3"} else QUESTION_IDS[:8])
     valid = (
         data.get("version") == version and data.get("scale") == {"min": 1, "max": 5}
         and len(questions) == len(expected_ids) and {q.get("id") for q in questions} == expected_ids
@@ -18,14 +18,14 @@ def validate_questions(data: dict[str, Any], version: str) -> None:
                 and all(isinstance(q.get(key), str) and q[key].strip() for key in ("text", "left", "right"))
                 for q in questions)
     )
-    if version == "deep-v2":
+    if version in {"deep-v2", "deep-v3"}:
         valid = valid and Counter(q["area"] for q in questions) == {area: 2 for area in AREAS}
     if not valid:
         raise ValueError("INVALID_QUESTION_CONFIG")
 
 
 def load_questions(version: str) -> dict[str, Any]:
-    filenames = {"deep-v1": "deep_questions.v1.json", "deep-v2": "deep_questions.v2.json"}
+    filenames = {"deep-v1": "deep_questions.v1.json", "deep-v2": "deep_questions.v2.json", "deep-v3": "deep_questions.v3.json"}
     if version not in filenames:
         raise ValueError("QUESTION_SET_NOT_FOUND")
     data = json.loads((CONFIG_DIR / filenames[version]).read_text(encoding="utf-8"))
@@ -53,7 +53,7 @@ def normalize_answer(answer: int, reverse: bool) -> int:
 def validate_configuration() -> None:
     from deep.report import load_copy
 
-    for version in ("deep-v1", "deep-v2"):
+    for version in ("deep-v1", "deep-v2", "deep-v3"):
         load_questions(version)
     load_rules("deep-rules-v1")
     load_copy("deep-copy-ko-v1")

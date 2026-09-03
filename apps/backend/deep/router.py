@@ -21,7 +21,11 @@ from auth.dependencies import (
 from auth.errors import AuthError
 from auth.security import token_digest
 from deep.config import load_questions
-from deep.dependencies import PrincipalDependency, ServiceDependency
+from deep.dependencies import (
+    PrincipalDependency,
+    ServiceDependency,
+    require_session_version,
+)
 from deep.engine.funding import calculate_funding
 from deep.errors import DeepError
 from deep.funding_models import FundingPreviewRequest, FundingPreviewResponse
@@ -59,6 +63,8 @@ class DeepRoute(APIRoute):
             except PyMongoError:
                 raise DeepError("DEEP_UNAVAILABLE", 503) from None
             except RequestValidationError:
+                if request.url.path.startswith("/api/v1/deep/v3/"):
+                    raise DeepError("INVALID_DEEP_INPUT", 422) from None
                 if request.url.path == "/api/v1/deep/funding/preview":
                     # Validation locations may include arbitrary user-provided JSON keys.
                     # Keep this new endpoint private without changing legacy error contracts.
@@ -77,6 +83,8 @@ router = APIRouter(prefix="/api/v1/deep", tags=["deep"], route_class=DeepRoute,
                    dependencies=[Depends(get_enabled_settings), Depends(require_account)],
                    responses={code: {"model": ErrorResponse} for code in (401, 403, 404, 409, 410, 422, 429, 503)})
 MUTATION = [Depends(require_trusted_origin)]
+SESSION_READ = [Depends(require_session_version)]
+SESSION_MUTATION = MUTATION + SESSION_READ
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_-]+$")]
 
 
@@ -143,17 +151,17 @@ async def join_session(
     principal: PrincipalDependency, service: ServiceDependency, settings: SettingsDependency,
 ) -> dict[str, Any]:
     await limit_mutation(request, principal, service, settings, "join")
-    document = await service.repo.join(code, principal.user_id, key, datetime.now(timezone.utc))
+    document = await service.repo.join(code, principal.user_id, key, datetime.now(timezone.utc), question_version="deep-v2")
     return service.session_response(document, principal.user_id)
 
 
-@router.get("/sessions/{session_id}/me/input", response_model=OwnDeepInputResponse)
+@router.get("/sessions/{session_id}/me/input", response_model=OwnDeepInputResponse, dependencies=SESSION_READ)
 async def get_input(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
     document = await service.repo.get_for_member(session_id, principal.user_id, datetime.now(timezone.utc))
     return service.own_input(document, principal.user_id)
 
 
-@router.patch("/sessions/{session_id}/me/input", response_model=OwnDeepInputResponse, dependencies=MUTATION)
+@router.patch("/sessions/{session_id}/me/input", response_model=OwnDeepInputResponse, dependencies=SESSION_MUTATION)
 async def save_input(
     session_id: str, body: SaveDeepInputRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -162,13 +170,13 @@ async def save_input(
     return service.own_input(document, principal.user_id)
 
 
-@router.get("/sessions/{session_id}/plan", response_model=SharedPlanResponse)
+@router.get("/sessions/{session_id}/plan", response_model=SharedPlanResponse, dependencies=SESSION_READ)
 async def get_plan(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
     document = await service.repo.get_for_member(session_id, principal.user_id, datetime.now(timezone.utc))
     return service.plan_response(document, principal.user_id)
 
 
-@router.patch("/sessions/{session_id}/plan", response_model=SharedPlanResponse, dependencies=MUTATION)
+@router.patch("/sessions/{session_id}/plan", response_model=SharedPlanResponse, dependencies=SESSION_MUTATION)
 async def update_plan(
     session_id: str, body: UpdateSharedPlanRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -177,7 +185,7 @@ async def update_plan(
     return service.plan_response(document, principal.user_id)
 
 
-@router.post("/sessions/{session_id}/plan/confirm", response_model=SharedPlanResponse, dependencies=MUTATION)
+@router.post("/sessions/{session_id}/plan/confirm", response_model=SharedPlanResponse, dependencies=SESSION_MUTATION)
 async def confirm_plan(
     session_id: str, body: ConfirmSharedPlanRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -185,7 +193,7 @@ async def confirm_plan(
     return service.plan_response(document, principal.user_id)
 
 
-@router.post("/sessions/{session_id}/me/submit", response_model=DeepStatusResponse, dependencies=MUTATION)
+@router.post("/sessions/{session_id}/me/submit", response_model=DeepStatusResponse, dependencies=SESSION_MUTATION)
 async def submit(
     session_id: str, body: SubmitDeepInputRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -195,18 +203,18 @@ async def submit(
     return service.status_response(document, principal.user_id)
 
 
-@router.get("/sessions/{session_id}/status", response_model=DeepStatusResponse)
+@router.get("/sessions/{session_id}/status", response_model=DeepStatusResponse, dependencies=SESSION_READ)
 async def session_status(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
     document = await service.repo.get_for_member(session_id, principal.user_id, datetime.now(timezone.utc))
     return service.status_response(document, principal.user_id)
 
 
-@router.get("/sessions/{session_id}/result", response_model=DeepResultResponse)
+@router.get("/sessions/{session_id}/result", response_model=DeepResultResponse, dependencies=SESSION_READ)
 async def get_result(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
     return await service.result(session_id, principal.user_id)
 
 
-@router.post("/sessions/{session_id}/agreements", response_model=AgreementResponse, status_code=201, dependencies=MUTATION)
+@router.post("/sessions/{session_id}/agreements", response_model=AgreementResponse, status_code=201, dependencies=SESSION_MUTATION)
 async def propose_agreement(
     session_id: str, request: Request, body: AgreementRequest, principal: PrincipalDependency,
     service: ServiceDependency, settings: SettingsDependency,
@@ -216,13 +224,13 @@ async def propose_agreement(
     return service.agreement_response(agreement, principal.user_id)
 
 
-@router.get("/sessions/{session_id}/agreements", response_model=list[AgreementResponse])
+@router.get("/sessions/{session_id}/agreements", response_model=list[AgreementResponse], dependencies=SESSION_READ)
 async def list_agreements(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> list[dict[str, Any]]:
     agreements = await service.repo.list_agreements(session_id, principal.user_id, datetime.now(timezone.utc))
     return [service.agreement_response(agreement, principal.user_id) for agreement in agreements]
 
 
-@router.patch("/sessions/{session_id}/agreements/{agreement_id}", response_model=AgreementResponse, dependencies=MUTATION)
+@router.patch("/sessions/{session_id}/agreements/{agreement_id}", response_model=AgreementResponse, dependencies=SESSION_MUTATION)
 async def edit_agreement(
     session_id: str, agreement_id: str, body: EditAgreementRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -231,7 +239,7 @@ async def edit_agreement(
     return service.agreement_response(agreement, principal.user_id)
 
 
-@router.post("/sessions/{session_id}/agreements/{agreement_id}/confirm", response_model=AgreementResponse, dependencies=MUTATION)
+@router.post("/sessions/{session_id}/agreements/{agreement_id}/confirm", response_model=AgreementResponse, dependencies=SESSION_MUTATION)
 async def confirm_agreement(
     session_id: str, agreement_id: str, body: VersionRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -240,7 +248,7 @@ async def confirm_agreement(
     return service.agreement_response(agreement, principal.user_id)
 
 
-@router.post("/sessions/{session_id}/agreements/{agreement_id}/defer", response_model=AgreementResponse, dependencies=MUTATION)
+@router.post("/sessions/{session_id}/agreements/{agreement_id}/defer", response_model=AgreementResponse, dependencies=SESSION_MUTATION)
 async def defer_agreement(
     session_id: str, agreement_id: str, body: VersionRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -249,7 +257,7 @@ async def defer_agreement(
     return service.agreement_response(agreement, principal.user_id)
 
 
-@router.get("/sessions/{session_id}/rounds", response_model=RoundStateResponse)
+@router.get("/sessions/{session_id}/rounds", response_model=RoundStateResponse, dependencies=SESSION_READ)
 async def get_round(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
     document = await service.repo.get_for_member(session_id, principal.user_id, datetime.now(timezone.utc))
     requests = document.get("roundRequests", [])
@@ -257,7 +265,7 @@ async def get_round(session_id: str, principal: PrincipalDependency, service: Se
             "partnerRequested": any(user != principal.user_id for user in requests)}
 
 
-@router.post("/sessions/{session_id}/rounds", response_model=RoundResponse, dependencies=MUTATION)
+@router.post("/sessions/{session_id}/rounds", response_model=RoundResponse, dependencies=SESSION_MUTATION)
 async def request_round(
     session_id: str, body: RoundRequest, principal: PrincipalDependency, service: ServiceDependency,
 ) -> dict[str, Any]:
@@ -265,7 +273,7 @@ async def request_round(
     return {"round": document["round"], "pending": document["round"] == body.expectedRound}
 
 
-@router.post("/sessions/{session_id}/withdraw", response_model=ClosedDeepResponse, dependencies=MUTATION)
+@router.post("/sessions/{session_id}/withdraw", response_model=ClosedDeepResponse, dependencies=SESSION_MUTATION)
 async def withdraw(session_id: str, body: CreateDeepSessionRequest, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, str]:
     await service.repo.withdraw(session_id, principal.user_id, datetime.now(timezone.utc))
     return {"status": "closed"}

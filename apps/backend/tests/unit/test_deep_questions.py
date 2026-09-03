@@ -28,7 +28,7 @@ def test_v1_preserves_original_eight_questions_and_light_config_is_unchanged():
     assert config.load_questions("deep-v1")["questions"][4]["reverse"] is True
 
 
-@pytest.mark.parametrize("version", ["deep-v0", "../parameters", "deep-v3"])
+@pytest.mark.parametrize("version", ["deep-v0", "../parameters", "deep-v4"])
 def test_unknown_question_version_is_explicitly_rejected(version):
     config = importlib.import_module("deep.config")
     with pytest.raises(ValueError, match="QUESTION_SET_NOT_FOUND"):
@@ -63,7 +63,7 @@ def test_mvp_rules_disable_external_and_judgment_features():
     assert not any(rules[k] for k in ("numericSayDoEnabled", "policyMatchingEnabled", "llmEnabled"))
 
 
-def test_startup_validation_checks_both_question_versions_and_rules(monkeypatch):
+def test_startup_validation_checks_all_question_versions_and_rules(monkeypatch):
     from unittest.mock import Mock
 
     config = importlib.import_module("deep.config")
@@ -72,5 +72,5 @@ def test_startup_validation_checks_both_question_versions_and_rules(monkeypatch)
     monkeypatch.setattr(config, "load_questions", questions)
     monkeypatch.setattr(config, "load_rules", rules)
     config.validate_configuration()
-    assert [call.args[0] for call in questions.call_args_list] == ["deep-v1", "deep-v2"]
+    assert [call.args[0] for call in questions.call_args_list] == ["deep-v1", "deep-v2", "deep-v3"]
     rules.assert_called_once_with("deep-rules-v1")

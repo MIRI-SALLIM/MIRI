@@ -48,6 +48,44 @@
         "title": "AgreementRequest",
         "type": "object"
       },
+      "AgreementRequestV3": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedRound": {
+            "minimum": 1.0,
+            "title": "Expectedround",
+            "type": "integer"
+          },
+          "reviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewon"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/DecisionTerms"
+          },
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "expectedRound",
+          "terms"
+        ],
+        "title": "AgreementRequestV3",
+        "type": "object"
+      },
       "AgreementResponse": {
         "additionalProperties": false,
         "properties": {
@@ -108,6 +146,82 @@
           "partnerConfirmed"
         ],
         "title": "AgreementResponse",
+        "type": "object"
+      },
+      "AgreementResponseV3": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "myConfirmed": {
+            "title": "Myconfirmed",
+            "type": "boolean"
+          },
+          "partnerConfirmed": {
+            "title": "Partnerconfirmed",
+            "type": "boolean"
+          },
+          "planVersion": {
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "reviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewon"
+          },
+          "round": {
+            "title": "Round",
+            "type": "integer"
+          },
+          "sourceReportId": {
+            "title": "Sourcereportid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "proposed",
+              "agreed",
+              "deferred"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/DecisionTerms"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "round",
+          "text",
+          "reviewOn",
+          "status",
+          "myConfirmed",
+          "partnerConfirmed",
+          "terms",
+          "planVersion",
+          "sourceReportId"
+        ],
+        "title": "AgreementResponseV3",
         "type": "object"
       },
       "Amount": {
@@ -314,6 +428,36 @@
         "title": "ConfirmSharedPlanRequest",
         "type": "object"
       },
+      "Contribution": {
+        "additionalProperties": false,
+        "properties": {
+          "discussionState": {
+            "default": "unknown",
+            "enum": [
+              "unknown",
+              "notDiscussed",
+              "discussing",
+              "believeAgreed"
+            ],
+            "title": "Discussionstate",
+            "type": "string"
+          },
+          "expectedPartnerMonthly": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "ownMonthly": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "personalSavingFloor": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "personalSpendingFloor": {
+            "$ref": "#/components/schemas/Amount"
+          }
+        },
+        "title": "Contribution",
+        "type": "object"
+      },
       "CreateDeepSessionRequest": {
         "additionalProperties": false,
         "properties": {},
@@ -501,6 +645,103 @@
           "type"
         ],
         "title": "DebtInput",
+        "type": "object"
+      },
+      "DecisionTerms": {
+        "additionalProperties": false,
+        "properties": {
+          "commonScope": {
+            "items": {
+              "enum": [
+                "housing",
+                "food",
+                "transport",
+                "subscriptions",
+                "gifts",
+                "other"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Commonscope",
+            "type": "array"
+          },
+          "dueDay": {
+            "anyOf": [
+              {
+                "maximum": 31.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueday"
+          },
+          "exceptions": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Exceptions",
+            "type": "string"
+          },
+          "monthlyContributions": {
+            "additionalProperties": {
+              "maximum": 9007199254740991.0,
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "A",
+                "B"
+              ]
+            },
+            "title": "Monthlycontributions",
+            "type": "object"
+          },
+          "owner": {
+            "enum": [
+              "A",
+              "B",
+              "both"
+            ],
+            "title": "Owner",
+            "type": "string"
+          },
+          "scope": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Scope",
+            "type": "string"
+          },
+          "startMonth": {
+            "pattern": "^[1-9][0-9]{3}-(0[1-9]|1[0-2])$",
+            "title": "Startmonth",
+            "type": "string"
+          },
+          "topic": {
+            "enum": [
+              "monthlyContribution",
+              "housingFunding",
+              "savings",
+              "spending",
+              "investment",
+              "debt",
+              "jointManagement",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "scope",
+          "owner",
+          "startMonth"
+        ],
+        "title": "DecisionTerms",
         "type": "object"
       },
       "DeepInput-Input": {
@@ -797,6 +1038,372 @@
         "title": "DeepInput",
         "type": "object"
       },
+      "DeepInputV3-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "afterSettlementMonthlyPayments": {
+            "maxProperties": 30,
+            "patternProperties": {
+              "^[a-zA-Z0-9_-]+$": {
+                "$ref": "#/components/schemas/Amount"
+              }
+            },
+            "propertyNames": {
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "title": "Aftersettlementmonthlypayments",
+            "type": "object"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetInput"
+            },
+            "maxItems": 100,
+            "title": "Assets",
+            "type": "array"
+          },
+          "assetsStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Assetsstatus",
+            "type": "string"
+          },
+          "constraints": {
+            "items": {
+              "$ref": "#/components/schemas/PlanConstraint"
+            },
+            "maxItems": 20,
+            "title": "Constraints",
+            "type": "array"
+          },
+          "contextNotes": {
+            "additionalProperties": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "title": "Contextnotes",
+            "type": "object"
+          },
+          "contribution": {
+            "$ref": "#/components/schemas/Contribution"
+          },
+          "debts": {
+            "items": {
+              "$ref": "#/components/schemas/DebtInput-Input"
+            },
+            "maxItems": 30,
+            "title": "Debts",
+            "type": "array"
+          },
+          "debtsStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Debtsstatus",
+            "type": "string"
+          },
+          "fixedExpenses": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Fixedexpenses",
+            "type": "object"
+          },
+          "funding": {
+            "$ref": "#/components/schemas/PersonalFunding"
+          },
+          "housingCost": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "importantAreas": {
+            "items": {
+              "enum": [
+                "savings",
+                "spending",
+                "investment",
+                "debt",
+                "jointManagement"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Importantareas",
+            "type": "array"
+          },
+          "income": {
+            "$ref": "#/components/schemas/IncomeInput"
+          },
+          "inputVersion": {
+            "const": "deep-input-v3",
+            "title": "Inputversion",
+            "type": "string"
+          },
+          "livingTogether": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Livingtogether"
+          },
+          "skippedQuestionIds": {
+            "items": {
+              "enum": [
+                "D1",
+                "D2",
+                "D3",
+                "D4",
+                "D5",
+                "D6",
+                "D7",
+                "D8",
+                "D9",
+                "D10"
+              ],
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Skippedquestionids",
+            "type": "array"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "enum": [
+                "D1",
+                "D2",
+                "D3",
+                "D4",
+                "D5",
+                "D6",
+                "D7",
+                "D8",
+                "D9",
+                "D10"
+              ]
+            },
+            "title": "Values",
+            "type": "object"
+          },
+          "variableExpenses": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Variableexpenses",
+            "type": "object"
+          }
+        },
+        "required": [
+          "inputVersion"
+        ],
+        "title": "DeepInputV3",
+        "type": "object"
+      },
+      "DeepInputV3-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "afterSettlementMonthlyPayments": {
+            "maxProperties": 30,
+            "patternProperties": {
+              "^[a-zA-Z0-9_-]+$": {
+                "$ref": "#/components/schemas/Amount"
+              }
+            },
+            "propertyNames": {
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "title": "Aftersettlementmonthlypayments",
+            "type": "object"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetInput"
+            },
+            "maxItems": 100,
+            "title": "Assets",
+            "type": "array"
+          },
+          "assetsStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Assetsstatus",
+            "type": "string"
+          },
+          "constraints": {
+            "items": {
+              "$ref": "#/components/schemas/PlanConstraint"
+            },
+            "maxItems": 20,
+            "title": "Constraints",
+            "type": "array"
+          },
+          "contextNotes": {
+            "additionalProperties": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "title": "Contextnotes",
+            "type": "object"
+          },
+          "contribution": {
+            "$ref": "#/components/schemas/Contribution"
+          },
+          "debts": {
+            "items": {
+              "$ref": "#/components/schemas/DebtInput-Output"
+            },
+            "maxItems": 30,
+            "title": "Debts",
+            "type": "array"
+          },
+          "debtsStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Debtsstatus",
+            "type": "string"
+          },
+          "fixedExpenses": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Fixedexpenses",
+            "type": "object"
+          },
+          "funding": {
+            "$ref": "#/components/schemas/PersonalFunding"
+          },
+          "housingCost": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "importantAreas": {
+            "items": {
+              "enum": [
+                "savings",
+                "spending",
+                "investment",
+                "debt",
+                "jointManagement"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Importantareas",
+            "type": "array"
+          },
+          "income": {
+            "$ref": "#/components/schemas/IncomeInput"
+          },
+          "inputVersion": {
+            "const": "deep-input-v3",
+            "title": "Inputversion",
+            "type": "string"
+          },
+          "livingTogether": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Livingtogether"
+          },
+          "skippedQuestionIds": {
+            "items": {
+              "enum": [
+                "D1",
+                "D2",
+                "D3",
+                "D4",
+                "D5",
+                "D6",
+                "D7",
+                "D8",
+                "D9",
+                "D10"
+              ],
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Skippedquestionids",
+            "type": "array"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "enum": [
+                "D1",
+                "D2",
+                "D3",
+                "D4",
+                "D5",
+                "D6",
+                "D7",
+                "D8",
+                "D9",
+                "D10"
+              ]
+            },
+            "title": "Values",
+            "type": "object"
+          },
+          "variableExpenses": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Variableexpenses",
+            "type": "object"
+          }
+        },
+        "required": [
+          "inputVersion"
+        ],
+        "title": "DeepInputV3",
+        "type": "object"
+      },
       "DeepReport": {
         "additionalProperties": false,
         "properties": {
@@ -972,6 +1579,44 @@
           "expectedVersion"
         ],
         "title": "EditAgreementRequest",
+        "type": "object"
+      },
+      "EditAgreementV3": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedVersion": {
+            "minimum": 1.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          },
+          "reviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewon"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/DecisionTerms"
+          },
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "expectedVersion",
+          "terms"
+        ],
+        "title": "EditAgreementV3",
         "type": "object"
       },
       "ErrorDetail": {
@@ -2050,6 +2695,167 @@
         "title": "OwnDeepInputResponse",
         "type": "object"
       },
+      "OwnInputV3": {
+        "additionalProperties": false,
+        "properties": {
+          "input": {
+            "$ref": "#/components/schemas/DeepInputV3-Output"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "input"
+        ],
+        "title": "OwnInputV3",
+        "type": "object"
+      },
+      "PersonalFunding": {
+        "additionalProperties": false,
+        "properties": {
+          "settlements": {
+            "items": {
+              "$ref": "#/components/schemas/FundingSettlement"
+            },
+            "maxItems": 60,
+            "title": "Settlements",
+            "type": "array"
+          },
+          "settlementsStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Settlementsstatus",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/FundingSource"
+            },
+            "maxItems": 100,
+            "title": "Sources",
+            "type": "array"
+          },
+          "sourcesStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Sourcesstatus",
+            "type": "string"
+          }
+        },
+        "title": "PersonalFunding",
+        "type": "object"
+      },
+      "PlanConstraint": {
+        "additionalProperties": false,
+        "properties": {
+          "allowBorrowing": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowborrowing"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "housingCost",
+              "debtPayment",
+              "borrowing",
+              "personalSpending",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Note",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "household",
+              "self"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "strength": {
+            "enum": [
+              "required",
+              "preferred"
+            ],
+            "title": "Strength",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "scope",
+          "strength"
+        ],
+        "title": "PlanConstraint",
+        "type": "object"
+      },
+      "PlanResponseV3": {
+        "additionalProperties": false,
+        "properties": {
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "myConfirmed": {
+            "title": "Myconfirmed",
+            "type": "boolean"
+          },
+          "partnerConfirmed": {
+            "title": "Partnerconfirmed",
+            "type": "boolean"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/SharedPlanV3-Output"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "plan",
+          "myConfirmed",
+          "partnerConfirmed",
+          "locked"
+        ],
+        "title": "PlanResponseV3",
+        "type": "object"
+      },
       "QuestionComparisonItem": {
         "properties": {
           "isHit": {
@@ -2379,6 +3185,109 @@
         "title": "ReadyDeepResult",
         "type": "object"
       },
+      "ReadyResultV3": {
+        "additionalProperties": false,
+        "properties": {
+          "agreements": {
+            "items": {
+              "$ref": "#/components/schemas/AgreementResponseV3"
+            },
+            "title": "Agreements",
+            "type": "array"
+          },
+          "operatingStatus": {
+            "additionalProperties": true,
+            "title": "Operatingstatus",
+            "type": "object"
+          },
+          "report": {
+            "$ref": "#/components/schemas/ReportV3"
+          },
+          "status": {
+            "const": "ready",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "report",
+          "agreements",
+          "operatingStatus"
+        ],
+        "title": "ReadyResultV3",
+        "type": "object"
+      },
+      "ReportV3": {
+        "additionalProperties": false,
+        "properties": {
+          "cashflow": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          },
+          "goal": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          },
+          "housing": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          },
+          "issues": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "limitations": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "object"
+          },
+          "planning": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          },
+          "topics": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Topics",
+            "type": "array"
+          },
+          "values": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          },
+          "versions": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Versions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "versions",
+          "cashflow",
+          "housing",
+          "goal",
+          "planning",
+          "values",
+          "issues",
+          "topics",
+          "limitations"
+        ],
+        "title": "ReportV3",
+        "type": "object"
+      },
       "ResultReadyResponse": {
         "properties": {
           "partnerCompleted": {
@@ -2663,6 +3572,25 @@
         "title": "SaveInputRequest",
         "type": "object"
       },
+      "SaveInputV3": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "input": {
+            "$ref": "#/components/schemas/DeepInputV3-Input"
+          }
+        },
+        "required": [
+          "expectedRevision",
+          "input"
+        ],
+        "title": "SaveInputV3",
+        "type": "object"
+      },
       "ScaleConfig": {
         "properties": {
           "leftLabel": {
@@ -2871,6 +3799,45 @@
         "title": "SessionStatusResponse",
         "type": "object"
       },
+      "SessionV3": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "invitationCode": {
+            "title": "Invitationcode",
+            "type": "string"
+          },
+          "questionVersion": {
+            "const": "deep-v3",
+            "title": "Questionversion",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "A",
+              "B"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "round": {
+            "title": "Round",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "round",
+          "invitationCode",
+          "questionVersion"
+        ],
+        "title": "SessionV3",
+        "type": "object"
+      },
       "SettlementPart": {
         "additionalProperties": false,
         "properties": {
@@ -3038,6 +4005,254 @@
         "title": "SharedPlanResponse",
         "type": "object"
       },
+      "SharedPlanV3-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "commonExpenses": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "propertyNames": {
+              "enum": [
+                "housing",
+                "food",
+                "transport",
+                "subscriptions",
+                "gifts",
+                "other"
+              ]
+            },
+            "title": "Commonexpenses",
+            "type": "object"
+          },
+          "commonExpensesStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Commonexpensesstatus",
+            "type": "string"
+          },
+          "fundingAsOf": {
+            "format": "date",
+            "title": "Fundingasof",
+            "type": "string"
+          },
+          "fundingDeadlines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingDeadline"
+            },
+            "maxItems": 120,
+            "title": "Fundingdeadlines",
+            "type": "array"
+          },
+          "housingPriceWon": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "housingType": {
+            "default": "keep",
+            "enum": [
+              "keep",
+              "rent",
+              "jeonse",
+              "buy"
+            ],
+            "title": "Housingtype",
+            "type": "string"
+          },
+          "monthlyHousingCost": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "newHousingLoan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DebtInput-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "newLoanAvailableOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newloanavailableon"
+          },
+          "newLoanCertainty": {
+            "default": "unknown",
+            "enum": [
+              "confirmed",
+              "expected",
+              "unknown"
+            ],
+            "title": "Newloancertainty",
+            "type": "string"
+          },
+          "oneOffCostsWon": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "planSchemaVersion": {
+            "const": "deep-plan-v3",
+            "title": "Planschemaversion",
+            "type": "string"
+          },
+          "startMonth": {
+            "pattern": "^[1-9][0-9]{3}-(0[1-9]|1[0-2])$",
+            "title": "Startmonth",
+            "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoalInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "startMonth",
+          "planSchemaVersion",
+          "fundingAsOf"
+        ],
+        "title": "SharedPlanV3",
+        "type": "object"
+      },
+      "SharedPlanV3-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "commonExpenses": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "propertyNames": {
+              "enum": [
+                "housing",
+                "food",
+                "transport",
+                "subscriptions",
+                "gifts",
+                "other"
+              ]
+            },
+            "title": "Commonexpenses",
+            "type": "object"
+          },
+          "commonExpensesStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Commonexpensesstatus",
+            "type": "string"
+          },
+          "fundingAsOf": {
+            "format": "date",
+            "title": "Fundingasof",
+            "type": "string"
+          },
+          "fundingDeadlines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingDeadline"
+            },
+            "maxItems": 120,
+            "title": "Fundingdeadlines",
+            "type": "array"
+          },
+          "housingPriceWon": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "housingType": {
+            "default": "keep",
+            "enum": [
+              "keep",
+              "rent",
+              "jeonse",
+              "buy"
+            ],
+            "title": "Housingtype",
+            "type": "string"
+          },
+          "monthlyHousingCost": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "newHousingLoan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DebtInput-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "newLoanAvailableOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newloanavailableon"
+          },
+          "newLoanCertainty": {
+            "default": "unknown",
+            "enum": [
+              "confirmed",
+              "expected",
+              "unknown"
+            ],
+            "title": "Newloancertainty",
+            "type": "string"
+          },
+          "oneOffCostsWon": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "planSchemaVersion": {
+            "const": "deep-plan-v3",
+            "title": "Planschemaversion",
+            "type": "string"
+          },
+          "startMonth": {
+            "pattern": "^[1-9][0-9]{3}-(0[1-9]|1[0-2])$",
+            "title": "Startmonth",
+            "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoalInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "startMonth",
+          "planSchemaVersion",
+          "fundingAsOf"
+        ],
+        "title": "SharedPlanV3",
+        "type": "object"
+      },
       "SubmitDeepInputRequest": {
         "additionalProperties": false,
         "properties": {
@@ -3096,6 +4311,43 @@
           "completedAt"
         ],
         "title": "SubmitResponse",
+        "type": "object"
+      },
+      "SubmitV3": {
+        "additionalProperties": false,
+        "properties": {
+          "consentVersion": {
+            "const": "deep-sharing-v2",
+            "title": "Consentversion",
+            "type": "string"
+          },
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "shareFinance": {
+            "title": "Sharefinance",
+            "type": "boolean"
+          },
+          "shareValues": {
+            "title": "Sharevalues",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "expectedRevision",
+          "planVersion",
+          "consentVersion",
+          "shareFinance",
+          "shareValues"
+        ],
+        "title": "SubmitV3",
         "type": "object"
       },
       "SurplusResult": {
@@ -3210,6 +4462,25 @@
           "recommendation"
         ],
         "title": "TypeClassificationResult",
+        "type": "object"
+      },
+      "UpdatePlanV3": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedVersion": {
+            "minimum": 1.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/SharedPlanV3-Input"
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "plan"
+        ],
+        "title": "UpdatePlanV3",
         "type": "object"
       },
       "UpdateSharedPlanRequest": {
@@ -6524,6 +7795,2404 @@
         "summary": "Withdraw",
         "tags": [
           "deep"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/invitations/{code}/join": {
+      "post": {
+        "operationId": "join_session_api_v1_deep_v3_invitations__code__join_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "title": "Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeepSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Join Session",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions": {
+      "post": {
+        "operationId": "create_session_api_v1_deep_v3_sessions_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeepSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Create Session",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/agreements": {
+      "get": {
+        "operationId": "list_agreements_api_v1_deep_v3_sessions__session_id__agreements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AgreementResponseV3"
+                  },
+                  "title": "Response List Agreements Api V1 Deep V3 Sessions  Session Id  Agreements Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "List Agreements",
+        "tags": [
+          "deep-v3"
+        ]
+      },
+      "post": {
+        "operationId": "propose_agreement_api_v1_deep_v3_sessions__session_id__agreements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgreementRequestV3"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgreementResponseV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Propose Agreement",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/agreements/{agreement_id}": {
+      "patch": {
+        "operationId": "edit_agreement_api_v1_deep_v3_sessions__session_id__agreements__agreement_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "agreement_id",
+            "required": true,
+            "schema": {
+              "title": "Agreement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditAgreementV3"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgreementResponseV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Edit Agreement",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/agreements/{agreement_id}/confirm": {
+      "post": {
+        "operationId": "confirm_agreement_api_v1_deep_v3_sessions__session_id__agreements__agreement_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "agreement_id",
+            "required": true,
+            "schema": {
+              "title": "Agreement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgreementResponseV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Confirm Agreement",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/agreements/{agreement_id}/defer": {
+      "post": {
+        "operationId": "defer_agreement_api_v1_deep_v3_sessions__session_id__agreements__agreement_id__defer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "agreement_id",
+            "required": true,
+            "schema": {
+              "title": "Agreement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgreementResponseV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Defer Agreement",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/me/input": {
+      "get": {
+        "operationId": "get_input_api_v1_deep_v3_sessions__session_id__me_input_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnInputV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Input",
+        "tags": [
+          "deep-v3"
+        ]
+      },
+      "patch": {
+        "operationId": "save_input_api_v1_deep_v3_sessions__session_id__me_input_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveInputV3"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnInputV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Save Input",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/me/questions": {
+      "get": {
+        "operationId": "own_questions_api_v1_deep_v3_sessions__session_id__me_questions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Own Questions Api V1 Deep V3 Sessions  Session Id  Me Questions Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Own Questions",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/me/submit": {
+      "post": {
+        "operationId": "submit_api_v1_deep_v3_sessions__session_id__me_submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitV3"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Submit",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/plan": {
+      "get": {
+        "operationId": "get_plan_api_v1_deep_v3_sessions__session_id__plan_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponseV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Plan",
+        "tags": [
+          "deep-v3"
+        ]
+      },
+      "patch": {
+        "operationId": "update_plan_api_v1_deep_v3_sessions__session_id__plan_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlanV3"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponseV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Update Plan",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/plan/confirm": {
+      "post": {
+        "operationId": "confirm_plan_api_v1_deep_v3_sessions__session_id__plan_confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmSharedPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponseV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Confirm Plan",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/result": {
+      "get": {
+        "operationId": "get_result_api_v1_deep_v3_sessions__session_id__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "ready": "#/components/schemas/ReadyResultV3",
+                      "waiting": "#/components/schemas/WaitingDeepResult"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WaitingDeepResult"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReadyResultV3"
+                    }
+                  ],
+                  "title": "Response Get Result Api V1 Deep V3 Sessions  Session Id  Result Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Result",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/rounds": {
+      "get": {
+        "operationId": "get_round_api_v1_deep_v3_sessions__session_id__rounds_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoundStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Round",
+        "tags": [
+          "deep-v3"
+        ]
+      },
+      "post": {
+        "operationId": "request_round_api_v1_deep_v3_sessions__session_id__rounds_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoundRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoundResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Request Round",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/status": {
+      "get": {
+        "operationId": "session_status_api_v1_deep_v3_sessions__session_id__status_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Session Status",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/withdraw": {
+      "post": {
+        "operationId": "withdraw_api_v1_deep_v3_sessions__session_id__withdraw_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeepSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClosedDeepResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Withdraw",
+        "tags": [
+          "deep-v3"
         ]
       }
     },

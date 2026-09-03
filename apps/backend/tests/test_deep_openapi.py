@@ -74,3 +74,25 @@ def test_deep_and_light_security_remain_distinct():
 
 def test_legacy_create_rejects_deep_in_generated_contract():
     assert app.openapi()["components"]["schemas"]["CreateSessionRequest"]["properties"]["mode"]["const"] == "light"
+
+
+def test_v3_examples_match_models_and_are_submittable():
+    import json
+    from pathlib import Path
+
+    from deep.v3_models import AgreementRequestV3, SaveInputV3, SubmitV3, UpdatePlanV3
+    from deep.validation import validate_submission
+
+    examples = json.loads((Path(__file__).parent / "fixtures/deep_v3_contract_examples.json").read_text(encoding="utf-8"))
+    for key, model in {"saveRequest": SaveInputV3, "planUpdateRequest": UpdatePlanV3,
+                       "submitRequest": SubmitV3, "agreementCreateRequest": AgreementRequestV3}.items():
+        model.model_validate(examples[key])
+    assert validate_submission(SaveInputV3.model_validate(examples["saveRequest"]).input) == []
+
+
+def test_v3_result_discriminator_and_required_input_version():
+    schema = app.openapi()
+    result = schema["paths"]["/api/v1/deep/v3/sessions/{session_id}/result"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+    assert set(result["discriminator"]["mapping"]) == {"waiting", "ready"}
+    input_ref = schema["components"]["schemas"]["SaveInputV3"]["properties"]["input"]["$ref"].split("/")[-1]
+    assert "inputVersion" in schema["components"]["schemas"][input_ref]["required"]

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
+from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
@@ -13,9 +14,29 @@ from auth.repository import AuthRepository
 from deep.agreements import confirm_agreement, defer_agreement, edit_agreement
 from deep.errors import DeepError
 from deep.reviewer_scope import user_room, validate_document_room, validate_join_room
-from deep.schemas import DeepInput, SharedPlan
+from deep.schemas import DeepInput
 from deep.state import can_publish, publication_stamp
+from deep.v3_models import DecisionTerms, DeepInputV3, SharedPlanV3
 from deep.validation import validate_submission
+from deep.versions import input_for_version, plan_for_version, version_fields
+
+
+def validate_versioned_input(document: dict[str, Any], data: dict[str, Any]) -> DeepInput:
+    validated = input_for_version(document["questionVersion"], data)
+    if isinstance(validated, DeepInputV3):
+        try:
+            plan = SharedPlanV3.model_validate(document["plan"]["data"])
+            validated.funding_request(plan.fundingAsOf)
+        except ValidationError:
+            raise DeepError("INVALID_FUNDING_INPUT", 422) from None
+    return validated
+
+
+def validated_terms(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return DecisionTerms.model_validate(payload.get("terms")).model_dump(mode="json")
+    except ValidationError:
+        raise DeepError("INVALID_AGREEMENT_TERMS", 422) from None
 
 
 def as_utc(value: datetime) -> datetime:
@@ -29,8 +50,8 @@ def member_role(document: dict[str, Any], user_id: str) -> str:
     raise DeepError("NOT_FOUND", 404)
 
 
-def new_member(user_id: str) -> dict[str, Any]:
-    return {"userId": user_id, "revision": 0, "input": DeepInput().model_dump(mode="json"),
+def new_member(user_id: str, question_version: str = "deep-v2") -> dict[str, Any]:
+    return {"userId": user_id, "revision": 0, "input": input_for_version(question_version).model_dump(mode="json"),
             "submittedAt": None, "confirmedPlanVersion": 0, "consent": None}
 
 
@@ -79,14 +100,15 @@ class DeepRepository:
     async def allow_attempt(self, actor_hash: str, action: str, now: datetime) -> bool:
         return await AuthRepository(self.database).allow_attempt(actor_hash, "deep-" + action, 20, now)
 
-    async def create(self, user_id: str, idempotency_key: str, payload_hash: str, now: datetime) -> dict[str, Any]:
+    async def create(self, user_id: str, idempotency_key: str, payload_hash: str, now: datetime, *, question_version: str = "deep-v2") -> dict[str, Any]:
+        versions = version_fields(question_version)
         await self._check_deleting_user(user_id)
         review_room = await user_room(self.database, user_id, now)
         key = hashlib.sha256(idempotency_key.encode()).hexdigest()
         identity = {"creatorUserId": user_id, "idempotencyKey": key}
         existing = await self.sessions.find_one(identity)
         if existing is not None:
-            if existing["payloadHash"] != payload_hash:
+            if existing["payloadHash"] != payload_hash or existing["questionVersion"] != question_version:
                 raise DeepError("IDEMPOTENCY_CONFLICT")
             active(existing, now)
             await self._check_deleting_members(existing)
@@ -94,10 +116,9 @@ class DeepRepository:
         for _ in range(3):
             document: dict[str, Any] = {**identity, "payloadHash": payload_hash, "id": str(uuid4()), "round": 1, "version": 0,
                         "status": "collecting", "invitationCode": "INV-" + secrets.token_urlsafe(16),
-                        "members": {"A": new_member(user_id), "B": None},
-                        "plan": {"version": 1, "data": SharedPlan(startMonth=now.strftime("%Y-%m")).model_dump(mode="json")},
-                        "questionVersion": "deep-v2", "ruleVersion": "deep-rules-v1", "copyVersion": "deep-copy-ko-v1",
-                        "consentVersion": "deep-sharing-v1", "reportId": None,
+                        "members": {"A": new_member(user_id, question_version), "B": None},
+                        "plan": {"version": 1, "data": plan_for_version(question_version, now=now).model_dump(mode="json")},
+                        **versions, "reportId": None,
                         "createdAt": now, "expiresAt": now + timedelta(days=self.draft_days)}
             if review_room:
                 document.update(reviewerRunId=review_room["id"], reviewerExpiresAt=review_room["expiresAt"],
@@ -114,7 +135,7 @@ class DeepRepository:
             except DuplicateKeyError:
                 existing = await self.sessions.find_one(identity)
                 if existing is not None:
-                    if existing["payloadHash"] != payload_hash:
+                    if existing["payloadHash"] != payload_hash or existing["questionVersion"] != question_version:
                         raise DeepError("IDEMPOTENCY_CONFLICT") from None
                     active(existing, now)
                     await self._check_deleting_members(existing)
@@ -130,6 +151,16 @@ class DeepRepository:
         active(document, now)
         await self._check_deleting_members(document)
         return document
+
+    async def version_for_cleanup(self, session_id: str, user_id: str) -> str:
+        # Withdrawal is intentionally retryable after closure/expiry/deletion tombstones.
+        # Membership is still mandatory; return no financial data from this lookup.
+        document = await self.sessions.find_one({"id": session_id, "$or": [
+            {"members.A.userId": user_id}, {"members.B.userId": user_id},
+        ]})
+        if document is None:
+            raise DeepError("NOT_FOUND", 404)
+        return str(document["questionVersion"])
 
     async def _commit(
         self, document: dict[str, Any], fields: dict[str, Any], now: datetime,
@@ -159,11 +190,11 @@ class DeepRepository:
                 return updated
         raise DeepError("REVISION_CONFLICT")
 
-    async def join(self, code: str, user_id: str, idempotency_key: str, now: datetime) -> dict[str, Any]:
+    async def join(self, code: str, user_id: str, idempotency_key: str, now: datetime, *, question_version: str | None = None) -> dict[str, Any]:
         await self._check_deleting_user(user_id)
         for _ in range(5):
             document = await self.sessions.find_one({"invitationCode": code, "status": {"$ne": "closed"}, "expiresAt": {"$gt": now}})
-            if document is None:
+            if document is None or (question_version is not None and document["questionVersion"] != question_version):
                 raise DeepError("NOT_FOUND", 404)
             await validate_join_room(self.database, document, user_id, now)
             await self._check_deleting_members(document)
@@ -174,7 +205,7 @@ class DeepRepository:
                 if partner["userId"] == user_id:
                     return document
                 raise DeepError("SESSION_FULL")
-            updated = await self._commit(document, {"members.B": new_member(user_id)}, now, {"members.B": None})
+            updated = await self._commit(document, {"members.B": new_member(user_id, document["questionVersion"])}, now, {"members.B": None})
             if updated is not None:
                 try:
                     await self._check_deleting_members(updated)
@@ -194,6 +225,7 @@ class DeepRepository:
                 raise DeepError("REVISION_CONFLICT")
             if member["submittedAt"] is not None:
                 raise DeepError("INPUT_LOCKED")
+            validate_versioned_input(document, data)
             return ({f"members.{role}.input": data, f"members.{role}.revision": expected_revision + 1},
                     {f"members.{role}.revision": expected_revision, f"members.{role}.submittedAt": None,
                      "status": {"$in": ["collecting", "waiting"]}})
@@ -207,6 +239,7 @@ class DeepRepository:
                 raise DeepError("PLAN_VERSION_CONFLICT")
             if any(member and member["submittedAt"] is not None for member in document["members"].values()):
                 raise DeepError("PLAN_LOCKED")
+            plan_for_version(document["questionVersion"], plan)
             fields: dict[str, Any] = {"plan": {"version": expected_version + 1, "data": plan}}
             for label, member in document["members"].items():
                 if member:
@@ -243,7 +276,8 @@ class DeepRepository:
                 if member["consent"] == snapshot_consent:
                     return None
                 raise DeepError("INPUT_LOCKED")
-            missing = validate_submission(DeepInput.model_validate(member["input"]))
+            validated = validate_versioned_input(document, member["input"])
+            missing = validate_submission(validated)
             if missing:
                 raise DeepError("INPUT_INCOMPLETE", 422, {item["field"]: [item["code"]] for item in missing})
             return ({f"members.{role}.submittedAt": now, f"members.{role}.consent": snapshot_consent, "status": "waiting"},
@@ -366,6 +400,8 @@ class DeepRepository:
                      "text": payload["text"], "reviewOn": payload.get("reviewOn"), "status": "proposed", "confirmations": [],
                      "participants": [member["userId"] for member in document["members"].values()],
                      "createdAt": now, "expiresAt": document["expiresAt"]}
+        if document["questionVersion"] == "deep-v3":
+            agreement.update(terms=validated_terms(payload), planVersion=document["plan"]["version"], sourceReportId=document["reportId"])
         await self.database["deep_agreements"].insert_one(agreement)
         try:
             current = await self._agreement_session(session_id, user_id, datetime.now(timezone.utc))
@@ -407,6 +443,8 @@ class DeepRepository:
                 fields = {key: changed[key] for key in ("version", "text", "confirmations", "status")}
                 if action == "edit":
                     fields["reviewOn"] = payload.get("reviewOn")
+                    if document["questionVersion"] == "deep-v3":
+                        fields["terms"] = validated_terms(payload)
                 update = {"$set": fields}
             result = await collection.find_one_and_update(
                 {**query, "version": expected_version, "confirmations": agreement["confirmations"], "status": agreement["status"]},

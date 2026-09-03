@@ -1021,6 +1021,540 @@
         "title": "ErrorResponse",
         "type": "object"
       },
+      "FundingDeadline": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/Amount",
+            "description": "주거/일회성 비용의 이번 회차 지급액; 누적 총액 아님"
+          },
+          "dueOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueon"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "FundingDeadline",
+        "type": "object"
+      },
+      "FundingDebt": {
+        "additionalProperties": false,
+        "properties": {
+          "balance": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "FundingDebt",
+        "type": "object"
+      },
+      "FundingIssue": {
+        "additionalProperties": false,
+        "properties": {
+          "amountWon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amountwon"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "sourceId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceid"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "question"
+        ],
+        "title": "FundingIssue",
+        "type": "object"
+      },
+      "FundingPreviewRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "format": "date",
+            "title": "Asof",
+            "type": "string"
+          },
+          "deadlines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingDeadline"
+            },
+            "maxItems": 120,
+            "title": "Deadlines",
+            "type": "array"
+          },
+          "debts": {
+            "items": {
+              "$ref": "#/components/schemas/FundingDebt"
+            },
+            "maxItems": 30,
+            "title": "Debts",
+            "type": "array"
+          },
+          "debtsStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Debtsstatus",
+            "type": "string"
+          },
+          "settlements": {
+            "items": {
+              "$ref": "#/components/schemas/FundingSettlement"
+            },
+            "maxItems": 60,
+            "title": "Settlements",
+            "type": "array"
+          },
+          "settlementsStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Settlementsstatus",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/FundingSource"
+            },
+            "maxItems": 100,
+            "title": "Sources",
+            "type": "array"
+          },
+          "sourcesStatus": {
+            "default": "unknown",
+            "enum": [
+              "known",
+              "unknown",
+              "withheld"
+            ],
+            "title": "Sourcesstatus",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOf"
+        ],
+        "title": "FundingPreviewRequest",
+        "type": "object"
+      },
+      "FundingPreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "audience": {
+            "const": "private_input_preview",
+            "default": "private_input_preview",
+            "title": "Audience",
+            "type": "string"
+          },
+          "fundingBasis": {
+            "const": "self_reported_confirmed_sources",
+            "default": "self_reported_confirmed_sources",
+            "title": "Fundingbasis",
+            "type": "string"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/FundingIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "missingFields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missingfields",
+            "type": "array"
+          },
+          "ruleVersion": {
+            "const": "deep-funding-v1",
+            "default": "deep-funding-v1",
+            "title": "Ruleversion",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/FundingSourceResult"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "partial",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/FundingTimelineRow"
+            },
+            "title": "Timeline",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "sources",
+          "timeline",
+          "missingFields",
+          "assumptions",
+          "issues"
+        ],
+        "title": "FundingPreviewResponse",
+        "type": "object"
+      },
+      "FundingSettlement": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "debtId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Debtid",
+            "type": "string"
+          },
+          "dueOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueon"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/SettlementPart"
+            },
+            "maxItems": 100,
+            "title": "Parts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "debtId"
+        ],
+        "title": "FundingSettlement",
+        "type": "object"
+      },
+      "FundingSource": {
+        "additionalProperties": false,
+        "properties": {
+          "availableOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availableon"
+          },
+          "certainty": {
+            "default": "unknown",
+            "enum": [
+              "available",
+              "confirmed",
+              "expected",
+              "unknown"
+            ],
+            "title": "Certainty",
+            "type": "string"
+          },
+          "goalAllocationWon": {
+            "default": 0,
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Goalallocationwon",
+            "type": "integer"
+          },
+          "grossAmount": {
+            "$ref": "#/components/schemas/Amount",
+            "description": "본인 몫의 사용 예정 재원, 연결 상환 차감 전 원 단위 금액"
+          },
+          "housingAllocationWon": {
+            "default": 0,
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Housingallocationwon",
+            "type": "integer"
+          },
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "cashSavings",
+              "rentalDeposit",
+              "investments",
+              "subscription",
+              "realEstate",
+              "other",
+              "support",
+              "newBorrowing"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reserveAllocationWon": {
+            "default": 0,
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Reserveallocationwon",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ],
+        "title": "FundingSource",
+        "type": "object"
+      },
+      "FundingSourceResult": {
+        "additionalProperties": false,
+        "properties": {
+          "availableOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availableon"
+          },
+          "basis": {
+            "enum": [
+              "confirmed",
+              "expected",
+              "excluded"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
+          "housingAllocationWon": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Housingallocationwon",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "netAfterSettlementWon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Netaftersettlementwon"
+          }
+        },
+        "required": [
+          "id",
+          "netAfterSettlementWon",
+          "housingAllocationWon",
+          "availableOn",
+          "basis"
+        ],
+        "title": "FundingSourceResult",
+        "type": "object"
+      },
+      "FundingTimelineRow": {
+        "additionalProperties": false,
+        "properties": {
+          "availableForHousingWon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availableforhousingwon"
+          },
+          "confirmedSourceFundingWon": {
+            "title": "Confirmedsourcefundingwon",
+            "type": "integer"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "expectedSourceFundingWon": {
+            "title": "Expectedsourcefundingwon",
+            "type": "integer"
+          },
+          "fundingGapWon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fundinggapwon"
+          },
+          "includingExpectedGapWon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Includingexpectedgapwon"
+          },
+          "requiredHousingWon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredhousingwon"
+          },
+          "settlementDueWon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlementduewon"
+          }
+        },
+        "required": [
+          "date",
+          "requiredHousingWon",
+          "settlementDueWon",
+          "confirmedSourceFundingWon",
+          "expectedSourceFundingWon",
+          "availableForHousingWon",
+          "fundingGapWon",
+          "includingExpectedGapWon"
+        ],
+        "title": "FundingTimelineRow",
+        "type": "object"
+      },
       "GoalInput": {
         "additionalProperties": false,
         "properties": {
@@ -2337,6 +2871,30 @@
         "title": "SessionStatusResponse",
         "type": "object"
       },
+      "SettlementPart": {
+        "additionalProperties": false,
+        "properties": {
+          "amountWon": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Amountwon",
+            "type": "integer"
+          },
+          "sourceId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Sourceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceId",
+          "amountWon"
+        ],
+        "title": "SettlementPart",
+        "type": "object"
+      },
       "SharedPlan-Input": {
         "additionalProperties": false,
         "properties": {
@@ -3451,6 +4009,123 @@
         "summary": "설정 데이터 조회",
         "tags": [
           "설정 데이터"
+        ]
+      }
+    },
+    "/api/v1/deep/funding/preview": {
+      "post": {
+        "description": "입력만 계산하며 저장하거나 상대 데이터를 읽지 않습니다. 공동 결과나 합의가 아닙니다.",
+        "operationId": "preview_funding_api_v1_deep_funding_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FundingPreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundingPreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "본인이 입력한 재원의 날짜별 개인 미리보기",
+        "tags": [
+          "deep"
         ]
       }
     },

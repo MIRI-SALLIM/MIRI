@@ -22,7 +22,9 @@ from auth.errors import AuthError
 from auth.security import token_digest
 from deep.config import load_questions
 from deep.dependencies import PrincipalDependency, ServiceDependency
+from deep.engine.funding import calculate_funding
 from deep.errors import DeepError
+from deep.funding_models import FundingPreviewRequest, FundingPreviewResponse
 from deep.lifecycle import delete_account
 from deep.schemas import (
     AgreementRequest,
@@ -56,7 +58,13 @@ class DeepRoute(APIRoute):
                 return await original(request)
             except PyMongoError:
                 raise DeepError("DEEP_UNAVAILABLE", 503) from None
-            except (DeepError, AuthError, HTTPException, RequestValidationError):
+            except RequestValidationError:
+                if request.url.path == "/api/v1/deep/funding/preview":
+                    # Validation locations may include arbitrary user-provided JSON keys.
+                    # Keep this new endpoint private without changing legacy error contracts.
+                    raise DeepError("INVALID_FUNDING_INPUT", 422) from None
+                raise
+            except (DeepError, AuthError, HTTPException):
                 raise
             except Exception:  # noqa: BLE001 - privacy boundary: never log stored data via exceptions
                 # Stored financial data can appear in validation exceptions. Never send
@@ -89,6 +97,17 @@ async def limit_mutation(
         key = token_digest(f"deep-{action}:{kind}:{value}", settings.session_pepper)
         if not await service.repo.allow_attempt(key, action + "-" + kind, datetime.now(timezone.utc)):
             raise DeepError("RATE_LIMITED", 429)
+
+
+@router.post("/funding/preview", response_model=FundingPreviewResponse, dependencies=MUTATION,
+             summary="본인이 입력한 재원의 날짜별 개인 미리보기",
+             description="입력만 계산하며 저장하거나 상대 데이터를 읽지 않습니다. 공동 결과나 합의가 아닙니다.")
+async def preview_funding(
+    request: Request, body: FundingPreviewRequest, principal: PrincipalDependency,
+    service: ServiceDependency, settings: SettingsDependency,
+) -> FundingPreviewResponse:
+    await limit_mutation(request, principal, service, settings, "funding-preview")
+    return calculate_funding(body)
 
 
 @router.get("/questions", response_model=QuestionSet)

@@ -22,10 +22,31 @@ const contrastRatio = (first: string, second: string) => {
 };
 
 describe("전역 접근성 토큰", () => {
-  it("포커스 링은 밝은 배경에서 3:1 이상의 대비를 유지한다", () => {
-    const focusRule = stylesheet.match(/:focus-visible\s*{[^}]*outline:\s*3px solid #([0-9a-f]{6})/i);
-    const focusColor = focusRule?.[1];
+  it("Tailwind v4 CSS-first 테마와 기존 토큰을 선언한다", () => {
+    expect(stylesheet).toContain('@import "tailwindcss";');
+    expect(stylesheet).not.toContain("@tailwind base");
+    expect(stylesheet).toContain("@theme");
+    expect(stylesheet).toContain("--color-canvas: #FCFCFB");
+    expect(stylesheet).toContain("--color-green-hover: #2F8460");
+    expect(stylesheet).toContain("--color-border-soft: #F0F0EE");
+    expect(stylesheet).toContain("--color-arrow: #D8D8D6");
+    expect(stylesheet).toContain("--color-green-strong: #237A56");
+    expect(stylesheet).toContain("--radius-card: 20px");
+    expect(stylesheet).toContain("--radius-control: 14px");
+    expect(stylesheet).toContain("--animate-fadeup: fadeup 420ms ease-out both");
+  });
 
+  it("레퍼런스 랜딩과 같은 글자 렌더링 설정을 쓴다", () => {
+    expect(stylesheet).toContain("-webkit-font-smoothing: antialiased");
+  });
+
+  it("포커스 링은 밝은 배경에서 3:1 이상의 대비를 유지한다", () => {
+    const focusRule = stylesheet.match(
+      /:focus-visible\s*{[^}]*outline:\s*3px solid var\(--color-green-strong\)/i,
+    );
+    const focusColor = stylesheet.match(/--color-green-strong:\s*#([0-9a-f]{6})/i)?.[1];
+
+    expect(focusRule, "포커스 링은 green-strong 테마 토큰을 사용해야 합니다").toBeDefined();
     expect(focusColor, "포커스 링은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
     expect(contrastRatio(focusColor!, "fcfcfb")).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(focusColor!, "ffffff")).toBeGreaterThanOrEqual(3);

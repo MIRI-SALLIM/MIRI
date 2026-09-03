@@ -57,4 +57,20 @@ describe("PillToggle", () => {
 
     expect(onPressedChange).toHaveBeenCalledWith(true);
   });
+
+  it("uses accessible strong brand foregrounds when pressed", () => {
+    render(
+      <>
+        <PillToggle pressed onPressedChange={() => undefined} tone="green">
+          Green 선택
+        </PillToggle>
+        <PillToggle pressed onPressedChange={() => undefined} tone="purple">
+          Purple 선택
+        </PillToggle>
+      </>,
+    );
+
+    expect(screen.getByRole("button", { name: "Green 선택" })).toHaveClass("text-green-strong");
+    expect(screen.getByRole("button", { name: "Purple 선택" })).toHaveClass("text-purple-strong");
+  });
 });

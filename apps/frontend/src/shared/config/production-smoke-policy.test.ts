@@ -65,6 +65,23 @@ describe("production smoke release policy", () => {
     expect(productionSmokeSource).toContain("Promise.all([");
     expect(productionSmokeSource).not.toContain("timeout: 15_000");
     expect(productionSmokeSource).toContain("expect(Date.now()).toBeLessThanOrEqual(revealDeadline);");
+    const resultLinkAwaitIndex = productionSmokeSource.indexOf(
+      'expect(resultLinkA).toBeVisible({ timeout: ASSERTION_TIMEOUT }),',
+    );
+    const secondResultLinkAwaitIndex = productionSmokeSource.indexOf(
+      'expect(resultLinkB).toBeVisible({ timeout: ASSERTION_TIMEOUT }),',
+    );
+    const clockAssertionIndex = productionSmokeSource.indexOf(
+      "expect(Date.now()).toBeLessThanOrEqual(revealDeadline);",
+    );
+    const resultHeadingAwaitIndex = productionSmokeSource.indexOf(
+      'expect(pageA.getByRole("heading", { name: "라이트 결과" })).toBeVisible({',
+    );
+    expect(resultLinkAwaitIndex).toBeGreaterThanOrEqual(0);
+    expect(secondResultLinkAwaitIndex).toBeGreaterThan(resultLinkAwaitIndex);
+    expect(clockAssertionIndex).toBeGreaterThan(resultLinkAwaitIndex);
+    expect(clockAssertionIndex).toBeGreaterThan(secondResultLinkAwaitIndex);
+    expect(resultHeadingAwaitIndex).toBeGreaterThan(clockAssertionIndex);
     expect(
       productionSmokeSource.match(
         /expect\(Date\.now\(\)\)\.toBeLessThanOrEqual\(revealDeadline\);/g,
@@ -73,6 +90,14 @@ describe("production smoke release policy", () => {
     expect(productionSmokeSource).not.toContain("timeoutUntilRevealDeadline");
     expect(productionSmokeSource).toMatch(
       /getByRole\("heading", \{ name: "라이트 결과" \}\)\)\.toBeVisible\(\{\s+timeout: ASSERTION_TIMEOUT,/,
+    );
+    expect(
+      productionSmokeSource.match(
+        /getByRole\("heading", \{ name: "라이트 결과" \}\)\)\.toBeVisible\(\{\s+timeout: ASSERTION_TIMEOUT,/g,
+      ) ?? [],
+    ).toHaveLength(2);
+    expect(productionSmokeSource).toMatch(
+      /pageB\.getByRole\("heading", \{ name: "상대방을 기다리는 중" \}\)\)\.toBeVisible\(\{\s+timeout: ASSERTION_TIMEOUT,/,
     );
   });
 

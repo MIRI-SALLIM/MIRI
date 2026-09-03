@@ -24,7 +24,7 @@ Files: `.github/workflows/backend.yml`, `apps/backend/tests/integration/test_rev
 
 - [ ] 기존 Mongo job에 `tests/integration/test_deep_v3_mongo.py`를 추가한다. 같은 명령의 v2/Light 회귀 파일은 유지한다.
 - [ ] 실제 HTTPS 여정을 `version in [deep-v2,deep-v3]`, 동의 `(true,true),(false,true),(true,false),(false,false)`로 parameterize한다. v3만 `/api/v1/deep/v3`, `v3_input/v3_plan`, `deep-sharing-v2`, 구조화된 terms를 쓴다.
-- [ ] v3 공동비200만/각80만이면400000원 공백, 양쪽100만으로 확인하면 operatingStatus 공백0, 당시 report는400000을 유지하는지 검사한다. 동의 거절의 재무 planning 비공개, 개인 메모 제외, 수정 시 양쪽 확인 초기화, reset 후 DB artifact 삭제도 확인한다.
+- [ ] v3 공동비200만/각80만이면400000원 공백, 양쪽100만으로 확인하면 operatingStatus 공백0, 당시 report는400000을 유지하는지 검사한다. 동의 거절의 재무 planning 비공개, 개인 메모 제외, 수정 시 양쪽 확인 초기화, reset 후 접근 차단 및 artifact TTL 상한을 확인한다. 승인된 reviewer 설계에서 reset은 즉시 물리 삭제가 아니다.
 - [ ] 로컬 `python scripts/test_local.py -q`, Ruff, mypy, Linux 대상 mypy를 수행한다. 실DB skip은 결과에 구분한다.
 
 ## Task 2: fix2 게시와 원격 증거 수집

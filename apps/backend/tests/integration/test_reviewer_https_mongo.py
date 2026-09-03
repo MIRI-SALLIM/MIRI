@@ -162,7 +162,11 @@ def test_reviewer_journey_over_real_https_and_mongo(share_finance, share_values,
                 old_room = await db['reviewer_rooms'].find_one({'users.A': info_a['userId']})
                 assert old_room is not None and old_room['status'] == 'closed'
                 assert old_room['expiresAt'] > datetime.now(timezone.utc)
-                assert await db['deep_reports'].count_documents({'sessionId': created['id']}) == 0
-                assert await db['deep_agreements'].count_documents({'sessionId': created['id']}) == 0
+                # Reset revokes access immediately; approved retention is TTL, not hard deletion.
+                # Old-token/new-room reads were denied above. Retained artifacts may not
+                # outlive the old review room's logical expiration.
+                for name in ('deep_reports', 'deep_agreements'):
+                    artifacts = await db[name].find({'sessionId': created['id']}).to_list(length=None)
+                    assert all(artifact['expiresAt'] <= old_room['expiresAt'] for artifact in artifacts)
 
     asyncio.run(run())

@@ -5,6 +5,7 @@ export {
   ApiError,
   createApiError,
   createNetworkApiError,
+  isTerminalApiError,
   shouldRetryQuery,
 } from "./errors";
 export type { ApiErrorInit, ApiErrorKind, ApiFieldErrors } from "./errors";

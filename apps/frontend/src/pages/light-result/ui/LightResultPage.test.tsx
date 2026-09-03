@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -178,6 +178,53 @@ describe("LightResultPage", () => {
     expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
     expect(container.innerHTML).toContain(partnerAnswer);
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("keeps a cached ready result when revalidation fails temporarily", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), readyResult);
+    fetchMock.mockResolvedValue(
+      jsonResponse({ error: { code: "TEMPORARY", message: "잠시 후 다시 시도해 주세요." } }, 503),
+    );
+
+    const { container } = renderResult(queryClient);
+
+    await waitFor(() => {
+      expect(queryClient.getQueryState(lightResultQueryKey("session-a"))?.status).toBe("error");
+      expect(screen.queryByText("결과를 불러오지 못했어요.")).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("heading", { name: "라이트 결과" })).toBeInTheDocument();
+    expect(screen.getByText("서로의 생각을 이해하고 맞춰가는 첫걸음")).toBeInTheDocument();
+    expect(container.innerHTML).toContain(partnerAnswer);
+  });
+
+  it("shows the expired error when a cached ready result is no longer available", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), readyResult);
+    fetchMock.mockResolvedValue(
+      jsonResponse({ error: { code: "SESSION_EXPIRED", message: "이 세션은 만료됐어요." } }, 410),
+    );
+
+    renderResult(queryClient);
+
+    expect(await screen.findByText("이 세션은 만료됐어요.")).toBeInTheDocument();
+    expect(screen.queryByText("서로의 생각을 이해하고 맞춰가는 첫걸음")).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of a cached ready result for a contract-valid 404", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), readyResult);
+    fetchMock.mockResolvedValue(
+      jsonResponse(
+        { error: { code: "SESSION_NOT_FOUND", message: "세션을 찾을 수 없어요." } },
+        404,
+      ),
+    );
+
+    renderResult(queryClient);
+
+    expect(await screen.findByText("결과를 불러오지 못했어요.")).toBeInTheDocument();
+    expect(screen.queryByText("서로의 생각을 이해하고 맞춰가는 첫걸음")).not.toBeInTheDocument();
   });
 
   it("holds the loading section while a cached waiting result revalidates", async () => {

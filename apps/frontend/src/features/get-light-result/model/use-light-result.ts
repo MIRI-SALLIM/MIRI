@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import type { LightResult } from "@/entities/light-result";
+import { isTerminalApiError } from "@/shared/api";
 
 import { fetchLightResult, lightResultQueryKey } from "../api/get-light-result";
 
@@ -29,20 +30,28 @@ export function useLightResult(sessionId: string): LightResultView {
     return { error: new Error("Missing session id"), state: "error" };
   }
 
-  if (resultQuery.data === undefined) {
+  const data = resultQuery.data;
+  const staleReady = data !== undefined && data.status === "ready" ? data.result : undefined;
+
+  if (data === undefined) {
     return resultQuery.isError
       ? { error: resultQuery.error, state: "error" }
       : { state: "loading" };
   }
 
   if (resultQuery.isError) {
+    // 완성된 결과를 이미 받아 둔 뒤의 일시적 실패로 화면을 무너뜨리지 않는다.
+    if (staleReady !== undefined && !isTerminalApiError(resultQuery.error)) {
+      return { result: staleReady, state: "ready" };
+    }
+
     return { error: resultQuery.error, state: "error" };
   }
 
-  if (resultQuery.data.status === "waiting") {
+  if (data.status === "waiting") {
     // 재검증이 끝나기 전에 대기 화면으로 되돌리면 무한 왕복이 된다.
     return resultQuery.isFetching ? { state: "loading" } : { state: "waiting" };
   }
 
-  return { result: resultQuery.data.result, state: "ready" };
+  return { result: data.result, state: "ready" };
 }

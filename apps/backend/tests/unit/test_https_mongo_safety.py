@@ -6,6 +6,34 @@ NAME = 'mirisalim_deep_test_' + 'a' * 32
 PASSWORDS = ('synthetic-https-password-A', 'synthetic-https-password-B')
 
 
+@pytest.mark.parametrize('installed', ['1.0.1', '1.1.1'])
+def test_https_child_refuses_dotenv_versions_without_disable_support(monkeypatch, installed):
+    import importlib.metadata
+
+    from tests.https_mongo_support import server_environment
+
+    monkeypatch.setattr(importlib.metadata, 'version', lambda name: installed)
+    with pytest.raises(RuntimeError, match='python-dotenv'):
+        server_environment('https://127.0.0.1:8443', NAME, 'mongodb://127.0.0.1:27017', PASSWORDS, {})
+
+
+def test_https_child_actually_ignores_a_synthetic_dotenv_file(tmp_path):
+    import os
+    import subprocess
+    import sys
+
+    from tests.https_mongo_support import server_environment
+
+    dotenv = tmp_path / '.env'
+    dotenv.write_text('SYNTHETIC_DOTENV_LEAK=must-not-load\n', encoding='utf-8')
+    env = server_environment('https://127.0.0.1:8443', NAME, 'mongodb://127.0.0.1:27017', PASSWORDS, os.environ)
+    code = ('import os,sys; from dotenv import load_dotenv; '
+            'assert load_dotenv(sys.argv[1]) is False; assert "SYNTHETIC_DOTENV_LEAK" not in os.environ')
+    result = subprocess.run([sys.executable, '-c', code, str(dotenv)], env=env,
+                            capture_output=True, timeout=10, check=False)
+    assert result.returncode == 0 and not result.stdout and not result.stderr
+
+
 def test_https_child_cannot_inherit_production_configuration():
     from tests.https_mongo_support import server_environment
 

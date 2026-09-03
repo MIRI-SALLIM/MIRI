@@ -1,6 +1,7 @@
 """Real local HTTPS test server; never accept production targets or credentials."""
 
 import asyncio
+import importlib.metadata
 import os
 import re
 import secrets
@@ -27,6 +28,9 @@ BACKEND = Path(__file__).resolve().parents[1]
 
 def server_environment(origin: str, database_name: str, mongo_uri: str, passwords: tuple[str, str],
                        inherited: Mapping[str, str]) -> dict[str, str]:
+    installed = re.match(r'(\d+)\.(\d+)', importlib.metadata.version('python-dotenv'))
+    if installed is None or tuple(map(int, installed.groups())) < (1, 2):
+        raise RuntimeError('python-dotenv >=1.2.0 is required to disable dotenv in isolated tests')
     if not re.fullmatch(r'mirisalim_deep_test_[a-f0-9]{32}', database_name):
         raise ValueError('Unsafe test database name')
     parsed = urlsplit(origin)

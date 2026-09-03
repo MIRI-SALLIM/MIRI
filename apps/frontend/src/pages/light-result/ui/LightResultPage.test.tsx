@@ -211,6 +211,22 @@ describe("LightResultPage", () => {
     expect(screen.queryByText("서로의 생각을 이해하고 맞춰가는 첫걸음")).not.toBeInTheDocument();
   });
 
+  it("shows an error instead of a cached ready result for a contract-valid 404", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), readyResult);
+    fetchMock.mockResolvedValue(
+      jsonResponse(
+        { error: { code: "SESSION_NOT_FOUND", message: "세션을 찾을 수 없어요." } },
+        404,
+      ),
+    );
+
+    renderResult(queryClient);
+
+    expect(await screen.findByText("결과를 불러오지 못했어요.")).toBeInTheDocument();
+    expect(screen.queryByText("서로의 생각을 이해하고 맞춰가는 첫걸음")).not.toBeInTheDocument();
+  });
+
   it("holds the loading section while a cached waiting result revalidates", async () => {
     const queryClient = createTestQueryClient();
     queryClient.setQueryData(lightResultQueryKey("session-a"), waitingResponseBody);

@@ -21,7 +21,7 @@ describe("terminal API errors", () => {
     expect(isTerminalApiError(new ApiError({ status: null, code: null, kind }))).toBe(true);
   });
 
-  it.each(["unavailable", "rate-limited", "unknown"] as const)("does not treat %s as terminal", (kind) => {
+  it.each(["unavailable", "rate-limited", "unknown", "conflict", "validation"] as const)("does not treat %s as terminal", (kind) => {
     expect(isTerminalApiError(new ApiError({ status: null, code: null, kind }))).toBe(false);
   });
 

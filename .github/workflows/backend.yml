@@ -35,7 +35,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare synthetic local-only build fixtures
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('apps/backend')
+          for relative in (
+              '.reviewer-credentials.local/accounts.json',
+              '.reviewer-credentials.local/railway.env',
+              'config/context-probe.local/credentials.json',
+              'context-probe.local',
+          ):
+              target = root / relative
+              target.parent.mkdir(parents=True, exist_ok=True)
+              with target.open('x', encoding='utf-8') as stream:
+                  stream.write('synthetic-build-context-fixture-not-a-secret')
+          PY
       - run: docker build -t mirisalim-backend:test apps/backend
+      - name: Verify local-only files are absent from the image
+        run: |
+          docker run --rm --network none -i --entrypoint python mirisalim-backend:test - <<'PY'
+          from pathlib import Path
+          root = Path('/app')
+          assert (root / 'main.py').is_file(), 'Application code missing from image'
+          assert (root / 'auth/reviewer_router.py').is_file(), 'Reviewer routes missing from image'
+          forbidden = (
+              '.reviewer-credentials.local',
+              'config/context-probe.local',
+              'context-probe.local',
+          )
+          assert not any((root / name).exists() for name in forbidden), 'Local-only files entered image'
+          print('Build context privacy: PASS')
+          PY
 
   deep-mongo:
     runs-on: ubuntu-latest

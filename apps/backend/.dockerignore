@@ -10,3 +10,5 @@ __pycache__/
 .git/
 tests/
 openapi.json
+# Local credential bundles and other machine-only files, at any depth.
+**/*.local

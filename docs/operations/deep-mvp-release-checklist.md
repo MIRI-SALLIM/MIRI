@@ -1,6 +1,6 @@
 # Deep MVP 연동·출시 점검
 
-2026-09-03: C1~C4 로컬 구현 및 C5 실제 Mongo 검증까지 진행했다. **운영 배포, 실제 카카오/브라우저 검증, 원격 CI는 미완료다. `DEEP_MODE_ENABLED=false`를 유지한다.**
+2026-09-03: C1~C4 구현 및 C5 로컬·원격 실제 Mongo 검증까지 진행했다. `fix/gate2-openapi-contract`의 `7e5a0f7`은 [Backend CI](https://github.com/MIRI-SALLIM/MIRI/actions/runs/33732423572)의 quality/deep-mongo/container가 모두 성공했다. **운영 배포와 실제 카카오/브라우저 검증은 미완료다. `DEEP_MODE_ENABLED=false`를 유지한다.** 후속 빌드 비밀 파일 제외 회귀 검증은 최신 인계를 참조한다.
 
 ## 프론트 전달 계약
 
@@ -66,8 +66,8 @@
 ## 출시 gate — 미완료
 
 - [x] 운영과 분리된 실제 Mongo에서 기존 미실행 DB 테스트12개 통과. 원격 CI/운영 Atlas 시험을 대신하지 않음.
-- [ ] 사용자와 통합 브랜치·커밋·푸시 여부 결정. 현재는 미수행.
-- [ ] 원격 quality/deep-mongo/container 성공. skip은 실DB 통과가 아님.
+- [x] 사용자 요청으로 `fix/gate2-openapi-contract` 원격 브랜치 생성·커밋·푸시. 기존 fix1 및 배포 설정은 유지.
+- [x] `7e5a0f7` 원격 quality/deep-mongo/container 성공. quality 295 passed/13 skipped, 별도 실제 Mongo job 17 passed/0 skipped. Python3.11 Ruff 및 mypy 100개 파일 통과. 후속 커밋은 별도 CI 결과를 확인한다.
 - [ ] 실제 Atlas 버전과 Mongo7 차이 및 unique/TTL 인덱스 권한 확인.
 - [ ] 카카오 앱·동의 화면·REST API 키·Client Secret·프론트 origin·callback 확정. 비밀값은 Railway 설정으로만 전달.
 - [ ] 독립 AUTH_SESSION_PEPPER 난수, Origin/CORS, 프록시 쿠키/redirect 검증.

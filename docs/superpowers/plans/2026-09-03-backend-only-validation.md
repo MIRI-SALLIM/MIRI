@@ -24,9 +24,9 @@
 Create tests/https_mongo_support.py and tests/unit/test_https_mongo_safety.py.
 Interface: server_environment(origin, database_name, mongo_uri, passwords, inherited) -> dict[str,str].
 
-- [ ] Red: reject ordinary DB names, non-loopback HTTPS origins and unsafe Mongo URI; assert inherited production credentials are absent and password hashes verify against synthetic inputs.
-- [ ] Implement explicit environment whitelist, validated target and synthetic auth configuration.
-- [ ] Run `python scripts/test_local.py tests/unit/test_https_mongo_safety.py -q`.
+- [x] Red: reject ordinary DB names, non-loopback HTTPS origins and unsafe Mongo URI; assert inherited production credentials are absent and password hashes verify against synthetic inputs.
+- [x] Implement explicit environment whitelist, validated target and synthetic auth configuration.
+- [x] Run `python scripts/test_local.py tests/unit/test_https_mongo_safety.py -q`.
 
 Representative independent assertions:
 ```python
@@ -42,16 +42,18 @@ Add async test context `https_backend(database_name, mongo_uri, passwords)` yiel
 
 Create tests/integration/test_reviewer_https_mongo.py. Test consumes sample_input/sample_plan; default financial sample means two net incomes of 3,000,000 and shared monthly housing 1,000,000.
 
-- [ ] Exercise real /health database=connected; Light anonymous cookie and Mongo persistence; unauthenticated Deep denied.
-- [ ] Independent A/B logins, secure/HttpOnly/no-store cookies, context recovery, spoofed auth header and wrong Origin denied.
-- [ ] Create/join, unrelated room denied, private drafts/stale revision, plan confirmations, one-submit waiting, two-submit identical results.
-- [ ] Parameterize B consent: (true,true), (false,true), (true,false). Opted-out blocks unavailable with sharing_not_authorized; private-note sentinels absent.
-- [ ] Two-party agreement confirmation, two-party next round, reset revokes old A/B but not another room; Light cookie survives.
-- [ ] Read disposable Mongo to prove data and TTL cap, not memory fallback.
-- [ ] Add test file to existing deep-mongo CI command; fix only defects reproduced by this validation, without changing intended contracts.
+- [x] Exercise real /health database=connected; Light anonymous cookie and Mongo persistence; unauthenticated Deep denied.
+- [x] Independent A/B logins, secure/HttpOnly/no-store cookies, context recovery, spoofed auth header and wrong Origin denied.
+- [x] Create/join, unrelated room denied, private drafts/stale revision, plan confirmations, one-submit waiting, two-submit identical results.
+- [x] Parameterize B consent: (true,true), (false,true), (true,false). Opted-out blocks unavailable with sharing_not_authorized; private-note sentinels absent.
+- [x] Two-party agreement confirmation, two-party next round, reset revokes old A/B but not another room; Light cookie survives.
+- [x] Read disposable Mongo to prove data and TTL cap, not memory fallback.
+- [x] Add test file to existing deep-mongo CI command; fix only defects reproduced by this validation, without changing intended contracts.
 
 ## Task 3 — Verify and hand off
 
-- [ ] Local wrapper/Ruff/mypy; actual CI HTTPS/Mongo cases with no skips.
-- [ ] Record inspected develop SHA, test evidence and remaining frontend/production boundaries in latest handoff/release checklist.
-- [ ] Commit/push only this backend validation work to fix2 gate; do not merge develop or deploy Railway.
+- [x] Local wrapper/Ruff/mypy; actual CI HTTPS/Mongo cases with no skips.
+- [x] Record inspected develop SHA, test evidence and remaining frontend/production boundaries in latest handoff/release checklist.
+- [x] Commit/push only this backend validation work to fix2 gate; do not merge develop or deploy Railway.
+
+Final evidence: a9dce09 / [CI 33734406279](https://github.com/MIRI-SALLIM/MIRI/actions/runs/33734406279): quality 309 passed/16 skipped, separate actual DB/HTTPS 20 passed/0 skipped, container privacy check success. See latest backend HTTPS handoff for the UTC response fix and reviewed dotenv isolation floor/runtime guard.

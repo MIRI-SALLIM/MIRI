@@ -82,6 +82,10 @@
 
 ### 현재 연동 준비 상태
 
+후속 최신 상태는 [HTTPS 백엔드 검증 인계](../handoffs/2026-09-03-backend-https-progress.md)를 우선한다. `origin/develop` bd9056c에는 Light 화면·same-origin API·Vite /api 프록시가 있다. Deep CTA는 비활성이며 Deep/심사용 로그인 UI는 없다. 이 작업에서는 해당 프론트를 가져오거나 브라우저 시험을 실행하지 않았다.
+
+프론트 URL 없이도 `tests/integration/test_reviewer_https_mongo.py`가 CI의 전용 Mongo와 로컬 HTTPS Uvicorn으로 실제 심사 로그인부터 초기화까지 검사한다. `ENVIRONMENT=production`, Secure/HttpOnly 쿠키, 명시적 테스트 CA 신뢰를 사용한다. 로컬은 wrapper에서 skip하고 CI의 `REQUIRE_DEEP_MONGO_TESTS=1`에서는 누락을 실패 처리한다. 이는 프론트/Vercel 프록시/브라우저 SameSite 및 실제 Railway 검증을 대체하지 않는다.
+
 이 worktree에는 실제 `.env`가 없고 현재 실행 환경의 PUBLIC_APP_ORIGIN/KAKAO_REST_API_KEY/KAKAO_CLIENT_SECRET/AUTH_SESSION_PEPPER는 미설정이다. Railway의 실제 변수 상태를 조회한 결과는 아니다. 카카오 앱 준비 여부와 확정 프론트 URL을 사용자에게 확인해야 한다. 비밀값을 채팅에 요청하지 않는다.
 
 이 checkout의 `apps/frontend/src/app/App.tsx`는 기초 UI 데모이고 `vite.config.ts`에 `/api` 프록시가 없다. Kakao/Deep API 호출도 확인되지 않았다. 별도로 작업 중인 프론트 저장소/배포본의 상태는 미확인이다. 프론트 담당자의 최신 코드/URL로 연동 시험해야 하며 여기의 데모를 완성된 프론트로 간주하지 않는다.

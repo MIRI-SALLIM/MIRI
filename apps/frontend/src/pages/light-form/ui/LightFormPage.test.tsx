@@ -98,7 +98,7 @@ function renderLightForm(path = "/light/1") {
         <MemoryRouter initialEntries={[path]}>
           <Routes>
             <Route element={<LightFormPage />} path="/light/:step" />
-            <Route element={<h1>제출 완료</h1>} path="/done" />
+            <Route element={<h1>상대방을 기다리는 중</h1>} path="/waiting/:sessionId" />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
@@ -387,7 +387,7 @@ describe("LightFormPage", () => {
     expect(serverChoice).toBeDisabled();
   });
 
-  it("routes to DonePage only after the submit response succeeds", async () => {
+  it("routes to WaitingPage only after the submit response succeeds", async () => {
     sessionStorage.setItem("activeSessionId", "session-a");
     let resolveSubmit!: (response: Response) => void;
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -427,9 +427,9 @@ describe("LightFormPage", () => {
 
       expect(submitCalls).not.toHaveLength(0);
     });
-    expect(screen.queryByRole("heading", { name: "제출 완료" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
 
     resolveSubmit(jsonResponse({ completedAt: "2026-08-17T00:03:00Z", status: "submitted" }));
-    expect(await screen.findByRole("heading", { name: "제출 완료" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "상대방을 기다리는 중" })).toBeInTheDocument();
   });
 });

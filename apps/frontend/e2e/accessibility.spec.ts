@@ -72,20 +72,15 @@ test("reachable light states have no serious or critical accessibility violation
     await expectNoSeriousOrCriticalViolations(pageB, "invite");
 
     await submitLightForm(pageA);
-    await expect(pageA.getByText(session.invitationCode)).toBeVisible();
-    await expectNoSeriousOrCriticalViolations(pageA, "done");
-
-    await pageA.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
     await expect(pageA.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible();
     await expect(pageA.getByRole("heading", { name: "아직 상대가 들어오지 않았어요" })).toBeVisible();
+    await expect(pageA.getByRole("button", { name: "초대 링크 복사" })).toBeVisible();
     await expectNoSeriousOrCriticalViolations(pageA, "waiting");
 
     await pageB.getByRole("button", { name: "참여하고 시작하기" }).click();
     await expect(pageB.getByRole("heading", { name: "가볍게 맞춰보기" })).toBeVisible();
     await answerEveryQuestion(pageB, 1, 1);
     await submitLightForm(pageB);
-    await pageB.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
-    await expect(pageB.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible();
 
     await expect(pageA.getByRole("link", { name: "결과 보기" })).toBeVisible({ timeout: 15_000 });
     await pageA.getByRole("link", { name: "결과 보기" }).click();

@@ -166,7 +166,7 @@ export async function submitLightForm(page: Page): Promise<void> {
     page.getByRole("button", { name: "입력 완료하기" }).click(),
   ]);
   expect(submitResponse.ok()).toBe(true);
-  await expect(page.getByRole("heading", { name: "제출 완료" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible({
     timeout: ASSERTION_TIMEOUT,
   });
 }
@@ -192,13 +192,9 @@ export async function openReadyPair(browser: Browser): Promise<{
   await joinInvitation(pageB, new URL(`/invite/${session.invitationCode}`, pageA.url()).toString());
 
   await submitLightForm(pageA);
-  await pageA.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
-  await expect(pageA.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible();
 
   await answerEveryQuestion(pageB, 1, 1);
   await submitLightForm(pageB);
-  await pageB.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
-  await expect(pageB.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible();
 
   await expect(pageA.getByRole("link", { name: "결과 보기" })).toBeVisible({ timeout: 15_000 });
   await pageA.getByRole("link", { name: "결과 보기" }).click();

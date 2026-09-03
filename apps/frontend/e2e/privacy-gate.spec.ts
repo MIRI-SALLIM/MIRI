@@ -21,7 +21,7 @@ test("a waiting result response exposes only the gate fields", async ({ page }) 
     { timeout: 10_000 },
   );
   await page.getByRole("button", { name: "입력 완료하기" }).click();
-  await expect(page.getByRole("heading", { name: "제출 완료" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible();
   await page.goto(`/result/light/${session.id}`);
 
   const body = (await (await waitingResponse).json()) as Record<string, unknown>;

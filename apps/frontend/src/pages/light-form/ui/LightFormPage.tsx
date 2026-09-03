@@ -173,7 +173,7 @@ export function LightFormPage() {
     onError: () => setSaveStatus("error"),
     onSuccess: () => {
       setReadOnly(true);
-      navigate("/done");
+      navigate(`/waiting/${sessionId}`);
     },
     retry: false,
   });

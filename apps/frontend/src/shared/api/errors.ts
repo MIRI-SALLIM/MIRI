@@ -10,6 +10,8 @@ export type ApiErrorKind =
 
 export type ApiFieldErrors = Record<string, string[]>;
 
+const terminalKinds: ApiErrorKind[] = ["expired", "not-found", "unauthorized"];
+
 export interface ApiErrorInit {
   status: number | null;
   code: string | null;
@@ -119,6 +121,9 @@ export const createApiError = (response: Response, payload: unknown): ApiError =
 
 export const createNetworkApiError = (): ApiError =>
   new ApiError({ status: null, code: null, kind: "unavailable" });
+
+export const isTerminalApiError = (error: unknown): boolean =>
+  error instanceof ApiError && terminalKinds.includes(error.kind);
 
 export const shouldRetryQuery = (failureCount: number, error: unknown): boolean => {
   if (!(error instanceof ApiError)) {

@@ -153,6 +153,22 @@ describe("SharePage", () => {
     expect(mapperMock).toHaveBeenCalled();
   });
 
+  it("keeps a cached ready share card when revalidation fails temporarily", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), readyResult);
+    fetchMock.mockResolvedValue(
+      jsonResponse({ error: { code: "TEMPORARY", message: "잠시 후 다시 시도해 주세요." } }, 503),
+    );
+
+    renderShare("/result/light/session-a/share", queryClient);
+
+    await waitFor(() => {
+      expect(queryClient.getQueryState(lightResultQueryKey("session-a"))?.status).toBe("error");
+      expect(screen.queryByText("결과를 불러오지 못했어요.")).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId("share-card")).toBeInTheDocument();
+  });
+
   it("renders a ready result as a portrait card by default", async () => {
     fetchMock.mockResolvedValue(jsonResponse(readyResult));
 

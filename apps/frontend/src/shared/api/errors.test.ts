@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ApiError, shouldRetryQuery } from "./errors";
+import { ApiError, isTerminalApiError, shouldRetryQuery } from "./errors";
 
 const apiError = (status: number | null) => new ApiError({ status, code: null, kind: "unknown" });
 
@@ -13,5 +13,19 @@ describe("API retry policy", () => {
     expect(shouldRetryQuery(0, apiError(null))).toBe(true);
     expect(shouldRetryQuery(1, apiError(500))).toBe(true);
     expect(shouldRetryQuery(2, apiError(503))).toBe(false);
+  });
+});
+
+describe("terminal API errors", () => {
+  it.each(["expired", "not-found", "unauthorized"] as const)("treats %s as terminal", (kind) => {
+    expect(isTerminalApiError(new ApiError({ status: null, code: null, kind }))).toBe(true);
+  });
+
+  it.each(["unavailable", "rate-limited", "unknown"] as const)("does not treat %s as terminal", (kind) => {
+    expect(isTerminalApiError(new ApiError({ status: null, code: null, kind }))).toBe(false);
+  });
+
+  it.each([new Error("ordinary error"), undefined, null, "error"])("rejects non-ApiError values: %s", (error) => {
+    expect(isTerminalApiError(error)).toBe(false);
   });
 });

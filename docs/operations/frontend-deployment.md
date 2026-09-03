@@ -133,6 +133,9 @@ availability, share preview ratio selection, PNG download, serious/critical
 axe violations including color contrast, and the four required security
 headers. A successful local or preview run does not prove that the deployed
 frontend is connected to the intended production MongoDB-backed backend.
+The three-second reveal budget applies only until both participants see the
+"결과 보기" link. Routing or rendering delays after the link is exposed are
+not treated as a smoke-test failure.
 Because the flow contains participant data, production smoke disables trace,
 screenshot, and video retention even on failure. Keep evidence limited to
 command exit codes, test counts, the redacted production host, status codes,

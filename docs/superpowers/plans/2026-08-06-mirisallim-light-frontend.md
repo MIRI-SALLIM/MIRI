@@ -447,7 +447,7 @@ git commit -m "feat(web): complete variable light questionnaire"
 **인터페이스:**
 - 소비: 백엔드 B5의 초대, 참가, 상태, nudge 엔드포인트.
 - **참가 요청에 `nickname`을 보내지 않는다.** 설계 스펙 2.3의 무기명 진입이 최종 동작이다.
-- 산출물: 대기 중일 때만 3000ms 간격으로 폴링하는 `useSessionStatus(sessionId)`.
+- 산출물: 대기 중일 때만 1000ms 간격으로 폴링하는 `useSessionStatus(sessionId)`. 이 화면에서 준비를 알아내는 수단이 폴링뿐이라 주기가 공개 지연의 하한이고, 3000ms로는 대기 중인 참가자가 다음 tick을 기다리는 동안 스펙의 3초 예산을 다 쓸 수 있어 줄였다. 대기가 얼마나 길어지는지는 프론트엔드가 통제하지 못해 폴링 요청 총량에 상한이 없으며, 1000ms는 그 비용을 감수하고 고른 값이다(요청 예산은 미정).
 - 제약: 닉네임을 수집하지 않으므로 저장·렌더링 문제 자체가 없다. 다만 응답 `SessionResponse.participants[].nickname`이 존재하더라도 **어떤 화면에도 렌더링하지 않는다.** 초대·대기 화면은 스펙 2.3대로 일반 카피(`파트너가 함께 해보자고 초대했어요`)를 유지한다. `SessionStatusResponse`는 닉네임을 담지 않고 `partnerJoined`/`partnerCompleted` boolean만 주므로, 대기 화면 구현은 이 플래그만으로 충분하다. 프라이버시 테스트는 응답에 상대 닉네임을 일부러 넣고 화면에 렌더링되지 않음을 확인하는 방식으로 검증했다(`InvitePage.test.tsx`).
 
 - [x] **Step 1: 실패하는 InvitePage 테스트 작성**
@@ -470,7 +470,7 @@ git commit -m "feat(web): complete variable light questionnaire"
 
 - [x] **Step 5: 대기와 nudge 구현**
 
-TanStack Query는 준비되지 않은 동안에만 3000ms 간격으로 폴링하고, unmount되거나 준비 완료되면 멈춘다. 파트너가 참가하기 전에는 nudge 대신 링크 재공유를 보여준다. 참가 후에는 nudge 뮤테이션을 허용하고, 429는 다음 가능 시점 안내로 매핑한다.
+TanStack Query는 준비되지 않은 동안에만 1000ms 간격으로 폴링하고, unmount되거나 준비 완료되면 멈춘다. 주기가 공개 지연의 하한이므로 3000ms로는 스펙의 3초 예산을 지키지 못할 수 있어 1000ms로 줄였고, 폴링 요청 총량에 상한이 없다는 트레이드오프를 감수한다. 파트너가 참가하기 전에는 nudge 대신 링크 재공유를 보여준다. 참가 후에는 nudge 뮤테이션을 허용하고, 429는 다음 가능 시점 안내로 매핑한다.
 
 - [x] **Step 6: 검증 및 커밋**
 

@@ -9,6 +9,16 @@ import {
 } from "./support/light-flow";
 
 async function expectNoSeriousOrCriticalViolations(page: Page, state: string): Promise<void> {
+  await page.waitForLoadState("networkidle");
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () => document.getAnimations().filter((animation) => animation.playState === "running").length,
+        ),
+      { message: `${state}: animations did not settle`, timeout: 10_000 },
+    )
+    .toBe(0);
   await page.evaluate(async () => {
     await Promise.all(document.getAnimations().map((animation) => animation.finished));
   });

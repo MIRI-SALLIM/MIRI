@@ -62,3 +62,19 @@ def test_reviewer_access_log_removes_accidentally_supplied_query_secrets():
     OAuthAccessLogFilter().filter(record)
     assert "private" not in record.getMessage()
     assert "/api/v1/auth/reviewer/login" in record.getMessage()
+@pytest.mark.parametrize('offset_hours', [None, 0, 9])
+def test_reviewer_context_expiry_always_identifies_the_utc_instant(offset_hours):
+    from datetime import datetime, timedelta, timezone
+
+    from auth.reviewer_router import context
+    from auth.settings import load_auth_settings
+
+    expected = datetime(2026, 9, 4, 10, 0, tzinfo=timezone.utc)
+    expires = (expected.replace(tzinfo=None) if offset_hours is None
+               else expected.astimezone(timezone(timedelta(hours=offset_hours))))
+    room = {'id': 'synthetic-room', 'users': {'A': 'synthetic-user'}, 'expiresAt': expires}
+    settings = load_auth_settings({'AUTH_SESSION_PEPPER': 'p' * 32})
+    encoded = context(room, 'A', settings).model_dump(mode='json')['expiresAt']
+    parsed = datetime.fromisoformat(encoded.replace('Z', '+00:00'))
+    assert parsed.utcoffset() is not None
+    assert parsed == expected

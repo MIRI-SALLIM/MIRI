@@ -76,7 +76,7 @@ async def https_backend(database_name: str, mongo_uri: str,
             sys.executable, '-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', str(port),
             '--ssl-keyfile', str(key), '--ssl-certfile', str(cert), '--no-access-log', '--no-proxy-headers',
         ], cwd=BACKEND, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0) if os.name == 'nt' else 0)
         try:
             deadline = time.monotonic() + 20
             async with httpx.AsyncClient(base_url=origin, verify=context, trust_env=False, timeout=1) as health:

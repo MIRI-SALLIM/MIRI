@@ -79,8 +79,11 @@ class ReviewerContextResponse(BaseModel):
 def context(room: dict[str, Any], role: str, settings: AuthSettings) -> ReviewerContextResponse:
     if role not in {"A", "B"}:
         raise AuthError("AUTH_REQUIRED")
+    # PyMongo's default decoding returns naive UTC; the wire timestamp must be unambiguous.
+    expires = room["expiresAt"]
+    expires = expires.replace(tzinfo=timezone.utc) if expires.tzinfo is None else expires.astimezone(timezone.utc)
     return ReviewerContextResponse(userId=room["users"][role], role="A" if role == "A" else "B",
-                                   roomCode=room_code(room["id"], settings.session_pepper), expiresAt=room["expiresAt"])
+                                   roomCode=room_code(room["id"], settings.session_pepper), expiresAt=expires)
 
 
 async def authenticated_room(principal: Principal, repo: AuthRepository, now: datetime) -> dict[str, Any]:

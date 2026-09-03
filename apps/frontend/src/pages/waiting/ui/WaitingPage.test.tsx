@@ -129,6 +129,8 @@ describe("WaitingPage", () => {
     renderWaiting();
 
     expect(await screen.findByText("아직 상대가 들어오지 않았어요")).toBeInTheDocument();
+    expect(screen.getByText(/내 입력은 제출되어 이제 수정할 수 없어요\./)).toBeInTheDocument();
+    expect(screen.getByText("이 세션은 7일 후 자동으로 삭제돼요.")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "초대 링크 복사" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "알림 보내기" })).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: "잠긴 결과 미리보기" })).toBeInTheDocument();

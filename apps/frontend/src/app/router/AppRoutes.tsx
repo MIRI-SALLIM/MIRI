@@ -8,7 +8,6 @@ import { RouteLoadingFallback } from "./RouteLoadingFallback";
 
 const LandingPage = lazy(async () => ({ default: (await import("@/pages/landing")).LandingPage }));
 const LightFormPage = lazy(async () => ({ default: (await import("@/pages/light-form")).LightFormPage }));
-const DonePage = lazy(async () => ({ default: (await import("@/pages/done")).DonePage }));
 const InvitePage = lazy(async () => ({ default: (await import("@/pages/invite")).InvitePage }));
 const WaitingPage = lazy(async () => ({ default: (await import("@/pages/waiting")).WaitingPage }));
 const LightResultPage = lazy(async () => ({
@@ -23,7 +22,6 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<LandingPage />} />
           <Route path="light/:step" element={<LightFormPage />} />
-          <Route path="done" element={<DonePage />} />
           <Route path="invite/:code" element={<InvitePage />} />
           <Route path="waiting/:sessionId" element={<WaitingPage />} />
           <Route path="result/light/:sessionId" element={<LightResultPage />} />

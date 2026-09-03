@@ -11,7 +11,11 @@ interface LightFormState {
   isHydrated: boolean;
   isReadOnly: boolean;
   saveStatus: LightFormSaveStatus;
-  hydrate: (input: LightInputResponse) => void;
+  sessionId: string | null;
+  hydrate: (
+    input: LightInputResponse,
+    options?: { isReadOnly?: boolean; sessionId?: string },
+  ) => void;
   setAnswer: (index: number, value: LightAnswerValue) => void;
   setCurrentStep: (step: number) => void;
   setGuess: (index: number, value: LightAnswerValue) => void;
@@ -26,13 +30,20 @@ export const useLightFormStore = create<LightFormState>((set) => ({
   isHydrated: false,
   isReadOnly: false,
   saveStatus: "idle",
-  hydrate: (input) =>
-    set({
-      answers: input.answers ? [...input.answers] : [],
-      guesses: input.guesses ? [...input.guesses] : [],
-      isHydrated: true,
-      isReadOnly: false,
-      saveStatus: "idle",
+  sessionId: null,
+  hydrate: (input, options) =>
+    set((state) => {
+      const hasSessionId = options?.sessionId !== undefined;
+      const isSameSession = !hasSessionId || state.sessionId === options.sessionId;
+
+      return {
+        answers: input.answers ? [...input.answers] : [],
+        guesses: input.guesses ? [...input.guesses] : [],
+        isHydrated: true,
+        isReadOnly: options?.isReadOnly ?? (isSameSession ? state.isReadOnly : false),
+        saveStatus: "idle",
+        sessionId: options?.sessionId ?? state.sessionId,
+      };
     }),
   setAnswer: (index, value) =>
     set((state) => {

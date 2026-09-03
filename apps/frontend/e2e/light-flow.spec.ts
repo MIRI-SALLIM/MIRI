@@ -27,9 +27,6 @@ test("two independent participants can complete the light flow and download a sh
 
     await joinInvitation(pageB, invitationUrl);
     await submitLightForm(pageA);
-    await expect(pageA.getByRole("heading", { name: "제출 완료" })).toBeVisible();
-    await pageA.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
-    await expect(pageA.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible();
 
     // 대기 중 결과 URL 방문이 waiting 응답을 캐시에 남긴다. goto가 부팅한 SPA 안에서
     // 클라이언트 리다이렉트로 /waiting에 닿으므로, 이후 reload 없이 진행해야 캐시가 남는다.
@@ -38,8 +35,6 @@ test("two independent participants can complete the light flow and download a sh
 
     await answerEveryQuestion(pageB, 1, 1);
     await submitLightForm(pageB);
-    await pageB.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
-    await expect(pageB.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible();
 
     const resultLinkA = pageA.getByRole("link", { name: "결과 보기" });
     const resultLinkB = pageB.getByRole("link", { name: "결과 보기" });

@@ -30,6 +30,10 @@ describe("production smoke release policy", () => {
     expect(deploymentDocument).not.toContain(legacyProductionSmokeFlag);
   });
 
+  it("keeps submission flow on the automatic waiting transition", () => {
+    expect(productionSmokeSource).not.toContain("상대방을 기다리러 가기");
+  });
+
   it("keeps waiting payloads and production artifacts out of assertions", () => {
     expect(productionSmokeSource).toContain("function isWaitingGateResponseBody");
     expect(productionSmokeSource).toContain(

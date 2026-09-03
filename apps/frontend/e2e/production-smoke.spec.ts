@@ -196,7 +196,6 @@ test.describe("production smoke", () => {
       );
 
       await submitLightForm(pageA);
-      await pageA.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
       await expect(pageA.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible({
         timeout: ASSERTION_TIMEOUT,
       });
@@ -227,7 +226,6 @@ test.describe("production smoke", () => {
       const revealDeadline = Date.now() + REVEAL_DEADLINE_MS;
       expect(bSubmitResponseReceived.ok()).toBe(true);
       await bSubmitForm;
-      await pageB.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
       await expect(pageB.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible({
         timeout: ASSERTION_TIMEOUT,
       });

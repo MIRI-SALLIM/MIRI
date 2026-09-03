@@ -4,6 +4,8 @@
 
 ## 먼저 읽을 문서
 
+최신 배포·검증 상태: [Deep v3 실DB 검증·fix2 코드 배포](handoffs/2026-09-03-deep-v3-release-progress.md). 실제 Mongo/HTTPS 검증과 Railway fix2 코드 배포를 완료했다. 운영 Deep·심사용 로그인은 설정 전이라 비활성이고, 사용자 요청에 따라 프론트 UI 제작은 보류했다. 아래 구현 인계의 이전 미배포 상태는 이 문서로 갱신한다.
+
 최신 백엔드 구현 인계: [딥모드 v3 입력·분담·공동 리포트 연결](handoffs/2026-09-03-deep-v3-integration-progress.md). 프론트 계약은 [Deep v3 API](deep-v3-api.md). 승인된 방향은 [최종 질문 파이프라인](superpowers/specs/2026-09-03-deep-question-pipeline-final-design.md)이며 이번에는 저장→질문→공동 결과를 연결했다. 전체 재무 질문 UI·AI·실배포 완료는 아니다. 재원 기반은 [개인 미리보기 인계](handoffs/2026-09-03-deep-funding-progress.md), 이전 검증은 [프론트 없이 수행하는 HTTPS·실Mongo 검증](handoffs/2026-09-03-backend-https-progress.md), 인증 계약은 [심사용 로그인·독립 체험방·초기화](handoffs/2026-09-03-reviewer-login-progress.md), 이전 출시 경계는 [Deep MVP C 인계](handoffs/2026-09-03-deep-mvp-c-progress.md)를 참고한다. 이전 [A/B 인계](handoffs/2026-09-03-deep-mvp-ab-progress.md)는 과거 상태다. 기존 Light/프론트 문서는 아래에 보존한다.
 
 1. [프론트엔드 개발 시작 프롬프트](handoffs/2026-08-10-mirisallim-frontend-start-prompt.md)

@@ -2,6 +2,8 @@
 
 이 문서는 새 백엔드 연결 계약이다. 프론트 화면 구현·운영 배포 완료를 의미하지 않는다.
 
+2026-09-03 상태: [Railway API 서버](https://mirisalim-backend-production.up.railway.app)에 v3 코드는 배포됐지만 **Deep·심사용 로그인은 운영 설정 전으로 비활성(404)**이다. 예제 기반 UI 작업은 가능하며 실제 인증 연결은 프론트 origin 확정 후 진행한다. 검증 근거와 남은 설정은 [최신 배포 인계](handoffs/2026-09-03-deep-v3-release-progress.md)를 참고한다.
+
 ## 시작과 인증
 
 - 새 세션 API 기준 경로: `/api/v1/deep/v3`. 기존 `/api/v1/deep` 세션은 v2로 유지한다. 기존 세션을 자동 변환하지 않는다.

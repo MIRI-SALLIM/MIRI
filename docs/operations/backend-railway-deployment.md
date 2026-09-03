@@ -16,7 +16,7 @@
 | 항목 | 값 |
 | --- | --- |
 | GitHub repository | `MIRI-SALLIM/MIRI` |
-| Source branch | `fix/gate1-openapi-contract` |
+| Source branch | `fix/gate2-openapi-contract` |
 | Root Directory | `/apps/backend` |
 | Builder | 저장소의 `Dockerfile` 자동 감지 |
 | Runtime | Python 3.11 / Uvicorn |
@@ -54,7 +54,7 @@ Railway project canvas에서 생성된 service를 열고 다음을 설정한다.
 | 설정 | 값 |
 | --- | --- |
 | Source repository | `MIRI-SALLIM/MIRI` |
-| Source branch | `fix/gate1-openapi-contract` |
+| Source branch | `fix/gate2-openapi-contract` |
 | Root Directory | `/apps/backend` |
 | Healthcheck Path | `/health` |
 | Healthcheck Timeout | `300` seconds |

@@ -45,8 +45,12 @@ async function tabUntilFocused(page: Page, target: Locator, maxTabs = 80): Promi
 test("reachable light states have no serious or critical accessibility violations", async ({ browser }) => {
   test.setTimeout(120_000);
 
-  const contextA = await browser.newContext();
-  const contextB = await browser.newContext();
+  // fadeup(opacity 0 -> 1)이 도는 중간 상태를 axe가 샘플하면 글자색이 배경과 섞여
+  // 대비가 기준에 못 미치는 것으로 잡힌다. globals.css가 prefers-reduced-motion에서
+  // 모든 애니메이션을 0.01ms로 줄이므로, 이 설정으로 중간 상태 자체를 없앤다.
+  // 대비는 정착 상태에서만 의미가 있고, 이 경로는 실제 사용자 설정이기도 하다.
+  const contextA = await browser.newContext({ reducedMotion: "reduce" });
+  const contextB = await browser.newContext({ reducedMotion: "reduce" });
   const pageA = await contextA.newPage();
   const pageB = await contextB.newPage();
 

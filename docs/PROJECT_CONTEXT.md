@@ -4,6 +4,8 @@
 
 ## 먼저 읽을 문서
 
+최신 백엔드 구현 인계: [심사용 로그인·독립 체험방·초기화](handoffs/2026-09-03-reviewer-login-progress.md). [Deep MVP C 구현 및 미완료 출시 gate](handoffs/2026-09-03-deep-mvp-c-progress.md)도 함께 확인한다. 이전 [A/B 인계](handoffs/2026-09-03-deep-mvp-ab-progress.md)는 과거 상태다. 기존 Light/프론트 문서는 아래에 보존한다.
+
 1. [프론트엔드 개발 시작 프롬프트](handoffs/2026-08-10-mirisallim-frontend-start-prompt.md)
 2. [3분 모드 프로덕션 수직 슬라이스 설계](superpowers/specs/2026-08-05-mirisallim-light-vertical-slice-design.md)
 3. [프론트엔드 구현 계획](superpowers/plans/2026-08-06-mirisallim-light-frontend.md)

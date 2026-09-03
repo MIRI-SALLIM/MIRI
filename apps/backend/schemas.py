@@ -181,7 +181,7 @@ PUBLIC_QUESTION_IDS: frozenset[PublicQuestionId] = frozenset(
 
 class CreateSessionRequest(BaseModel):
     nickname: str | None = Field(None, min_length=1, max_length=20, description="작성자 닉네임", json_schema_extra={"example": "예랑이"})
-    mode: str = Field("light", description="진단 모드 (light | deep)", json_schema_extra={"example": "light"})
+    mode: Literal["light"] = Field("light", description="라이트 전용. 딥은 /api/v1/deep/sessions 사용", json_schema_extra={"example": "light"})
 
 class SessionParticipant(BaseModel):
     role: str = Field(..., description="참여자 역할 (creator | invitee)", json_schema_extra={"example": "creator"})

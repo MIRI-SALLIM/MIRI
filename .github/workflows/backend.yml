@@ -28,11 +28,37 @@ jobs:
           cache-dependency-path: apps/backend/requirements.txt
       - run: python -m pip install -r requirements.txt
       - run: python -m ruff check .
-      - run: python -m mypy main.py schemas.py services tests scripts
-      - run: python -m pytest -q
+      - run: python -m mypy main.py schemas.py services auth deep tests scripts
+      - run: python scripts/test_local.py -q
 
   container:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t mirisalim-backend:test apps/backend
+
+  deep-mongo:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      ENVIRONMENT: test
+      DEEP_MODE_ENABLED: "false"
+      MONGODB_URI: mongodb://127.0.0.1:27017
+      DEEP_TEST_MONGODB_URI: mongodb://127.0.0.1:27017
+      REQUIRE_DEEP_MONGO_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+      - run: python -m pip install -r apps/backend/requirements.txt
+      - run: python -m pytest tests/integration/test_deep_mongo.py tests/integration/test_reviewer_mongo.py tests/integration/test_mongo_concurrency.py tests/integration/test_result_engine.py -q
+        working-directory: apps/backend

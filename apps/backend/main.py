@@ -27,6 +27,17 @@ from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from auth.errors import AuthError
+from auth.logging import install_auth_log_filter
+from auth.reviewer_router import router as reviewer_router
+from auth.router import error_response as auth_error_response
+from auth.router import router as auth_router
+from auth.settings import load_auth_settings
+from deep.config import validate_configuration
+from deep.errors import DeepError
+from deep.router import account_router as deep_account_router
+from deep.router import error_response as deep_error_response
+from deep.router import router as deep_router
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -62,6 +73,9 @@ from services.session_repository import (
 from services.validator import validate_input
 
 load_dotenv()
+if load_auth_settings(os.environ).enabled:
+    validate_configuration()
+install_auth_log_filter()
 
 # ==========================================
 # 환경 설정 및 상수
@@ -158,6 +172,20 @@ app = FastAPI(
         {"url": "/", "description": "기본 서버 (Default)"}
     ]
 )
+app.include_router(auth_router)
+app.include_router(reviewer_router)
+app.include_router(deep_router)
+app.include_router(deep_account_router)
+
+
+@app.exception_handler(AuthError)
+async def auth_exception_handler(request: Request, exc: AuthError) -> JSONResponse:
+    return auth_error_response(exc)
+
+
+@app.exception_handler(DeepError)
+async def deep_exception_handler(request: Request, exc: DeepError) -> JSONResponse:
+    return deep_error_response(exc)
 
 # 쿠키 보안 스킴 정의
 cookie_sec = APIKeyCookie(name=PARTICIPANT_COOKIE_NAME, auto_error=False, description="참여자 인증 쿠키")
@@ -384,6 +412,10 @@ def _get_partner(document: dict[str, Any], token_hash: str) -> dict[str, Any] | 
 
 
 def _raise_if_expired(document: dict[str, Any]) -> None:
+    if document.get("mode", "light") != "light":
+        raise HTTPException(status_code=409, detail={
+            "code": "LEGACY_DEEP_UNSUPPORTED", "message": "이전 딥 세션은 지원하지 않습니다. 로그인 후 새 딥 진단을 시작해 주세요.",
+        })
     expires_at = document.get("expiresAt")
     if isinstance(expires_at, datetime.datetime) and as_utc(expires_at) <= utc_now():
         raise HTTPException(
@@ -531,63 +563,6 @@ def get_light_questions(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail={"code": "CONFIG_NOT_FOUND", "message": "라이트 진단 질문 설정 파일을 불러올 수 없습니다."}
     )
-
-
-@app.get(
-    "/api/v1/deep/questions",
-    summary="딥 모드 가치관 질문 목록 조회",
-    response_model=QuestionSet,
-    responses={
-        404: {"model": ErrorResponse, "description": "질문 세트를 찾을 수 없음"},
-        422: {"model": ErrorResponse, "description": "입력 파라미터 검증 실패"}
-    },
-    tags=["딥 진단"]
-)
-def get_deep_questions(
-    version: str = Query("deep-v1", description="딥 진단 질문 세트 버전 (기본값: deep-v1)")
-) -> dict[str, Any]:
-    if version != "deep-v1":
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "QUESTION_SET_NOT_FOUND", "message": f"'{version}' 버전을 찾을 수 없습니다."}
-        )
-
-    param_data = get_cached_config("parameters") or {}
-    deep_mappings = param_data.get("questionMapping", {}).get("deep", [])
-
-    questions: list[dict[str, Any]] = []
-    for idx, item in enumerate(deep_mappings, start=1):
-        left_label = item.get("left", "왼쪽 서술 성향")
-        right_label = item.get("right", "오른쪽 서술 성향")
-        questions.append({
-            "id": item["id"],
-            "order": idx,
-            "category": item.get("category", item.get("area", "가치관")),
-            "target": "self",
-            "text": item["text"],
-            "subText": f"1점({left_label})부터 5점({right_label})까지 본인의 생각에 가까운 점수를 선택해 주세요.",
-            "type": "scale",
-            "scaleConfig": {
-                "min": 1,
-                "max": 5,
-                "leftLabel": left_label,
-                "rightLabel": right_label,
-                "steps": [
-                    f"1점: 매우 {left_label}",
-                    f"2점: 약간 {left_label}",
-                    "3점: 중간 / 보통",
-                    f"4점: 약간 {right_label}",
-                    f"5점: 매우 {right_label}"
-                ]
-            }
-        })
-
-    return {
-        "version": "deep-v1",
-        "title": "미리살림 딥 진단 가치관 질문 세트",
-        "description": "신혼부부의 5대 핵심 재무 가치관(저축, 소비, 투자, 부채, 공동관리) 영역별 8개 심층 문항입니다.",
-        "questions": questions
-    }
 
 
 # ==========================================
@@ -789,6 +764,7 @@ async def get_invitation(
     # 유효하지 않은 코드, 만료된 코드, 이미 참여된 코드 모두 중립적인 404 반환
     if (
         document is None
+        or document.get("mode", "light") != "light"
         or not code.startswith("INV-")
         or len(document.get("participants", [])) >= 2
         or (
@@ -827,7 +803,7 @@ async def join_invitation(
     active_req = req or JoinInvitationRequest(nickname=None)
     repository = await get_session_repository()
     document = await repository.get_by_code(code)
-    if not code.startswith("INV-") or document is None:
+    if not code.startswith("INV-") or document is None or document.get("mode", "light") != "light":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "INVITATION_NOT_FOUND", "message": "유효하지 않거나 만료된 초대 링크입니다."}

@@ -65,7 +65,19 @@ def test_light_questions():
 
 def test_deep_questions():
     """딥 진단 8개 가치관 문항(5대 영역) 및 공통 에러 봉투 검증"""
-    res = client.get("/api/v1/deep/questions")
+    from unittest.mock import patch
+
+    from auth.dependencies import get_enabled_settings, require_account
+    from auth.models import Principal
+    from auth.settings import load_auth_settings
+
+    # deep-v1 is now an authenticated compatibility query, not a public entry point.
+    with patch.dict(app.dependency_overrides, {
+        get_enabled_settings: lambda: load_auth_settings({}),
+        require_account: lambda: Principal("compatibility-test"),
+    }):
+        res = client.get("/api/v1/deep/questions?version=deep-v1")
+        err_res = client.get("/api/v1/deep/questions?version=invalid")
     assert res.status_code == 200
     data = res.json()
     assert data["version"] == "deep-v1"
@@ -77,7 +89,6 @@ def test_deep_questions():
     assert {"저축", "소비", "투자", "부채", "공동관리"}.issubset(categories)
 
     # 404 에러 검증
-    err_res = client.get("/api/v1/deep/questions?version=invalid")
     assert err_res.status_code == 404
     assert err_res.json()["error"]["code"] == "QUESTION_SET_NOT_FOUND"
     print("✅ [테스트 3] /api/v1/deep/questions 8개 가치관 문항 정상")

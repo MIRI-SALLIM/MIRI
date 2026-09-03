@@ -12,6 +12,8 @@
 
 이 파일이 있다고 운영 계정이 활성화된 것은 아니다. **Railway에는 아직 적용하지 않았다.** 기존 운영 `AUTH_SESSION_PEPPER`가 이미 있다면 무심코 새 값으로 교체하지 않는다(기존 로그인에 영향). 계정 비밀번호만 전달하고 `railway.env`/pepper는 프론트 또는 심사위원에게 전달하지 않는다.
 
+비밀 폴더는 Git 제외 외에 `apps/backend/.dockerignore`의 `**/*.local`로 Docker 빌드에서도 제외한다. Git 제외만으로 로컬 Docker 빌드 전송을 막을 수 있다고 가정하지 않는다([Docker 빌드 컨텍스트 안내](https://docs.docker.com/build/concepts/context/#dockerignore-files)). CI는 실제 비밀번호 대신 합성 `.local` 파일·폴더를 만들고 완성 이미지에 없는지 검사한다.
+
 다른 환경에서 새 묶음을 준비할 때는 `python scripts/provision_reviewers.py .reviewer-credentials.local`을 사용한다. 기존 폴더를 덮어쓰지 않으며, 비밀번호를 stdout에 출력하지 않는다. Windows에서는 실행 계정의 ACL을 적용하므로 Codex의 별도 실행 계정으로 생성한 경우 실제 사용자의 읽기 권한도 확인해야 한다. 이미 생성한 묶음은 재생성할 필요가 없다.
 
 1. 로컬 `apps/backend`에서 다음을 각각 실행한다. 입력은 화면에 표시되지 않으며 터미널에는 해시만 출력된다. 비밀번호는 안전한 비밀번호 관리자에서 서로 다른 난수로 만들고 보관한다. 예제/테스트의 비밀번호는 사용하지 않는다.

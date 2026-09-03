@@ -361,9 +361,23 @@ git commit -m "ci(web): complete release readiness"
 
 After supervisor confirms user authorization, create or update Vercel project `mirisallim`, set root directory `apps/frontend`, deploy preview, inspect headers/rewrite, then promote the verified build to production. Update backend `ALLOWED_ORIGINS` to the exact Vercel production origin only through the backend owner's approved process.
 
-- [ ] **Step 6: Run production smoke**
+- [x] **Step 6: Run production smoke**
 
-**아직 실행하지 않았다.** 2026-09-03 실행 중 이슈 #24(대기 중 결과 URL 방문 후 결과 보기가 되튕김)로 중단됐다. 그 수정(PR #25)과 후속 4건(PR #29·#30·#31·#35)이 `develop`에 병합되고 프로덕션에 배포된 지금 재실행 가능하다. 이 스텝이 F8에 남은 유일한 작업이다.
+**통과했다 (2026-09-03).**
+
+| 항목 | 값 |
+| --- | --- |
+| 종료 코드 | 0 |
+| 테스트 | 2 passed (desktop-chromium, mobile-chromium 각 1회) |
+| 소요 | 48.6s |
+| 호스트 | `miri-sallim.vercel.app` |
+| 실패 증거 | 없음 (`test-results` 미생성) |
+
+이 실행으로 그동안 프로덕션에서 미검증이던 네 항목이 확인됐다 — 결과 페이지 axe, 공유 미리보기와 비율 전환, PNG 다운로드, 공유 카드 프라이버시. 함께 검증된 것은 동시공개 3초 예산, 대기 중 결과 URL 프라이버시 게이트, 보안 헤더 4종이다.
+
+첫 실행은 이슈 #24(대기 중 결과 URL 방문 후 결과 보기가 되튕김)로 중단됐다. 그 수정(PR #25)과 후속 4건(PR #29·#30·#31·#35)을 병합·배포한 뒤 재실행해 완주했다. 특히 #26이 3초 예산을 결과 공개 시점까지로 한정하고 #28이 폴링 주기를 1000ms로 줄인 것이 효과를 냈다 — 첫 실행에서는 예산 잔량이 349ms까지 줄었다.
+
+기록은 위 표까지만 남긴다. 쿠키·응답 본문·participant token·답변/결과 payload는 남기지 않았다.
 
 Set `PLAYWRIGHT_BASE_URL` to the exact Vercel production URL and run:
 

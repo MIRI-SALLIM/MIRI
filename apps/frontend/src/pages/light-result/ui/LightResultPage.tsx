@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { Navigate, useParams } from "react-router-dom";
 
-import { fetchLightResult, lightResultQueryKey } from "@/features/get-light-result";
+import { useLightResult } from "@/features/get-light-result";
 import { ApiError } from "@/shared/api";
 import { ResultComparison } from "@/widgets/result-comparison";
 import { ResultSummary } from "@/widgets/result-summary";
@@ -29,18 +28,9 @@ function ResultError({ error }: { error: unknown }) {
 
 export function LightResultPage() {
   const { sessionId = "" } = useParams();
-  const resultQuery = useQuery({
-    enabled: sessionId !== "",
-    queryFn: () => fetchLightResult(sessionId),
-    queryKey: lightResultQueryKey(sessionId),
-    retry: false,
-  });
+  const lightResult = useLightResult(sessionId);
 
-  if (sessionId === "") {
-    return <ResultError error={new Error("Missing session id")} />;
-  }
-
-  if (resultQuery.isPending) {
+  if (lightResult.state === "loading") {
     return (
       <section aria-live="polite" className={pageClassName}>
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">라이트 결과</h1>
@@ -49,15 +39,15 @@ export function LightResultPage() {
     );
   }
 
-  if (resultQuery.isError || resultQuery.data === undefined) {
-    return <ResultError error={resultQuery.error} />;
+  if (lightResult.state === "error") {
+    return <ResultError error={lightResult.error} />;
   }
 
-  if (resultQuery.data.status === "waiting") {
+  if (lightResult.state === "waiting") {
     return <Navigate replace to={`/waiting/${sessionId}`} />;
   }
 
-  const { result } = resultQuery.data;
+  const { result } = lightResult;
 
   return (
     <section className={pageClassName}>

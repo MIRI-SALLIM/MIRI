@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { lightResultQueryKey } from "@/features/get-light-result";
+
 import { WaitingPage } from "./WaitingPage";
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
@@ -90,11 +92,13 @@ async function flush(milliseconds = 0) {
   });
 }
 
-function renderWaiting() {
-  const queryClient = new QueryClient({
+function createTestQueryClient() {
+  return new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
+}
 
+function renderWaiting(queryClient = createTestQueryClient()) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={["/waiting/session-a"]}>
@@ -177,6 +181,23 @@ describe("WaitingPage", () => {
     );
     expect(screen.queryByRole("img", { name: "잠긴 결과 미리보기" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "알림 보내기" })).not.toBeInTheDocument();
+  });
+
+  it("drops a cached waiting result once the reveal unlocks", async () => {
+    respondWith({
+      status: () => jsonResponse(sessionStatus({ partnerCompleted: true, partnerJoined: true }), 200),
+    });
+
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), {
+      partnerCompleted: false,
+      status: "waiting",
+    });
+
+    renderWaiting(queryClient);
+
+    expect(await screen.findByText("결과가 준비됐어요")).toBeInTheDocument();
+    expect(queryClient.getQueryData(lightResultQueryKey("session-a"))).toBeUndefined();
   });
 
   it("reports an expired session", async () => {

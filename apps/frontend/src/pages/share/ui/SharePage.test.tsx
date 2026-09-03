@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { lightResultQueryKey } from "@/features/get-light-result";
+
 import { SharePage } from "./SharePage";
 
 const { downloadShareCardMock, fetchMock, mapperMock } = vi.hoisted(() => ({
@@ -72,11 +74,18 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function renderShare(initialEntry = "/result/light/session-a/share") {
-  const queryClient = new QueryClient({
+const waitingResponseBody = { partnerCompleted: false, status: "waiting" } as const;
+
+function createTestQueryClient() {
+  return new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
+}
 
+function renderShare(
+  initialEntry = "/result/light/session-a/share",
+  queryClient = createTestQueryClient(),
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
@@ -129,6 +138,19 @@ describe("SharePage", () => {
     expect(screen.queryByTestId("share-card")).not.toBeInTheDocument();
     expect(screen.queryByText("차곡차곡 지도")).not.toBeInTheDocument();
     expect(mapperMock).not.toHaveBeenCalled();
+  });
+
+  it("re-fetches instead of bouncing when a cached waiting result is stale", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), waitingResponseBody);
+    fetchMock.mockResolvedValue(jsonResponse(readyResult));
+
+    renderShare("/result/light/session-a/share", queryClient);
+
+    expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
+    expect(await screen.findByTestId("share-card")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
+    expect(mapperMock).toHaveBeenCalled();
   });
 
   it("renders a ready result as a portrait card by default", async () => {

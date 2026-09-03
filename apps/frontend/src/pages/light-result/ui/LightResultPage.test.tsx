@@ -1,7 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { lightResultQueryKey } from "@/features/get-light-result";
+import { WaitingPage } from "@/pages/waiting";
 
 import { LightResultPage } from "./LightResultPage";
 
@@ -65,6 +69,16 @@ const readyResult = {
   },
 };
 
+const waitingResponseBody = { partnerCompleted: false, status: "waiting" } as const;
+
+const readySessionStatus = {
+  expiresAt: "2026-08-19T12:00:00Z",
+  meCompleted: true,
+  partnerCompleted: true,
+  partnerJoined: true,
+  partnerNudgedAt: null,
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     headers: { "content-type": "application/json" },
@@ -72,11 +86,13 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function renderResult() {
-  const queryClient = new QueryClient({
+function createTestQueryClient() {
+  return new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
+}
 
+function renderResult(queryClient = createTestQueryClient()) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={["/result/light/session-a"]}>
@@ -146,5 +162,110 @@ describe("LightResultPage", () => {
     expect(container.innerHTML).toContain(partnerAnswer);
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+  });
+
+  it("re-fetches instead of bouncing when a cached waiting result is stale", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), waitingResponseBody);
+    fetchMock.mockResolvedValue(jsonResponse(readyResult));
+
+    const { container } = renderResult(queryClient);
+
+    expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
+    expect(
+      await screen.findByText("서로의 생각을 이해하고 맞춰가는 첫걸음"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
+    expect(container.innerHTML).toContain(partnerAnswer);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("holds the loading section while a cached waiting result revalidates", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), waitingResponseBody);
+
+    let resolveResult: (response: Response) => void = () => {};
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => {
+        resolveResult = resolve;
+      }),
+    );
+
+    const { container } = renderResult(queryClient);
+
+    expect(screen.getByText("결과를 불러오는 중이에요.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
+    expect(container.innerHTML).not.toContain(partnerAnswer);
+
+    await act(async () => {
+      resolveResult(jsonResponse(readyResult));
+    });
+
+    expect(
+      await screen.findByText("서로의 생각을 이해하고 맞춰가는 첫걸음"),
+    ).toBeInTheDocument();
+  });
+
+  it("redirects to the waiting page when the revalidated result is still waiting", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), waitingResponseBody);
+    fetchMock.mockResolvedValue(jsonResponse(waitingResponseBody));
+
+    const { container } = renderResult(queryClient);
+
+    expect(await screen.findByRole("heading", { name: "상대방을 기다리는 중" })).toBeInTheDocument();
+    expect(container.innerHTML).not.toContain(partnerAnswer);
+  });
+
+  it("shows an error when revalidating a cached waiting result fails", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(lightResultQueryKey("session-a"), waitingResponseBody);
+    fetchMock.mockResolvedValue(
+      jsonResponse({ error: { code: "TEMPORARY", message: "잠시 후 다시 시도해 주세요." } }, 503),
+    );
+
+    renderResult(queryClient);
+
+    expect(await screen.findByText("결과를 불러오지 못했어요.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "상대방을 기다리는 중" })).not.toBeInTheDocument();
+  });
+
+  it("opens the result after the waiting page unlocks it", async () => {
+    let resultCallCount = 0;
+    fetchMock.mockImplementation(async (request: Request) => {
+      const { pathname } = new URL(request.url);
+
+      if (pathname.endsWith("/status")) {
+        return jsonResponse(readySessionStatus);
+      }
+
+      if (pathname.endsWith("/result")) {
+        resultCallCount += 1;
+
+        return jsonResponse(resultCallCount === 1 ? waitingResponseBody : readyResult);
+      }
+
+      throw new Error(`unexpected request: ${pathname}`);
+    });
+
+    const user = userEvent.setup();
+
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <MemoryRouter initialEntries={["/result/light/session-a"]}>
+          <Routes>
+            <Route element={<LightResultPage />} path="/result/light/:sessionId" />
+            <Route element={<WaitingPage />} path="/waiting/:sessionId" />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    // 결과가 아직 안 열려서 대기 화면으로 보내고, 그 대기 응답이 캐시에 남는다.
+    await user.click(await screen.findByRole("link", { name: "결과 보기" }));
+
+    expect(
+      await screen.findByText("서로의 생각을 이해하고 맞춰가는 첫걸음"),
+    ).toBeInTheDocument();
   });
 });

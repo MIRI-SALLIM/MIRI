@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { LoginCheck } from "@/pages/login-check";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { PillToggle } from "@/shared/ui/pill-toggle";
@@ -7,6 +8,10 @@ import { Progress } from "@/shared/ui/progress";
 import { AppShell } from "@/widgets/app-shell";
 
 export function App() {
+  return window.location.pathname === "/deep/login-check" ? <LoginCheck /> : <Foundation />;
+}
+
+function Foundation() {
   const [answerSelected, setAnswerSelected] = useState(true);
   const [predictionSelected, setPredictionSelected] = useState(false);
 

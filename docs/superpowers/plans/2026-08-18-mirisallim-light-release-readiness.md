@@ -44,7 +44,7 @@
 - Consumes: backend command `python -m uvicorn main:app --host 127.0.0.1 --port 8000` from `apps/backend` and Vite proxy target `MIRISALLIM_API_PROXY_TARGET`.
 - Produces: `test:e2e`, `test:e2e:smoke`, `PLAYWRIGHT_BASE_URL`, `MIRISALLIM_E2E_USE_MONGO`, and reusable role-based flow helpers.
 
-- [ ] **Step 1: Add the scripts and a failing smoke test**
+- [x] **Step 1: Add the scripts and a failing smoke test**
 
 Set scripts to:
 
@@ -57,13 +57,13 @@ Set scripts to:
 
 The smoke test opens `/`, checks the heading `돈 이야기, 다투기 전에 맞춰봐요`, and asserts no horizontal overflow at 390px.
 
-- [ ] **Step 2: Run the smoke test and verify RED**
+- [x] **Step 2: Run the smoke test and verify RED**
 
 Run: `npm.cmd --workspace @mirisallim/frontend run test:e2e:smoke`
 
 Expected: FAIL because Playwright config and managed web servers do not exist.
 
-- [ ] **Step 3: Implement Playwright config**
+- [x] **Step 3: Implement Playwright config**
 
 The config must:
 
@@ -84,7 +84,7 @@ npm run dev -- --host 127.0.0.1 --port 4173
 
 with `MIRISALLIM_API_PROXY_TARGET=http://127.0.0.1:8000`.
 
-- [ ] **Step 4: Add deterministic flow helpers**
+- [x] **Step 4: Add deterministic flow helpers**
 
 `e2e/support/light-flow.ts` exports:
 
@@ -97,7 +97,7 @@ export async function submitLightForm(page: Page): Promise<void>;
 
 Helpers use accessible names only: `가볍게 맞춰보기`, `참여하고 시작하기`, groups `내 답` and `상대 예측`, buttons `첫 번째 선택`, `두 번째 선택`, `다음`, `입력 완료하기`. They derive the question count from the rendered progress and loop until the submit button appears; they do not hardcode five questions.
 
-- [ ] **Step 5: Run smoke and commit**
+- [x] **Step 5: Run smoke and commit**
 
 Run:
 
@@ -129,7 +129,7 @@ git commit -m "test(web): add playwright runtime"
 - Consumes: Task 1 flow helpers and actual FastAPI HTTP responses.
 - Produces: A/B end-to-end regression and strict waiting-response privacy assertions.
 
-- [ ] **Step 1: Write the full-flow test**
+- [x] **Step 1: Write the full-flow test**
 
 Create one Chromium browser with two independent contexts `contextA` and `contextB`.
 
@@ -142,7 +142,7 @@ Create one Chromium browser with two independent contexts `contextA` and `contex
 7. Both pages show the same `서로 맞힌 답` numerator and denominator.
 8. A opens `결과 공유`, selects both ratios, and verifies a PNG download event.
 
-- [ ] **Step 2: Write the network privacy test**
+- [x] **Step 2: Write the network privacy test**
 
 Register a response listener for A before the first submission. At the result endpoint, parse JSON in memory and assert:
 
@@ -154,7 +154,7 @@ expect(JSON.stringify(body)).not.toMatch(/answers|guesses|result|type|score/i);
 
 Also assert A's DOM and accessibility-visible text do not contain a sentinel partner answer before B submits, and that local/session storage contain no answers, guesses, result, type, score, nickname, or participant token values.
 
-- [ ] **Step 3: Run the new specs and verify failures identify real gaps**
+- [x] **Step 3: Run the new specs and verify failures identify real gaps**
 
 Run:
 
@@ -165,11 +165,11 @@ npm.cmd --workspace @mirisallim/frontend run test:e2e -- e2e/privacy-gate.spec.t
 
 Expected before helper completion: FAIL at the first missing flow integration or download assertion, not at Playwright startup.
 
-- [ ] **Step 4: Implement only the helper changes needed by the tests**
+- [x] **Step 4: Implement only the helper changes needed by the tests**
 
 Keep all endpoint payload inspection inside the test process. Do not attach response bodies, cookies, trace annotations, or user inputs to test output. Wait for readiness using UI/response conditions with a 10-second assertion timeout; do not add fixed sleeps.
 
-- [ ] **Step 5: Run specs and commit**
+- [x] **Step 5: Run specs and commit**
 
 Run both focused specs until they exit 0, then:
 
@@ -190,7 +190,7 @@ git commit -m "test(web): cover two-party privacy flow"
 - Consumes: Task 1 flow helpers and `AxeBuilder` from `@axe-core/playwright`.
 - Produces: route-level axe, keyboard, and viewport regression coverage.
 
-- [ ] **Step 1: Write accessibility tests**
+- [x] **Step 1: Write accessibility tests**
 
 Run axe after each reachable route state: landing, light form, done, invite, waiting, ready result, share. Fail on `serious` and `critical` violations. Add keyboard assertions for:
 
@@ -200,11 +200,11 @@ Run axe after each reachable route state: landing, light form, done, invite, wai
 - ratio buttons on SharePage;
 - visible focus outline through computed `outline-style` and `outline-width`.
 
-- [ ] **Step 2: Write responsive tests**
+- [x] **Step 2: Write responsive tests**
 
 At 390×844 and 1280×900, assert `document.documentElement.scrollWidth <= window.innerWidth` on landing, light form, result, and share. At 899px the `주요 메뉴` navigation is absent; at 900px it is present. On desktop, result type cards form two columns and question comparison forms three columns; on mobile each becomes one column.
 
-- [ ] **Step 3: Run focused tests and fix only confirmed UI failures**
+- [x] **Step 3: Run focused tests and fix only confirmed UI failures**
 
 Run:
 
@@ -215,7 +215,7 @@ npm.cmd --workspace @mirisallim/frontend run test:e2e -- e2e/responsive.spec.ts
 
 Any production-code fix must receive a focused Vitest regression in the owning slice before changing the implementation.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```text
 git add apps/frontend/e2e apps/frontend/src
@@ -233,7 +233,7 @@ git commit -m "test(web): enforce accessibility and responsive gates"
 - Consumes: npm scripts, Python `apps/backend/requirements.txt`, Playwright config, MongoDB service.
 - Produces: GitHub check named `frontend`.
 
-- [ ] **Step 1: Add the workflow**
+- [x] **Step 1: Add the workflow**
 
 Trigger on pull requests and pushes to `develop` when frontend, backend contract, lockfile, or workflow files change. Configure Node 20, Python 3.11, npm cache, and a `mongo:8` service with health checks.
 
@@ -253,11 +253,11 @@ npm.cmd --workspace @mirisallim/frontend run test:e2e
 
 In YAML use portable `npm`, not Windows-only `npm.cmd`. Set `CI=true`, `MIRISALLIM_E2E_USE_MONGO=1`, `MONGODB_URI=mongodb://127.0.0.1:27017`, `MONGODB_DATABASE=mirisallim_e2e`, and a non-production test pepper. Upload `playwright-report` and `test-results` only on failure with a seven-day retention.
 
-- [ ] **Step 2: Validate locally**
+- [x] **Step 2: Validate locally**
 
 Parse the YAML and run the frontend command sequence locally. If Docker/MongoDB is unavailable, run the complete memory-mode E2E and record Mongo-backed CI validation as pending until the first GitHub run; do not report Gate 5 passed.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```text
 git add .github/workflows/frontend.yml
@@ -276,11 +276,11 @@ git commit -m "ci(web): verify frontend release readiness"
 - Consumes: supervisor-confirmed production backend HTTPS origin.
 - Produces: same-origin `/api` rewrite, SPA fallback, CSP, HSTS, nosniff, no-referrer.
 
-- [ ] **Step 1: Resolve the deployment gate**
+- [x] **Step 1: Resolve the deployment gate**
 
 Supervisor verifies one actual backend URL by requesting `/health` and confirming HTTP 200 from the intended production service. If neither a Render nor Railway production URL is known and healthy, stop this task before editing `vercel.json`; local F8 work may continue but production deployment remains blocked.
 
-- [ ] **Step 2: Write a failing config test**
+- [x] **Step 2: Write a failing config test**
 
 Read `vercel.json` and assert:
 
@@ -289,17 +289,17 @@ Read `vercel.json` and assert:
 - all routes receive CSP, HSTS, `X-Content-Type-Options=nosniff`, and `Referrer-Policy=no-referrer`;
 - CSP contains `default-src 'self'`, `script-src 'self'`, `connect-src 'self'`, `img-src 'self' data: blob:`, `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`, and the existing jsDelivr font/style source.
 
-- [ ] **Step 3: Run the test and verify RED**
+- [x] **Step 3: Run the test and verify RED**
 
 Run: `npm.cmd --workspace @mirisallim/frontend run test -- --run src/shared/config/vercel-config.test.ts`
 
 Expected: FAIL because `vercel.json` does not exist.
 
-- [ ] **Step 4: Implement config and verify**
+- [x] **Step 4: Implement config and verify**
 
 Write the confirmed backend origin as a literal rewrite destination. Use HSTS `max-age=31536000; includeSubDomains`. Run the config test, full Vitest, and production build.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```text
 git add apps/frontend/vercel.json apps/frontend/src/shared/config/vercel-config.test.ts
@@ -318,7 +318,7 @@ git commit -m "chore(web): configure vercel security and api rewrite"
 - Consumes: merged F8 branch, verified backend origin, Vercel project `mirisallim` rooted at `apps/frontend`.
 - Produces: repeatable preview/prod deployment, rollback instructions, and production URL smoke evidence.
 
-- [ ] **Step 1: Write the operations document**
+- [x] **Step 1: Write the operations document**
 
 Document:
 
@@ -331,11 +331,11 @@ Document:
 - production smoke command using `PLAYWRIGHT_BASE_URL`;
 - exact rule that secrets, cookies, and response bodies are never copied into the document.
 
-- [ ] **Step 2: Add production smoke coverage**
+- [x] **Step 2: Add production smoke coverage**
 
 The smoke spec uses an externally supplied `PLAYWRIGHT_BASE_URL`, does not start local web servers, and verifies landing, A/B session creation/join through same-origin `/api/v1`, simultaneous result, share preview, PNG download, no serious/critical axe violations, and the four security headers. Backend `/health` is verified separately against the confirmed backend origin because the frontend rewrite intentionally exposes only `/api/*` application routes.
 
-- [ ] **Step 3: Run the complete local gate**
+- [x] **Step 3: Run the complete local gate**
 
 Run:
 
@@ -350,18 +350,20 @@ npm.cmd --workspace @mirisallim/frontend run test:e2e
 
 Expected: all local commands exit 0. This does not yet prove production deployment.
 
-- [ ] **Step 4: Commit local release readiness**
+- [x] **Step 4: Commit local release readiness**
 
 ```text
 git add apps/frontend .github/workflows/frontend.yml docs/operations/frontend-deployment.md
 git commit -m "ci(web): complete release readiness"
 ```
 
-- [ ] **Step 5: External deployment approval gate**
+- [x] **Step 5: External deployment approval gate**
 
 After supervisor confirms user authorization, create or update Vercel project `mirisallim`, set root directory `apps/frontend`, deploy preview, inspect headers/rewrite, then promote the verified build to production. Update backend `ALLOWED_ORIGINS` to the exact Vercel production origin only through the backend owner's approved process.
 
 - [ ] **Step 6: Run production smoke**
+
+**아직 실행하지 않았다.** 2026-09-03 실행 중 이슈 #24(대기 중 결과 URL 방문 후 결과 보기가 되튕김)로 중단됐다. 그 수정(PR #25)과 후속 4건(PR #29·#30·#31·#35)이 `develop`에 병합되고 프로덕션에 배포된 지금 재실행 가능하다. 이 스텝이 F8에 남은 유일한 작업이다.
 
 Set `PLAYWRIGHT_BASE_URL` to the exact Vercel production URL and run:
 

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -93,7 +93,7 @@ function WaitingRoute() {
   return (
     <>
       <h1>상대방을 기다리는 중</h1>
-      <button onClick={() => navigate("/light/3")} type="button">
+      <button onClick={() => navigate(-1)} type="button">
         입력 다시 보기
       </button>
     </>
@@ -456,9 +456,57 @@ describe("LightFormPage", () => {
     expect(await screen.findByRole("heading", { name: "상대방을 기다리는 중" })).toBeInTheDocument();
   });
 
+  it("enters the form when session status stays pending", async () => {
+    vi.useFakeTimers();
+
+    try {
+      sessionStorage.setItem("activeSessionId", "session-a");
+      fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = input instanceof Request ? input.clone() : new Request(input, init);
+        const url = new URL(request.url);
+
+        if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+          return jsonResponse(questionSet);
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+          return jsonResponse({ answers: [null, null, null], guesses: [null, null, null] });
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+          return new Promise<Response>(() => {});
+        }
+
+        throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+      });
+
+      renderLightForm();
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText("질문을 불러오는 중...")).toBeInTheDocument();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_000);
+      });
+
+      expect(screen.getByRole("heading", { name: "첫 번째 질문이에요." })).toBeInTheDocument();
+      expect(
+        within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+          name: "첫 번째 선택",
+        }),
+      ).toBeEnabled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("keeps the form read-only when remounting after submission", async () => {
     sessionStorage.setItem("activeSessionId", "session-a");
     let statusRequestCount = 0;
+    let submitted = false;
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const request = input instanceof Request ? input.clone() : new Request(input, init);
       const url = new URL(request.url);
@@ -475,7 +523,7 @@ describe("LightFormPage", () => {
         statusRequestCount += 1;
         return jsonResponse({
           expiresAt: null,
-          meCompleted: statusRequestCount > 1,
+          meCompleted: submitted,
           partnerCompleted: false,
           partnerJoined: true,
           partnerNudgedAt: null,
@@ -483,6 +531,7 @@ describe("LightFormPage", () => {
       }
 
       if (request.method === "POST" && url.pathname === "/api/v1/sessions/session-a/me/submit") {
+        submitted = true;
         return jsonResponse({ completedAt: "2026-08-17T00:03:00Z", status: "submitted" });
       }
 

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -24,6 +24,7 @@ import { Button } from "@/shared/ui/button";
 import { SubmitLightButton } from "@/features/submit-light-form";
 
 const pageErrorMessage = "질문을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
+const SESSION_STATUS_HYDRATION_TIMEOUT_MS = 1_000;
 
 function parseStep(value: string | undefined): number {
   const parsed = Number(value);
@@ -74,12 +75,17 @@ export function LightFormPage() {
     queryFn: () => fetchSessionStatus(sessionId!),
     queryKey: sessionId === null ? ["session-status", "disabled"] : sessionStatusQueryKey(sessionId),
     retry: false,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const answers = useLightFormStore((state) => state.answers);
   const guesses = useLightFormStore((state) => state.guesses);
   const isHydrated = useLightFormStore((state) => state.isHydrated);
   const isReadOnly = useLightFormStore((state) => state.isReadOnly);
+  const hydratedSessionId = useLightFormStore((state) => state.sessionId);
   const saveStatus = useLightFormStore((state) => state.saveStatus);
   const hydrate = useLightFormStore((state) => state.hydrate);
   const setAnswer = useLightFormStore((state) => state.setAnswer);
@@ -87,6 +93,7 @@ export function LightFormPage() {
   const setGuess = useLightFormStore((state) => state.setGuess);
   const setReadOnly = useLightFormStore((state) => state.setReadOnly);
   const setSaveStatus = useLightFormStore((state) => state.setSaveStatus);
+  const [hydrationTimeoutSessionId, setHydrationTimeoutSessionId] = useState<string | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: ({ input, session }: { input: LightInput; session: string }) => saveLightInput(session, input),
@@ -139,31 +146,55 @@ export function LightFormPage() {
 
   const questionCount = questionQuery.data?.questions.length ?? 0;
   const boundedStep = questionCount === 0 ? 0 : Math.min(Math.max(requestedStep - 1, 0), questionCount - 1);
+  const statusHydrationReady =
+    sessionStatusQuery.isFetchedAfterMount && (sessionStatusQuery.isSuccess || sessionStatusQuery.isError);
+  const hasHydrationTimedOut = sessionId !== null && hydrationTimeoutSessionId === sessionId;
 
   useEffect(() => {
+    if (sessionId === null || isReadOnly || statusHydrationReady) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHydrationTimeoutSessionId(sessionId);
+    }, SESSION_STATUS_HYDRATION_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isReadOnly, sessionId, statusHydrationReady]);
+
+  useEffect(() => {
+    if (isReadOnly && isHydrated && hydratedSessionId === sessionId) {
+      return;
+    }
+
     if (
       inputQuery.data &&
       questionCount > 0 &&
       sessionId !== null &&
       inputQuery.isFetchedAfterMount &&
-      sessionStatusQuery.isFetchedAfterMount &&
-      (sessionStatusQuery.isSuccess || sessionStatusQuery.isError)
+      (statusHydrationReady || hasHydrationTimedOut || isReadOnly)
     ) {
       hydrate(normalizeInput(inputQuery.data, questionCount), {
-        isReadOnly: sessionStatusQuery.isSuccess ? sessionStatusQuery.data.meCompleted : undefined,
+        isReadOnly:
+          statusHydrationReady && sessionStatusQuery.isSuccess && !isReadOnly
+            ? sessionStatusQuery.data.meCompleted
+            : undefined,
         sessionId,
       });
     }
   }, [
     hydrate,
+    hydratedSessionId,
     inputQuery.data,
     inputQuery.isFetchedAfterMount,
     questionCount,
     sessionId,
     sessionStatusQuery.data,
-    sessionStatusQuery.isError,
-    sessionStatusQuery.isFetchedAfterMount,
     sessionStatusQuery.isSuccess,
+    hasHydrationTimedOut,
+    isHydrated,
+    isReadOnly,
+    statusHydrationReady,
   ]);
 
   useEffect(() => {
@@ -222,7 +253,8 @@ export function LightFormPage() {
   const isLastStep = questionCount > 0 && boundedStep === questionCount - 1;
   const isHydrationPending =
     sessionId !== null &&
-    (!inputQuery.isFetchedAfterMount || !sessionStatusQuery.isFetchedAfterMount);
+    (!inputQuery.isFetchedAfterMount ||
+      (!statusHydrationReady && !hasHydrationTimedOut && !isReadOnly));
 
   return (
     <section className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-center px-6 pb-[clamp(10px,2vh,48px)] pt-[clamp(9px,1.5vh,36px)] [line-height:normal]">

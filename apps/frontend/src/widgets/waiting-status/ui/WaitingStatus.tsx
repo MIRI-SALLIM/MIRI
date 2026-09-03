@@ -1,8 +1,9 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { activeSessionQueryKey, fetchActiveSession } from "@/entities/session";
+import { lightResultQueryKey } from "@/features/get-light-result";
 import { useSessionStatus } from "@/features/poll-session-status";
 import { sendNudge } from "@/features/send-nudge";
 import { ApiError } from "@/shared/api";
@@ -63,6 +64,14 @@ export function WaitingStatus({ sessionId }: WaitingStatusProps) {
   });
 
   const nudge = useMutation({ mutationFn: () => sendNudge(sessionId) });
+  const queryClient = useQueryClient();
+
+  // 대기 중에 캐시된 waiting 결과가 남아 있으면 결과 화면이 다시 대기로 튕긴다.
+  useEffect(() => {
+    if (isReady) {
+      queryClient.removeQueries({ queryKey: lightResultQueryKey(sessionId) });
+    }
+  }, [isReady, queryClient, sessionId]);
 
   useEffect(
     () => () => {

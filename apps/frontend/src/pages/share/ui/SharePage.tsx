@@ -1,8 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 
-import { fetchLightResult, lightResultQueryKey } from "@/features/get-light-result";
+import { useLightResult } from "@/features/get-light-result";
 import {
   DownloadShareCardButton,
   toShareCardModel,
@@ -29,18 +28,9 @@ export function SharePage() {
   const { sessionId = "" } = useParams();
   const [ratio, setRatio] = useState<"portrait" | "square">("portrait");
   const cardRef = useRef<HTMLDivElement>(null);
-  const resultQuery = useQuery({
-    enabled: sessionId !== "",
-    queryFn: () => fetchLightResult(sessionId),
-    queryKey: lightResultQueryKey(sessionId),
-    retry: false,
-  });
+  const lightResult = useLightResult(sessionId);
 
-  if (sessionId === "") {
-    return <ShareError />;
-  }
-
-  if (resultQuery.isPending) {
+  if (lightResult.state === "loading") {
     return (
       <section aria-live="polite" className={pageClassName}>
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">결과 공유</h1>
@@ -49,15 +39,15 @@ export function SharePage() {
     );
   }
 
-  if (resultQuery.isError || resultQuery.data === undefined) {
+  if (lightResult.state === "error") {
     return <ShareError />;
   }
 
-  if (resultQuery.data.status === "waiting") {
+  if (lightResult.state === "waiting") {
     return <Navigate replace to={`/waiting/${sessionId}`} />;
   }
 
-  const model = toShareCardModel(resultQuery.data.result, ratio);
+  const model = toShareCardModel(lightResult.result, ratio);
 
   return (
     <section className={pageClassName}>

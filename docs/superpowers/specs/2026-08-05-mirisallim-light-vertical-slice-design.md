@@ -35,7 +35,6 @@
 | --- | --- |
 | `/` | 랜딩과 모드 선택 |
 | `/light/:step` | 3분 입력(기본 5문항) |
-| `/done` | 제출 완료와 초대 코드 |
 | `/invite/:code` | 초대 참여 |
 | `/waiting/:sessionId` | 상대 대기와 완료 감지 |
 | `/result/light/:sessionId` | 3분 결과 |

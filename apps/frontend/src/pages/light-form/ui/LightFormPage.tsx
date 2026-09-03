@@ -6,6 +6,7 @@ import {
   ACTIVE_SESSION_STORAGE_KEY,
   activeSessionQueryKey,
 } from "@/features/create-session";
+import { fetchSessionStatus, sessionStatusQueryKey } from "@/features/poll-session-status";
 import {
   getActiveSession,
   getLightInput,
@@ -66,6 +67,12 @@ export function LightFormPage() {
     enabled: sessionId !== null,
     queryFn: () => getLightInput(sessionId!),
     queryKey: ["light-input", sessionId],
+    retry: false,
+  });
+  const sessionStatusQuery = useQuery({
+    enabled: sessionId !== null,
+    queryFn: () => fetchSessionStatus(sessionId!),
+    queryKey: sessionId === null ? ["session-status", "disabled"] : sessionStatusQueryKey(sessionId),
     retry: false,
   });
 
@@ -134,10 +141,30 @@ export function LightFormPage() {
   const boundedStep = questionCount === 0 ? 0 : Math.min(Math.max(requestedStep - 1, 0), questionCount - 1);
 
   useEffect(() => {
-    if (inputQuery.data && questionCount > 0) {
-      hydrate(normalizeInput(inputQuery.data, questionCount));
+    if (
+      inputQuery.data &&
+      questionCount > 0 &&
+      sessionId !== null &&
+      inputQuery.isFetchedAfterMount &&
+      sessionStatusQuery.isFetchedAfterMount &&
+      (sessionStatusQuery.isSuccess || sessionStatusQuery.isError)
+    ) {
+      hydrate(normalizeInput(inputQuery.data, questionCount), {
+        isReadOnly: sessionStatusQuery.isSuccess ? sessionStatusQuery.data.meCompleted : undefined,
+        sessionId,
+      });
     }
-  }, [hydrate, inputQuery.data, questionCount]);
+  }, [
+    hydrate,
+    inputQuery.data,
+    inputQuery.isFetchedAfterMount,
+    questionCount,
+    sessionId,
+    sessionStatusQuery.data,
+    sessionStatusQuery.isError,
+    sessionStatusQuery.isFetchedAfterMount,
+    sessionStatusQuery.isSuccess,
+  ]);
 
   useEffect(() => {
     if (questionCount > 0) {
@@ -193,6 +220,9 @@ export function LightFormPage() {
           : null;
 
   const isLastStep = questionCount > 0 && boundedStep === questionCount - 1;
+  const isHydrationPending =
+    sessionId !== null &&
+    (!inputQuery.isFetchedAfterMount || !sessionStatusQuery.isFetchedAfterMount);
 
   return (
     <section className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-center px-6 pb-[clamp(10px,2vh,48px)] pt-[clamp(9px,1.5vh,36px)] [line-height:normal]">
@@ -212,7 +242,7 @@ export function LightFormPage() {
         </button>
       </div>
 
-      {questionQuery.isPending || inputQuery.isPending || !isHydrated ? (
+      {questionQuery.isPending || inputQuery.isPending || isHydrationPending || !isHydrated ? (
         <p aria-live="polite" className="rounded-card border border-border bg-card p-6 text-ink-muted" role="status">
           질문을 불러오는 중...
         </p>

@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LightFormPage } from "./LightFormPage";
+import { useLightFormStore } from "@/features/save-light-answer";
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
 
@@ -86,6 +87,19 @@ function storageKeys(storage: Storage) {
   return Array.from({ length: storage.length }, (_, index) => storage.key(index));
 }
 
+function WaitingRoute() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <h1>상대방을 기다리는 중</h1>
+      <button onClick={() => navigate("/light/3")} type="button">
+        입력 다시 보기
+      </button>
+    </>
+  );
+}
+
 function renderLightForm(path = "/light/1") {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
@@ -98,7 +112,7 @@ function renderLightForm(path = "/light/1") {
         <MemoryRouter initialEntries={[path]}>
           <Routes>
             <Route element={<LightFormPage />} path="/light/:step" />
-            <Route element={<h1>상대방을 기다리는 중</h1>} path="/waiting/:sessionId" />
+            <Route element={<WaitingRoute />} path="/waiting/:sessionId" />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
@@ -138,6 +152,15 @@ function mockSuccessfulApi() {
 beforeEach(() => {
   sessionStorage.clear();
   localStorage.clear();
+  useLightFormStore.setState({
+    answers: [],
+    currentStep: 0,
+    guesses: [],
+    isHydrated: false,
+    isReadOnly: false,
+    saveStatus: "idle",
+    sessionId: null,
+  });
   fetchMock.mockReset();
   mockSuccessfulApi();
 });
@@ -431,5 +454,62 @@ describe("LightFormPage", () => {
 
     resolveSubmit(jsonResponse({ completedAt: "2026-08-17T00:03:00Z", status: "submitted" }));
     expect(await screen.findByRole("heading", { name: "상대방을 기다리는 중" })).toBeInTheDocument();
+  });
+
+  it("keeps the form read-only when remounting after submission", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    let statusRequestCount = 0;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        return jsonResponse({ answers: [null, null, null], guesses: [null, null, null] });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        statusRequestCount += 1;
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: statusRequestCount > 1,
+          partnerCompleted: false,
+          partnerJoined: true,
+          partnerNudgedAt: null,
+        });
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/sessions/session-a/me/submit") {
+        return jsonResponse({ completedAt: "2026-08-17T00:03:00Z", status: "submitted" });
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    const { user } = renderLightForm("/light/3");
+    expect(await screen.findByText("3 / 3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "입력 완료하기" }));
+    expect(await screen.findByRole("heading", { name: "상대방을 기다리는 중" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "입력 다시 보기" }));
+    expect(await screen.findByText("3 / 3")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(statusRequestCount).toBe(2);
+      expect(
+        within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+          name: "다섯 번째 선택",
+        }),
+      ).toBeDisabled();
+      expect(
+        within(screen.getByRole("group", { name: "상대 예측" })).getByRole("button", {
+          name: "여섯 번째 선택",
+        }),
+      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: "입력 완료하기" })).toBeDisabled();
+    });
   });
 });

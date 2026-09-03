@@ -91,5 +91,5 @@ jobs:
           cache: pip
           cache-dependency-path: apps/backend/requirements.txt
       - run: python -m pip install -r apps/backend/requirements.txt
-      - run: python -m pytest tests/integration/test_deep_mongo.py tests/integration/test_reviewer_mongo.py tests/integration/test_mongo_concurrency.py tests/integration/test_result_engine.py -q
+      - run: python -m pytest tests/integration/test_deep_mongo.py tests/integration/test_reviewer_mongo.py tests/integration/test_reviewer_https_mongo.py tests/integration/test_mongo_concurrency.py tests/integration/test_result_engine.py -q
         working-directory: apps/backend

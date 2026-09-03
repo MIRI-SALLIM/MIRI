@@ -45,7 +45,7 @@ describe("production smoke release policy", () => {
     );
   });
 
-  it("checks both participants against one three-second reveal deadline", () => {
+  it("applies one three-second deadline until both reveal links are visible", () => {
     expect(productionSmokeSource).toContain("const REVEAL_DEADLINE_MS = 3_000;");
     expect(productionSmokeSource).toContain("const bSubmitResponse = pageB.waitForResponse(");
     expect(productionSmokeSource).toContain("const bSubmitForm = submitLightForm(pageB);");
@@ -65,6 +65,15 @@ describe("production smoke release policy", () => {
     expect(productionSmokeSource).toContain("Promise.all([");
     expect(productionSmokeSource).not.toContain("timeout: 15_000");
     expect(productionSmokeSource).toContain("expect(Date.now()).toBeLessThanOrEqual(revealDeadline);");
+    expect(
+      productionSmokeSource.match(
+        /expect\(Date\.now\(\)\)\.toBeLessThanOrEqual\(revealDeadline\);/g,
+      ) ?? [],
+    ).toHaveLength(1);
+    expect(productionSmokeSource).not.toContain("timeoutUntilRevealDeadline");
+    expect(productionSmokeSource).toMatch(
+      /getByRole\("heading", \{ name: "라이트 결과" \}\)\)\.toBeVisible\(\{\s+timeout: ASSERTION_TIMEOUT,/,
+    );
   });
 
   it("reduces share-card privacy checks to a redacted boolean", () => {

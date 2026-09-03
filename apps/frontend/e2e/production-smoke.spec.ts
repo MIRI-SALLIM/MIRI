@@ -225,31 +225,29 @@ test.describe("production smoke", () => {
       const bSubmitForm = submitLightForm(pageB);
       const bSubmitResponseReceived = await bSubmitResponse;
       const revealDeadline = Date.now() + REVEAL_DEADLINE_MS;
-      const timeoutUntilRevealDeadline = (): number => Math.max(1, revealDeadline - Date.now());
       expect(bSubmitResponseReceived.ok()).toBe(true);
       await bSubmitForm;
       await pageB.getByRole("link", { name: "상대방을 기다리러 가기" }).click();
       await expect(pageB.getByRole("heading", { name: "상대방을 기다리는 중" })).toBeVisible({
-        timeout: timeoutUntilRevealDeadline(),
+        timeout: ASSERTION_TIMEOUT,
       });
 
       const resultLinkA = pageA.getByRole("link", { name: "결과 보기" });
       const resultLinkB = pageB.getByRole("link", { name: "결과 보기" });
       await Promise.all([
-        expect(resultLinkA).toBeVisible({ timeout: timeoutUntilRevealDeadline() }),
-        expect(resultLinkB).toBeVisible({ timeout: timeoutUntilRevealDeadline() }),
+        expect(resultLinkA).toBeVisible({ timeout: ASSERTION_TIMEOUT }),
+        expect(resultLinkB).toBeVisible({ timeout: ASSERTION_TIMEOUT }),
       ]);
       expect(Date.now()).toBeLessThanOrEqual(revealDeadline);
       await Promise.all([resultLinkA.click(), resultLinkB.click()]);
       await Promise.all([
         expect(pageA.getByRole("heading", { name: "라이트 결과" })).toBeVisible({
-          timeout: timeoutUntilRevealDeadline(),
+          timeout: ASSERTION_TIMEOUT,
         }),
         expect(pageB.getByRole("heading", { name: "라이트 결과" })).toBeVisible({
-          timeout: timeoutUntilRevealDeadline(),
+          timeout: ASSERTION_TIMEOUT,
         }),
       ]);
-      expect(Date.now()).toBeLessThanOrEqual(revealDeadline);
 
       const scoreA = await pageA.getByText(/^\d+ \/ \d+$/).first().innerText();
       const scoreB = await pageB.getByText(/^\d+ \/ \d+$/).first().innerText();

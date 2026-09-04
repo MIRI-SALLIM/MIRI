@@ -11,6 +11,7 @@ from deep.dependencies import (
     ServiceDependency,
     require_session_version,
 )
+from deep.meeting.router import router as meeting_router
 from deep.repository import member_role
 from deep.router import MUTATION, DeepRoute, IdempotencyKey, limit_mutation
 from deep.schemas import (
@@ -41,6 +42,7 @@ from schemas import ErrorResponse
 router = APIRouter(prefix="/api/v1/deep/v3", tags=["deep-v3"], route_class=DeepRoute,
                    dependencies=[Depends(get_enabled_settings), Depends(require_account), Depends(require_session_version)],
                    responses={code: {"model": ErrorResponse} for code in (401, 403, 404, 409, 410, 422, 429, 503)})
+router.include_router(meeting_router)
 
 
 @router.post("/sessions", status_code=201, response_model=SessionV3, dependencies=MUTATION)

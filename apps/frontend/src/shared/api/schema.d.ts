@@ -608,6 +608,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Context */
+        get: operations["get_context_api_v1_deep_v3_sessions__session_id__meeting_context_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/explanation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Explanation */
+        get: operations["get_explanation_api_v1_deep_v3_sessions__session_id__meeting_explanation_get"];
+        put?: never;
+        /** Generate Explanation */
+        post: operations["generate_explanation_api_v1_deep_v3_sessions__session_id__meeting_explanation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Own Meeting */
+        get: operations["own_meeting_api_v1_deep_v3_sessions__session_id__meeting_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Save Answers */
+        patch: operations["save_answers_api_v1_deep_v3_sessions__session_id__meeting_me_patch"];
+        trace?: never;
+    };
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/me/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save Consent */
+        post: operations["save_consent_api_v1_deep_v3_sessions__session_id__meeting_me_consent_post"];
+        /** Revoke Consent */
+        delete: operations["revoke_consent_api_v1_deep_v3_sessions__session_id__meeting_me_consent_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/deep/v3/sessions/{session_id}/plan": {
         parameters: {
             query?: never;
@@ -1033,6 +1104,24 @@ export interface components {
              * @enum {string}
              */
             kind: "cashSavings" | "rentalDeposit" | "investments" | "subscription" | "realEstate" | "other";
+        };
+        /** AvailableExplanation */
+        AvailableExplanation: {
+            brief: components["schemas"]["MeetingBrief"];
+            /** Cards */
+            cards: components["schemas"]["ExplanationCard"][];
+            /** Reason */
+            reason: ("disabled" | "not_generated" | "no_issues" | "pending" | "interrupted" | "budget_exhausted" | "provider_unavailable") | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "ai" | "template";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "ready";
         };
         /** CalculationBlock */
         CalculationBlock: {
@@ -1496,6 +1585,30 @@ export interface components {
             /** @description 오류 세부 정보 객체 */
             error: components["schemas"]["ErrorDetail"];
         };
+        /** ExplanationCard */
+        ExplanationCard: {
+            /** Explanation */
+            explanation: string;
+            /** Factids */
+            factIds: ("budget" | "offered_total" | "contribution_gap" | "excess" | "contribution_a" | "contribution_b" | "expected_a_for_b" | "expected_b_for_a" | "expectation_a" | "expectation_b")[];
+            /**
+             * Issueid
+             * @enum {string}
+             */
+            issueId: "contribution_gap" | "contribution_unknown" | "excess_contributions" | "expectation_a" | "expectation_b";
+            /** Question */
+            question: string;
+        };
+        /** Fact */
+        Fact: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "budget" | "offered_total" | "contribution_gap" | "excess" | "contribution_a" | "contribution_b" | "expected_a_for_b" | "expected_b_for_a" | "expectation_a" | "expectation_b";
+            /** Valuewon */
+            valueWon: number;
+        };
         /** FundingDeadline */
         FundingDeadline: {
             /** @description 주거/일회성 비용의 이번 회차 지급액; 누적 총액 아님 */
@@ -1906,6 +2019,72 @@ export interface components {
             /** @description 성향 유형 분류 결과 */
             typeClassification: components["schemas"]["TypeClassificationResult"];
         };
+        /** MeetingAnswers */
+        MeetingAnswers: {
+            /** Adjustablemonthlywon */
+            adjustableMonthlyWon?: number | null;
+            /**
+             * Contributionmeaning
+             * @enum {string}
+             */
+            contributionMeaning: "initialProposal" | "selfReportedLimit" | "unknown";
+        };
+        /** MeetingBrief */
+        MeetingBrief: {
+            /**
+             * Agreementstatus
+             * @enum {string}
+             */
+            agreementStatus: "unknown" | "notProposed" | "proposed" | "deferred" | "agreed" | "conflicting";
+            /**
+             * Basis
+             * @default submitted_intentions_not_affordability
+             * @constant
+             */
+            basis: "submitted_intentions_not_affordability";
+            /** Commonscope */
+            commonScope: ("housing" | "food" | "transport" | "subscriptions" | "gifts" | "other")[];
+            /** Facts */
+            facts: components["schemas"]["Fact"][];
+            /** Issues */
+            issues: components["schemas"]["MeetingIssue"][];
+            /** Planversion */
+            planVersion: number;
+            /** Sourcehasassumptions */
+            sourceHasAssumptions: boolean;
+            /** Sourceround */
+            sourceRound: number;
+            /** Startmonth */
+            startMonth: string;
+        };
+        /** MeetingIssue */
+        MeetingIssue: {
+            /** Factids */
+            factIds: ("budget" | "offered_total" | "contribution_gap" | "excess" | "contribution_a" | "contribution_b" | "expected_a_for_b" | "expected_b_for_a" | "expectation_a" | "expectation_b")[];
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "contribution_gap" | "contribution_unknown" | "excess_contributions" | "expectation_a" | "expectation_b";
+        };
+        /** MeetingQuestion */
+        MeetingQuestion: {
+            /** Helptext */
+            helpText: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "contributionMeaning" | "adjustableMonthlyWon";
+            /** Options */
+            options?: {
+                [key: string]: string;
+            };
+            /** Required */
+            required: boolean;
+            /** Text */
+            text: string;
+        };
         /** NudgeResponse */
         NudgeResponse: {
             /**
@@ -1934,6 +2113,27 @@ export interface components {
             input: components["schemas"]["DeepInputV3-Output"];
             /** Revision */
             revision: number;
+        };
+        /** OwnMeeting */
+        OwnMeeting: {
+            answers: components["schemas"]["MeetingAnswers"] | null;
+            consent: components["schemas"]["RecordedMeetingConsent"] | null;
+            /** Consentnotice */
+            consentNotice: string;
+            /**
+             * Consentversion
+             * @default money-meeting-consent-v2
+             * @constant
+             */
+            consentVersion: "money-meeting-consent-v2";
+            /** Planversion */
+            planVersion: number;
+            /** Questions */
+            questions: components["schemas"]["MeetingQuestion"][];
+            /** Revision */
+            revision: number;
+            /** Round */
+            round: number;
         };
         /** PersonalFunding */
         PersonalFunding: {
@@ -2167,6 +2367,22 @@ export interface components {
              */
             status: "ready";
         };
+        /** ReadyMeetingContext */
+        ReadyMeetingContext: {
+            brief: components["schemas"]["MeetingBrief"];
+            clarifications: components["schemas"]["SharedClarifications"];
+            /**
+             * Providerstatus
+             * @default disabled
+             * @enum {string}
+             */
+            providerStatus: "disabled" | "configured";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "ready";
+        };
         /** ReadyResultV3 */
         ReadyResultV3: {
             /** Agreements */
@@ -2181,6 +2397,23 @@ export interface components {
              * @enum {string}
              */
             status: "ready";
+        };
+        /** RecordedMeetingConsent */
+        RecordedMeetingConsent: {
+            /** Allowaiprocessing */
+            allowAiProcessing: boolean;
+            /**
+             * Consentversion
+             * @constant
+             */
+            consentVersion: "money-meeting-consent-v2";
+            /**
+             * Recordedat
+             * Format: date-time
+             */
+            recordedAt: string;
+            /** Sharewithpartner */
+            shareWithPartner: boolean;
         };
         /** ReportV3 */
         ReportV3: {
@@ -2338,6 +2571,34 @@ export interface components {
             /** Expectedrevision */
             expectedRevision: number;
             input: components["schemas"]["DeepInputV3-Input"];
+        };
+        /** SaveMeetingAnswers */
+        SaveMeetingAnswers: {
+            answers: components["schemas"]["MeetingAnswers"];
+            /** Expectedrevision */
+            expectedRevision: number;
+            /** Expectedround */
+            expectedRound: number;
+            /** Planversion */
+            planVersion: number;
+        };
+        /** SaveMeetingConsent */
+        SaveMeetingConsent: {
+            /** Allowaiprocessing */
+            allowAiProcessing: boolean;
+            /**
+             * Consentversion
+             * @constant
+             */
+            consentVersion: "money-meeting-consent-v2";
+            /** Expectedrevision */
+            expectedRevision: number;
+            /** Expectedround */
+            expectedRound: number;
+            /** Planversion */
+            planVersion: number;
+            /** Sharewithpartner */
+            shareWithPartner: boolean;
         };
         /** ScaleConfig */
         ScaleConfig: {
@@ -2507,6 +2768,11 @@ export interface components {
             amountWon: number;
             /** Sourceid */
             sourceId: string;
+        };
+        /** SharedClarifications */
+        SharedClarifications: {
+            A: components["schemas"]["MeetingAnswers"];
+            B: components["schemas"]["MeetingAnswers"];
         };
         /** SharedPlan */
         "SharedPlan-Input": {
@@ -2849,6 +3115,14 @@ export interface components {
         WaitingDeepResult: {
             /** Partnercompleted */
             partnerCompleted: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "waiting";
+        };
+        /** WaitingMeetingContext */
+        WaitingMeetingContext: {
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -6299,6 +6573,672 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeepStatusResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_context_api_v1_deep_v3_sessions__session_id__meeting_context_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingMeetingContext"] | components["schemas"]["ReadyMeetingContext"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_explanation_api_v1_deep_v3_sessions__session_id__meeting_explanation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingMeetingContext"] | components["schemas"]["AvailableExplanation"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    generate_explanation_api_v1_deep_v3_sessions__session_id__meeting_explanation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingMeetingContext"] | components["schemas"]["AvailableExplanation"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    own_meeting_api_v1_deep_v3_sessions__session_id__meeting_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnMeeting"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_answers_api_v1_deep_v3_sessions__session_id__meeting_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveMeetingAnswers"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnMeeting"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_consent_api_v1_deep_v3_sessions__session_id__meeting_me_consent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveMeetingConsent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnMeeting"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    revoke_consent_api_v1_deep_v3_sessions__session_id__meeting_me_consent_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnMeeting"];
                 };
             };
             /** @description Unauthorized */

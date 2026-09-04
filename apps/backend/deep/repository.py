@@ -83,6 +83,9 @@ class DeepRepository:
         await self.database["deep_agreements"].create_index("id", unique=True)
         await self.database["deep_agreements"].create_index([("sessionId", 1), ("round", 1)])
         await self.database["deep_agreements"].create_index("expiresAt", expireAfterSeconds=0)
+        await self.database["deep_meeting_attempts"].create_index("expiresAt", expireAfterSeconds=0)
+        await self.database["deep_meeting_attempts"].create_index("sessionId")
+        await self.database["deep_meeting_budgets"].create_index("expiresAt", expireAfterSeconds=0)
         await self.database["account_deletions"].create_index("userId", unique=True)
         await self.database["account_deletions"].create_index("expiresAt", expireAfterSeconds=0)
 
@@ -347,7 +350,7 @@ class DeepRepository:
             await self.database["deep_reports"].delete_many({"sessionId": session_id, "publicationStamp": stamp})
 
     async def purge_session_artifacts(self, session_id: str) -> None:
-        for name in ("deep_reports", "deep_agreements"):
+        for name in ("deep_reports", "deep_agreements", "deep_meeting_attempts"):
             await self.database[name].delete_many({"sessionId": session_id})
 
     async def withdraw(self, session_id: str, user_id: str, now: datetime) -> dict[str, Any]:
@@ -356,9 +359,9 @@ class DeepRepository:
         document = await self.sessions.find_one(query)
         if document is None:
             raise DeepError("NOT_FOUND", 404)
-        if document["status"] != "closed":
+        if document["status"] != "closed" or document.get("meeting") is not None:
             document = await self.sessions.find_one_and_update(query, {"$set": {
-                "status": "closed", "closedAt": now, "reportId": None,
+                "status": "closed", "closedAt": document.get("closedAt") or now, "reportId": None, "meeting": None,
             }, "$inc": {"version": 1}}, return_document=ReturnDocument.AFTER)
             if document is None:
                 raise DeepError("NOT_FOUND", 404)
@@ -382,7 +385,7 @@ class DeepRepository:
                 expires = min(expires, as_utc(document["reviewerExpiresAt"]))
             return {"round": expected_round + 1, "members": members, "roundRequests": [],
                     "plan.version": document["plan"]["version"] + 1, "reportId": None, "publicationStamp": None,
-                    "publicationExpiresAt": None, "status": "collecting",
+                    "publicationExpiresAt": None, "status": "collecting", "meeting": None,
                     "expiresAt": expires}, {"round": expected_round}
         return await self._change_for_member(session_id, user_id, now, build)
 

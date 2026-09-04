@@ -7,7 +7,8 @@ from pathlib import Path
 
 def main() -> int:
     os.environ.update(ENVIRONMENT="test", MONGODB_URI="", DEEP_TEST_MONGODB_URI="", DEEP_MODE_ENABLED="false",
-                      REVIEWER_LOGIN_ENABLED="false", KAKAO_LOGIN_ENABLED="true")
+                      REVIEWER_LOGIN_ENABLED="false", KAKAO_LOGIN_ENABLED="true",
+                      DEEP_MEETING_AI_ENABLED="false", OPENAI_API_KEY="")
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     import pytest
 

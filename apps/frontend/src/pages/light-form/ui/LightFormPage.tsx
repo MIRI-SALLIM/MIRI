@@ -71,6 +71,7 @@ function getLightFormHydrationState({
 
 function shouldHydrateLightForm({
   hydratedSessionId,
+  hasUnsavedInput,
   isHydrated,
   isReadOnly,
   serverReadOnly,
@@ -78,6 +79,7 @@ function shouldHydrateLightForm({
   state,
 }: {
   hydratedSessionId: string | null;
+  hasUnsavedInput: boolean;
   isHydrated: boolean;
   isReadOnly: boolean;
   serverReadOnly: boolean | undefined;
@@ -90,6 +92,12 @@ function shouldHydrateLightForm({
 
   if (!isHydrated || hydratedSessionId !== sessionId) {
     return true;
+  }
+
+  // Failed saves remain protected until a new edit retries them; an explicit submitted
+  // status still hydrates so a remote completion can restore the read-only lock.
+  if (hasUnsavedInput && serverReadOnly !== true) {
+    return false;
   }
 
   // The backend only changes completedAt from null to a timestamp: submit sets it,
@@ -148,7 +156,6 @@ export function LightFormPage() {
   const guesses = useLightFormStore((state) => state.guesses);
   const isHydrated = useLightFormStore((state) => state.isHydrated);
   const isReadOnly = useLightFormStore((state) => state.isReadOnly);
-  const hydratedSessionId = useLightFormStore((state) => state.sessionId);
   const saveStatus = useLightFormStore((state) => state.saveStatus);
   const hydrate = useLightFormStore((state) => state.hydrate);
   const setAnswer = useLightFormStore((state) => state.setAnswer);
@@ -221,17 +228,25 @@ export function LightFormPage() {
     sessionId,
     statusReady: statusHydrationReady,
   });
-  const shouldHydrate = shouldHydrateLightForm({
-    hydratedSessionId,
-    isHydrated,
-    isReadOnly,
-    serverReadOnly,
-    sessionId,
-    state: hydrationState,
-  });
-
+  // Read saveStatus at effect time so save completion cannot rehydrate stale cached input.
   useEffect(() => {
-    if (!shouldHydrate || !inputQuery.data || sessionId === null) {
+    if (!inputQuery.data || sessionId === null) {
+      return;
+    }
+
+    const currentStoreState = useLightFormStore.getState();
+    const shouldHydrate = shouldHydrateLightForm({
+      hydratedSessionId: currentStoreState.sessionId,
+      hasUnsavedInput:
+        currentStoreState.saveStatus === "saving" || currentStoreState.saveStatus === "error",
+      isHydrated: currentStoreState.isHydrated,
+      isReadOnly: currentStoreState.isReadOnly,
+      serverReadOnly,
+      sessionId,
+      state: hydrationState,
+    });
+
+    if (!shouldHydrate) {
       return;
     }
 
@@ -241,11 +256,13 @@ export function LightFormPage() {
     });
   }, [
     hydrate,
+    hydrationState,
     inputQuery.data,
+    inputQuery.isFetchedAfterMount,
     questionCount,
     sessionId,
     serverReadOnly,
-    shouldHydrate,
+    statusHydrationReady,
   ]);
 
   useEffect(() => {

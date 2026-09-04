@@ -75,8 +75,8 @@ export function LoginCheck() {
     if (!busy) void run("login");
   }
 
-  const inputStyle = "mt-1 w-full rounded-lg border border-border bg-white p-3 text-ink";
-  const buttonStyle = "rounded-lg border border-border px-4 py-3 font-semibold disabled:opacity-50";
+  const inputStyle = "mt-1 w-full rounded-lg border border-border-control bg-white p-3 text-ink";
+  const buttonStyle = "rounded-lg border border-border-control px-4 py-3 font-semibold disabled:opacity-50";
   return (
     <main className="mx-auto max-w-xl space-y-6 px-5 py-10 text-ink">
       <a href="/" className="underline">홈으로</a>

@@ -129,6 +129,8 @@ export function LightFormPage() {
     enabled: sessionId !== null,
     queryFn: () => getLightInput(sessionId!),
     queryKey: ["light-input", sessionId],
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
     retry: false,
   });
   const sessionStatusQuery = useQuery({

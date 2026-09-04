@@ -1,4 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  focusManager,
+  onlineManager,
+} from "@tanstack/react-query";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
@@ -738,5 +743,124 @@ describe("LightFormPage", () => {
       ).toBeDisabled();
       expect(screen.getByRole("button", { name: "입력 완료하기" })).toBeDisabled();
     });
+  });
+
+  it("preserves local edits when input refetches on window focus", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    let inputRequestCount = 0;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        inputRequestCount += 1;
+        return jsonResponse({
+          answers: [inputRequestCount === 1 ? null : 1, null, null],
+          guesses: [null, null, null],
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      if (request.method === "PATCH") {
+        return jsonResponse(await request.json());
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    focusManager.setFocused(false);
+
+    try {
+      const { user } = renderLightForm();
+      await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
+      const choice = within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+        name: "첫 번째 선택",
+      });
+
+      await user.click(choice);
+      expect(choice).toHaveAttribute("aria-pressed", "true");
+
+      await act(async () => {
+        focusManager.setFocused(true);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(inputRequestCount).toBe(1);
+      await waitFor(() => expect(choice).toHaveAttribute("aria-pressed", "true"));
+    } finally {
+      focusManager.setFocused(undefined);
+    }
+  });
+
+  it("preserves local edits when input refetches on reconnect", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    let inputRequestCount = 0;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        inputRequestCount += 1;
+        return jsonResponse({
+          answers: [inputRequestCount === 1 ? null : 1, null, null],
+          guesses: [null, null, null],
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      if (request.method === "PATCH") {
+        return jsonResponse(await request.json());
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    onlineManager.setOnline(true);
+
+    try {
+      const { user } = renderLightForm();
+      await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
+      const choice = within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+        name: "첫 번째 선택",
+      });
+
+      await user.click(choice);
+      expect(choice).toHaveAttribute("aria-pressed", "true");
+
+      await act(async () => {
+        onlineManager.setOnline(false);
+        onlineManager.setOnline(true);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(inputRequestCount).toBe(1);
+      await waitFor(() => expect(choice).toHaveAttribute("aria-pressed", "true"));
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 });

@@ -816,12 +816,6 @@ async def join_invitation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "INVITATION_NOT_FOUND", "message": "초대 링크를 사용할 수 없습니다."},
         )
-    if len(document.get("participants", [])) >= 2:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "SESSION_ALREADY_JOINED", "message": "이미 상대방이 참여한 세션입니다."}
-        )
-
     question_count = _session_question_count(document)
     joined_document, token = await repository.join(
         invitation_code=code,
@@ -829,6 +823,7 @@ async def join_invitation(
         question_count=question_count,
         pepper=PARTICIPANT_TOKEN_PEPPER,
         now=utc_now(),
+        idempotency_key=idempotency_key,
     )
     if joined_document is None or token is None:
         raise HTTPException(

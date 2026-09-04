@@ -81,9 +81,10 @@ export function InvitePage() {
         <p aria-live="polite" className="text-sm text-ink-muted">
           초대 내용을 불러오는 중이에요
         </p>
-      ) : invitationQuery.isError || invitationQuery.data === undefined ? (
+      ) : invitationQuery.data === undefined ? (
         <InvitationUnavailable />
       ) : (
+        // A lost join response makes preview refetch return 404; keep its retry key alive.
         <InvitationDetails code={code} invitation={invitationQuery.data} />
       )}
     </section>

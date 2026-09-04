@@ -47,6 +47,27 @@ beforeEach(() => {
 });
 
 describe("JoinSessionButton", () => {
+  it("reuses the logical join key after a lost response without storing it in the browser", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("response lost"));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(joinedSession), {
+      headers: { "content-type": "application/json" }, status: 200,
+    }));
+    const user = userEvent.setup();
+    renderButton();
+    await user.click(screen.getByRole("button", { name: "참여하고 시작하기" }));
+    expect(await screen.findByText("참여하지 못했어요. 잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sessionStorage.length).toBe(0);
+    await user.click(screen.getByRole("button", { name: "참여하고 시작하기" }));
+    expect(await screen.findByRole("heading", { name: "라이트 질문" })).toBeInTheDocument();
+    const first = fetchMock.mock.calls[0][0] as Request;
+    const retry = fetchMock.mock.calls[1][0] as Request;
+    expect(first.headers.get("Idempotency-Key")).toBeTruthy();
+    expect(retry.headers.get("Idempotency-Key")).toBe(first.headers.get("Idempotency-Key"));
+    expect(sessionStorage.length).toBe(1);
+    expect(sessionStorage.getItem("activeSessionId")).toBe("session-a");
+  });
+
   it("joins without a nickname, sends an idempotency key, and stores only the public session id", async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify(joinedSession), {

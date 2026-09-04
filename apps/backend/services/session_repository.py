@@ -230,42 +230,55 @@ class SessionRepository:
         question_count: int,
         pepper: str,
         now: datetime,
+        idempotency_key: str | None = None,
     ) -> tuple[dict[str, Any] | None, str | None]:
-        token = generate_participant_token()
+        existing = await self._find_by_code(invitation_code)
+        expires_at = existing.get("expiresAt") if existing is not None else None
+        if existing is None or not isinstance(expires_at, datetime) or as_utc(expires_at) <= as_utc(now):
+            return None, None
+        # Reconstruct the same credential without storing the key or plaintext token.
+        token = (
+            digest_participant_token(f"light-join-replay-v1:{existing['id']}:{idempotency_key}", pepper)
+            if idempotency_key else generate_participant_token()
+        )
+        token_hash = digest_participant_token(token, pepper)
         participant = {
             "role": "invitee",
             "nickname": nickname,
-            "tokenHash": digest_participant_token(token, pepper),
+            "tokenHash": token_hash,
             "answers": [None] * question_count,
             "guesses": [None] * question_count,
             "completedAt": None,
             "lastNudgedAt": None,
         }
         query = {
+            "id": existing["id"],
             "invitationCode": invitation_code,
             "expiresAt": {"$gt": now},
             "participants.1": {"$exists": False},
         }
         if self._collection is None:
-            document = await self._find_by_code(invitation_code)
-            expires_at = document.get("expiresAt") if document is not None else None
-            if (
-                document is None
-                or not isinstance(expires_at, datetime)
-                or as_utc(expires_at) <= now
-            ):
-                return None, None
-            if len(document.get("participants", [])) >= 2:
-                return None, None
-            document["participants"].append(participant)
-            self._memory[document["id"]] = deepcopy(document)
-            return document, token
+            if len(existing.get("participants", [])) < 2:
+                existing["participants"].append(participant)
+                self._memory[existing["id"]] = deepcopy(existing)
+                return existing, token
+            guest = existing["participants"][1]
+            if idempotency_key and guest.get("tokenHash") == token_hash and guest.get("nickname") == nickname:
+                return existing, token
+            return None, None
 
         document = await self._collection.find_one_and_update(
             query,
             {"$push": {"participants": participant}},
             return_document=ReturnDocument.AFTER,
         )
+        if document is None and idempotency_key:
+            document = await self._collection.find_one({
+                "id": existing["id"],
+                "expiresAt": {"$gt": now},
+                "participants.1.tokenHash": token_hash,
+                "participants.1.nickname": nickname,
+            })
         return document, token if document is not None else None
 
     async def update_input(

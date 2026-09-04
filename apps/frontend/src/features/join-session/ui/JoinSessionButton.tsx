@@ -1,7 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { ApiError } from "@/shared/api";
+import { ApiError, createIdempotencyKey } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 
 import { joinSession } from "../api/join-session";
@@ -24,9 +25,16 @@ function joinErrorMessage(error: unknown): string {
 
 export function JoinSessionButton({ code }: JoinSessionButtonProps) {
   const navigate = useNavigate();
+  const attempt = useRef<{ code: string; key: string } | null>(null);
   const joinMutation = useMutation({
-    mutationFn: () => joinSession(code),
+    mutationFn: () => {
+      if (attempt.current?.code !== code) {
+        attempt.current = { code, key: createIdempotencyKey() };
+      }
+      return joinSession(code, attempt.current.key);
+    },
     onSuccess: (session) => {
+      attempt.current = null;
       sessionStorage.setItem("activeSessionId", session.id);
       navigate("/light/1");
     },

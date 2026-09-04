@@ -1,4 +1,4 @@
-import { apiClient, createIdempotencyKey, requestApi, type components } from "@/shared/api";
+import { apiClient, requestApi, type components } from "@/shared/api";
 
 export type Invitation = components["schemas"]["InvitationResponse"];
 export type JoinedSession = components["schemas"]["SessionResponse"];
@@ -13,10 +13,10 @@ export const fetchInvitation = (code: string): Promise<Invitation> =>
   );
 
 /** 참가자 인증은 서버 쿠키가 맡고, 클라이언트는 멱등성 키만 전송한다. */
-export const joinSession = (code: string): Promise<JoinedSession> =>
+export const joinSession = (code: string, idempotencyKey: string): Promise<JoinedSession> =>
   requestApi(
     apiClient.POST("/api/v1/invitations/{code}/join", {
-      headers: { "Idempotency-Key": createIdempotencyKey() },
+      headers: { "Idempotency-Key": idempotencyKey },
       params: { path: { code } },
     }),
   );

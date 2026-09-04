@@ -1,0 +1,15 @@
+{
+  "version": "deep-rules-v1",
+  "cohabitationMultiplier": "0.85",
+  "areaOrder": [
+    "jointManagement",
+    "savings",
+    "spending",
+    "debt",
+    "investment"
+  ],
+  "topicLimit": 3,
+  "numericSayDoEnabled": false,
+  "policyMatchingEnabled": false,
+  "llmEnabled": false
+}

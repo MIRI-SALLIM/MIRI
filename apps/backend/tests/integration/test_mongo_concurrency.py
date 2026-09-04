@@ -34,7 +34,13 @@ async def real_mongo_db():
     if not MONGODB_URI:
         pytest.skip("MONGODB_URI가 설정되어 있지 않아 실제 MongoDB 동시성 테스트를 건너뜁니다.")
 
-    client: AsyncMongoClient = AsyncMongoClient(MONGODB_URI)
+    client: AsyncMongoClient = AsyncMongoClient(MONGODB_URI, serverSelectionTimeoutMS=2000)
+    try:
+        await client.admin.command("ping")
+    except (PyMongoError, Exception):  # noqa: BLE001
+        await client.close()
+        pytest.skip("MongoDB 서버에 연결할 수 없어 실제 DB 동시성 테스트를 건너뜁니다.")
+
     test_db_name = f"mirisalim_test_concurrency_{uuid.uuid4().hex[:8]}"
     db = client[test_db_name]
     try:

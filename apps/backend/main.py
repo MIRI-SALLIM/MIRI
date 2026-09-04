@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from fastapi import (
@@ -26,6 +27,18 @@ from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from auth.errors import AuthError
+from auth.logging import install_auth_log_filter
+from auth.reviewer_router import router as reviewer_router
+from auth.router import error_response as auth_error_response
+from auth.router import router as auth_router
+from auth.settings import load_auth_settings
+from deep.config import validate_configuration
+from deep.errors import DeepError
+from deep.router import account_router as deep_account_router
+from deep.router import error_response as deep_error_response
+from deep.router import router as deep_router
+from deep.v3_router import router as deep_v3_router
 from schemas import (
     ConfigResponse,
     CreateSessionRequest,
@@ -61,18 +74,90 @@ from services.session_repository import (
 from services.validator import validate_input
 
 load_dotenv()
+if load_auth_settings(os.environ).enabled:
+    validate_configuration()
+install_auth_log_filter()
 
 # ==========================================
 # 환경 설정 및 상수
 # ==========================================
+
+DEVELOPMENT_PARTICIPANT_TOKEN_PEPPER = "mirisalim_dev_pepper_secret_2026"
+DEVELOPMENT_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
+def _parse_origins(raw: str) -> list[str]:
+    return list(dict.fromkeys(item.strip() for item in raw.split(",") if item.strip()))
+
+
+def _is_https_origin(value: str) -> bool:
+    parsed = urlsplit(value)
+    return bool(
+        parsed.scheme == "https"
+        and parsed.netloc
+        and parsed.path in ("", "/")
+        and not parsed.query
+        and not parsed.fragment
+        and parsed.username is None
+        and parsed.password is None
+    )
+
+
+def _validate_production_settings(
+    environment: str,
+    mongodb_uri: str | None,
+    pepper: str,
+    ttl_days_raw: str,
+    origins: list[str],
+) -> int:
+    try:
+        ttl_days = int(ttl_days_raw)
+    except ValueError as exc:
+        raise RuntimeError("Invalid production setting: SESSION_TTL_DAYS") from exc
+
+    if ttl_days <= 0:
+        raise RuntimeError("Invalid production setting: SESSION_TTL_DAYS")
+
+    if environment.lower() not in ("production", "prod"):
+        return ttl_days
+    if not mongodb_uri:
+        raise RuntimeError("Missing production setting: MONGODB_URI")
+    if pepper == DEVELOPMENT_PARTICIPANT_TOKEN_PEPPER or len(pepper) < 32:
+        raise RuntimeError("Invalid production setting: PARTICIPANT_TOKEN_PEPPER")
+    if not origins or any(not _is_https_origin(origin) for origin in origins):
+        raise RuntimeError("Invalid production setting: ALLOWED_ORIGINS")
+    return ttl_days
+
+
+def _cors_origins(environment: str, configured_origins: list[str]) -> list[str]:
+    if environment.lower() in ("production", "prod"):
+        return configured_origins
+    return list(dict.fromkeys(DEVELOPMENT_ORIGINS + configured_origins))
+
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 IS_PRODUCTION = ENVIRONMENT.lower() in ("production", "prod")
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE") or os.getenv("MONGODB_DB_NAME") or "mirisalim"
-PARTICIPANT_TOKEN_PEPPER = os.getenv("PARTICIPANT_TOKEN_PEPPER", "mirisalim_dev_pepper_secret_2026")
-SESSION_TTL_DAYS = int(os.getenv("SESSION_TTL_DAYS", "7"))
+PARTICIPANT_TOKEN_PEPPER = os.getenv(
+    "PARTICIPANT_TOKEN_PEPPER", DEVELOPMENT_PARTICIPANT_TOKEN_PEPPER
+)
+_CONFIGURED_ORIGINS = _parse_origins(
+    os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS") or ""
+)
+SESSION_TTL_DAYS = _validate_production_settings(
+    ENVIRONMENT,
+    MONGODB_URI,
+    PARTICIPANT_TOKEN_PEPPER,
+    os.getenv("SESSION_TTL_DAYS", "7"),
+    _CONFIGURED_ORIGINS,
+)
 
 PARTICIPANT_COOKIE_NAME = "mrs_participant"
 
@@ -88,24 +173,27 @@ app = FastAPI(
         {"url": "/", "description": "기본 서버 (Default)"}
     ]
 )
+app.include_router(auth_router)
+app.include_router(reviewer_router)
+app.include_router(deep_router)
+app.include_router(deep_v3_router)
+app.include_router(deep_account_router)
+
+
+@app.exception_handler(AuthError)
+async def auth_exception_handler(request: Request, exc: AuthError) -> JSONResponse:
+    return auth_error_response(exc)
+
+
+@app.exception_handler(DeepError)
+async def deep_exception_handler(request: Request, exc: DeepError) -> JSONResponse:
+    return deep_error_response(exc)
 
 # 쿠키 보안 스킴 정의
 cookie_sec = APIKeyCookie(name=PARTICIPANT_COOKIE_NAME, auto_error=False, description="참여자 인증 쿠키")
 
 # CORS 설정
-default_origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://mirisalim-backend.onrender.com",
-]
-env_origins = [
-    o.strip() for o in (
-        os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS") or ""
-    ).split(",") if o.strip()
-]
-origins = list(dict.fromkeys(default_origins + env_origins))
+origins = _cors_origins(ENVIRONMENT, _CONFIGURED_ORIGINS)
 
 app.add_middleware(
     CORSMiddleware,
@@ -243,33 +331,32 @@ async def get_session_repository() -> SessionRepository:
     if _session_repository is not None:
         return _session_repository
 
-    if ENVIRONMENT.lower() == "test":
+    if ENVIRONMENT.lower() in ("test", "local"):
         _session_repository = SessionRepository(use_memory=True)
         return _session_repository
 
     database = await get_database()
-    if database is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "code": "DATABASE_UNAVAILABLE",
-                "message": "세션 데이터베이스에 연결할 수 없습니다.",
-            },
-        )
+    if database is not None:
+        try:
+            repo = SessionRepository(database)
+            await repo.ensure_indexes()
+            _session_repository = repo
+            return _session_repository
+        except (PyMongoError, Exception):  # noqa: BLE001, S110
+            pass
 
-    _session_repository = SessionRepository(database)
-    try:
-        await _session_repository.ensure_indexes()
-    except PyMongoError as exc:
-        _session_repository = None
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "code": "DATABASE_UNAVAILABLE",
-                "message": "세션 데이터베이스에 연결할 수 없습니다.",
-            },
-        ) from exc
-    return _session_repository
+    # 로컬 개발 환경에서는 DB 연결 실패 시 In-Memory로 자동 폴백하여 끊김 없는 로컬 테스트 보장
+    if not IS_PRODUCTION:
+        _session_repository = SessionRepository(use_memory=True)
+        return _session_repository
+
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "DATABASE_UNAVAILABLE",
+            "message": "세션 데이터베이스에 연결할 수 없습니다.",
+        },
+    )
 
 
 def _parse_participant_cookie(cookie: str | None) -> tuple[str, str] | None:
@@ -327,6 +414,10 @@ def _get_partner(document: dict[str, Any], token_hash: str) -> dict[str, Any] | 
 
 
 def _raise_if_expired(document: dict[str, Any]) -> None:
+    if document.get("mode", "light") != "light":
+        raise HTTPException(status_code=409, detail={
+            "code": "LEGACY_DEEP_UNSUPPORTED", "message": "이전 딥 세션은 지원하지 않습니다. 로그인 후 새 딥 진단을 시작해 주세요.",
+        })
     expires_at = document.get("expiresAt")
     if isinstance(expires_at, datetime.datetime) and as_utc(expires_at) <= utc_now():
         raise HTTPException(
@@ -474,63 +565,6 @@ def get_light_questions(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail={"code": "CONFIG_NOT_FOUND", "message": "라이트 진단 질문 설정 파일을 불러올 수 없습니다."}
     )
-
-
-@app.get(
-    "/api/v1/deep/questions",
-    summary="딥 모드 가치관 질문 목록 조회",
-    response_model=QuestionSet,
-    responses={
-        404: {"model": ErrorResponse, "description": "질문 세트를 찾을 수 없음"},
-        422: {"model": ErrorResponse, "description": "입력 파라미터 검증 실패"}
-    },
-    tags=["딥 진단"]
-)
-def get_deep_questions(
-    version: str = Query("deep-v1", description="딥 진단 질문 세트 버전 (기본값: deep-v1)")
-) -> dict[str, Any]:
-    if version != "deep-v1":
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "QUESTION_SET_NOT_FOUND", "message": f"'{version}' 버전을 찾을 수 없습니다."}
-        )
-
-    param_data = get_cached_config("parameters") or {}
-    deep_mappings = param_data.get("questionMapping", {}).get("deep", [])
-
-    questions: list[dict[str, Any]] = []
-    for idx, item in enumerate(deep_mappings, start=1):
-        left_label = item.get("left", "왼쪽 서술 성향")
-        right_label = item.get("right", "오른쪽 서술 성향")
-        questions.append({
-            "id": item["id"],
-            "order": idx,
-            "category": item.get("category", item.get("area", "가치관")),
-            "target": "self",
-            "text": item["text"],
-            "subText": f"1점({left_label})부터 5점({right_label})까지 본인의 생각에 가까운 점수를 선택해 주세요.",
-            "type": "scale",
-            "scaleConfig": {
-                "min": 1,
-                "max": 5,
-                "leftLabel": left_label,
-                "rightLabel": right_label,
-                "steps": [
-                    f"1점: 매우 {left_label}",
-                    f"2점: 약간 {left_label}",
-                    "3점: 중간 / 보통",
-                    f"4점: 약간 {right_label}",
-                    f"5점: 매우 {right_label}"
-                ]
-            }
-        })
-
-    return {
-        "version": "deep-v1",
-        "title": "미리살림 딥 진단 가치관 질문 세트",
-        "description": "신혼부부의 5대 핵심 재무 가치관(저축, 소비, 투자, 부채, 공동관리) 영역별 8개 심층 문항입니다.",
-        "questions": questions
-    }
 
 
 # ==========================================
@@ -732,6 +766,7 @@ async def get_invitation(
     # 유효하지 않은 코드, 만료된 코드, 이미 참여된 코드 모두 중립적인 404 반환
     if (
         document is None
+        or document.get("mode", "light") != "light"
         or not code.startswith("INV-")
         or len(document.get("participants", [])) >= 2
         or (
@@ -770,7 +805,7 @@ async def join_invitation(
     active_req = req or JoinInvitationRequest(nickname=None)
     repository = await get_session_repository()
     document = await repository.get_by_code(code)
-    if not code.startswith("INV-") or document is None:
+    if not code.startswith("INV-") or document is None or document.get("mode", "light") != "light":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "INVITATION_NOT_FOUND", "message": "유효하지 않거나 만료된 초대 링크입니다."}
@@ -896,7 +931,7 @@ async def save_my_input(
     if result == "expired":
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail={"code": "SESSION_EXPIRED", "message": "?몄뀡??留뚮즺?섏뿀?듬땲??"},
+            detail={"code": "SESSION_EXPIRED", "message": "세션이 만료되었습니다."},
         )
     if result == "submitted":
         raise HTTPException(

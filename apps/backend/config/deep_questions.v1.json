@@ -1,0 +1,81 @@
+{
+  "version": "deep-v1",
+  "scale": {
+    "min": 1,
+    "max": 5
+  },
+  "questions": [
+    {
+      "id": "D1",
+      "area": "savings",
+      "reverse": false,
+      "category": "저축",
+      "text": "쓰고 남으면 저축한다 ↔ 저축부터 하고 남는 걸 쓴다",
+      "left": "쓰고 남은 돈을 저축",
+      "right": "먼저 저축하고 남은 돈을 소비"
+    },
+    {
+      "id": "D2",
+      "area": "savings",
+      "reverse": true,
+      "category": "저축",
+      "text": "목돈 목표를 정해두고 모은다 ↔ 상황에 맞춰 유동적으로 모은다",
+      "left": "목표 금액을 정해 철저히 저축",
+      "right": "상황에 맞춰 유동적으로 모음"
+    },
+    {
+      "id": "D3",
+      "area": "spending",
+      "reverse": false,
+      "category": "소비",
+      "text": "사고 싶은 게 있으면 바로 산다 ↔ 한참 고민하고 산다",
+      "left": "사고 싶은 것은 바로 구매",
+      "right": "충분히 고민하고 비교 후 구매"
+    },
+    {
+      "id": "D4",
+      "area": "spending",
+      "reverse": false,
+      "category": "소비",
+      "text": "경조사나 선물에는 넉넉히 쓴다 ↔ 최소한으로 한다",
+      "left": "경조사/선물에 아낌없이 지출",
+      "right": "실속 위주로 최소한만 지출"
+    },
+    {
+      "id": "D5",
+      "area": "investment",
+      "reverse": true,
+      "category": "투자",
+      "text": "손실 위험이 있어도 수익을 노린다 ↔ 적더라도 안전한 게 낫다",
+      "left": "원금 손실 감수하고 고수익 추구",
+      "right": "원금 보존 중심의 안전성 추구"
+    },
+    {
+      "id": "D6",
+      "area": "debt",
+      "reverse": false,
+      "category": "부채",
+      "text": "필요하면 대출은 활용할 수 있는 도구다 ↔ 빚은 최대한 피해야 한다",
+      "left": "대출을 적극적인 레버리지로 활용",
+      "right": "대출과 빚은 무조건 최소화"
+    },
+    {
+      "id": "D7",
+      "area": "jointManagement",
+      "reverse": true,
+      "category": "공동관리",
+      "text": "결혼하면 통장을 합치고 싶다 ↔ 각자 관리하고 공동비만 분담하고 싶다",
+      "left": "모든 통장을 하나로 합쳐 통합 관리",
+      "right": "각자 독립 관리하며 공동비만 분담"
+    },
+    {
+      "id": "D8",
+      "area": "jointManagement",
+      "reverse": true,
+      "category": "공동관리",
+      "text": "서로의 지출을 모두 공유해야 한다 ↔ 각자 쓰는 돈은 묻지 않는다",
+      "left": "개인 지출 내역까지 모두 투명하게 공유",
+      "right": "개인 용돈과 지출은 상호 불간섭"
+    }
+  ]
+}

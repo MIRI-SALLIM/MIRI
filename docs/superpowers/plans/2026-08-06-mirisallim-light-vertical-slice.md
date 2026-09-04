@@ -653,7 +653,7 @@ git commit -m "feat: join sessions by invitation code"
 **Interfaces:**
 - Produces: `GET /api/v1/sessions/{id}/status -> {status, meCompleted, partnerJoined, partnerCompleted, partnerNudgedAt, expiresAt}`.
 - Produces: `POST /api/v1/sessions/{id}/nudge` with rolling 24-hour sender limit.
-- Produces: `useSessionStatus(sessionId)` polling every 3000ms only while status is not ready.
+- Produces: `useSessionStatus(sessionId)` polling at 2000ms before `partnerJoined` and 1000ms after participation is detected; both intervals remain below the three-second reveal budget, and polling still stops when the result is ready or the error is terminal.
 
 - [ ] **Step 1: Write failing status privacy and nudge tests**
 

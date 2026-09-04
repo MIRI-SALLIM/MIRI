@@ -4,12 +4,12 @@ import { ApiError } from "@/shared/api";
 
 import { fetchSessionStatus, sessionStatusQueryKey, type SessionStatus } from "../api/session-status";
 
-// 스펙은 양측 제출 후 3초 이내 공개를 요구한다(vertical-slice-design.md:27).
-// 이 화면에서 준비를 알아내는 수단은 폴링뿐이라 주기가 곧 공개 지연의 하한이고,
-// 3000ms로는 대기 중인 참가자가 다음 tick을 기다리는 동안 예산을 다 쓸 수 있어 줄였다.
-// 대기가 얼마나 길어지는지는 프론트엔드가 통제하지 못하므로 폴링 요청 총량에 상한이 없다.
-// 1000ms는 그 비용을 감수하고 고른 값이며, 근거가 되는 요청 예산은 아직 정해지지 않았다.
-export const SESSION_STATUS_POLL_INTERVAL_MS = 1_000;
+// 상대가 참여한 뒤에는 양측 제출과 결과 공개를 빠르게 감지해야 하므로 1000ms를 유지한다.
+export const SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS = 1_000;
+
+// 요청 예산은 아직 정해지지 않았지만, 미참여 화면에서 1초 대비 요청 빈도를 절반으로 줄이면서
+// 3초 공개 예산 안에 남도록 2000ms를 사용한다.
+export const SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS = 2_000;
 
 const terminalKinds = ["expired", "not-found", "unauthorized"];
 
@@ -32,8 +32,15 @@ export function useSessionStatus(sessionId: string): SessionStatusResult {
   const statusQuery = useQuery({
     queryFn: () => fetchSessionStatus(sessionId),
     queryKey: sessionStatusQueryKey(sessionId),
-    refetchInterval: ({ state }) =>
-      isTerminal(state.error) || isResultReady(state.data) ? false : SESSION_STATUS_POLL_INTERVAL_MS,
+    refetchInterval: ({ state }) => {
+      if (isTerminal(state.error) || isResultReady(state.data)) {
+        return false;
+      }
+
+      return state.data?.partnerJoined
+        ? SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS
+        : SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS;
+    },
   });
 
   return {

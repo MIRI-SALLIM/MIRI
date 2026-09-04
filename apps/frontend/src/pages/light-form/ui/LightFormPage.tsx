@@ -37,6 +37,68 @@ function normalizeInput(input: NonNullable<Awaited<ReturnType<typeof getLightInp
   };
 }
 
+type LightFormHydrationState = "failed-data" | "pending-input" | "pending-status" | "ready";
+
+function getLightFormHydrationState({
+  hasInput,
+  inputFetched,
+  isReadOnly,
+  questionCount,
+  sessionId,
+  statusReady,
+}: {
+  hasInput: boolean;
+  inputFetched: boolean;
+  isReadOnly: boolean;
+  questionCount: number;
+  sessionId: string | null;
+  statusReady: boolean;
+}): LightFormHydrationState {
+  if (sessionId === null || !inputFetched) {
+    return "pending-input";
+  }
+
+  if (!statusReady && !isReadOnly) {
+    return "pending-status";
+  }
+
+  if (!hasInput || questionCount === 0) {
+    return "failed-data";
+  }
+
+  return "ready";
+}
+
+function shouldHydrateLightForm({
+  hydratedSessionId,
+  isHydrated,
+  isReadOnly,
+  serverReadOnly,
+  sessionId,
+  state,
+}: {
+  hydratedSessionId: string | null;
+  isHydrated: boolean;
+  isReadOnly: boolean;
+  serverReadOnly: boolean | undefined;
+  sessionId: string | null;
+  state: LightFormHydrationState;
+}): boolean {
+  if (state !== "ready") {
+    return false;
+  }
+
+  if (!isHydrated || hydratedSessionId !== sessionId) {
+    return true;
+  }
+
+  // The backend only changes completedAt from null to a timestamp: submit sets it,
+  // and PATCH rejects an already-submitted participant; no API path clears it.
+  // Keep the server value authoritative when it is explicit, while hydrate's session
+  // comparison resets a stale lock when a different session is opened.
+  return !isReadOnly || serverReadOnly === false;
+}
+
 export function LightFormPage() {
   const navigate = useNavigate();
   const { step } = useParams<{ step: string }>();
@@ -146,39 +208,41 @@ export function LightFormPage() {
   const boundedStep = questionCount === 0 ? 0 : Math.min(Math.max(requestedStep - 1, 0), questionCount - 1);
   const statusHydrationReady =
     sessionStatusQuery.isFetchedAfterMount && (sessionStatusQuery.isSuccess || sessionStatusQuery.isError);
+  const serverReadOnly =
+    statusHydrationReady && sessionStatusQuery.isSuccess ? sessionStatusQuery.data.meCompleted : undefined;
+  const hydrationState = getLightFormHydrationState({
+    hasInput: inputQuery.data !== undefined,
+    inputFetched: inputQuery.isFetchedAfterMount,
+    isReadOnly,
+    questionCount,
+    sessionId,
+    statusReady: statusHydrationReady,
+  });
+  const shouldHydrate = shouldHydrateLightForm({
+    hydratedSessionId,
+    isHydrated,
+    isReadOnly,
+    serverReadOnly,
+    sessionId,
+    state: hydrationState,
+  });
 
   useEffect(() => {
-    if (isReadOnly && isHydrated && hydratedSessionId === sessionId) {
+    if (!shouldHydrate || !inputQuery.data || sessionId === null) {
       return;
     }
 
-    if (
-      inputQuery.data &&
-      questionCount > 0 &&
-      sessionId !== null &&
-      inputQuery.isFetchedAfterMount &&
-      (statusHydrationReady || isReadOnly)
-    ) {
-      hydrate(normalizeInput(inputQuery.data, questionCount), {
-        isReadOnly:
-          statusHydrationReady && sessionStatusQuery.isSuccess && !isReadOnly
-            ? sessionStatusQuery.data.meCompleted
-            : undefined,
-        sessionId,
-      });
-    }
+    hydrate(normalizeInput(inputQuery.data, questionCount), {
+      isReadOnly: serverReadOnly,
+      sessionId,
+    });
   }, [
     hydrate,
-    hydratedSessionId,
     inputQuery.data,
-    inputQuery.isFetchedAfterMount,
     questionCount,
     sessionId,
-    sessionStatusQuery.data,
-    sessionStatusQuery.isSuccess,
-    isHydrated,
-    isReadOnly,
-    statusHydrationReady,
+    serverReadOnly,
+    shouldHydrate,
   ]);
 
   useEffect(() => {
@@ -236,9 +300,7 @@ export function LightFormPage() {
 
   const isLastStep = questionCount > 0 && boundedStep === questionCount - 1;
   const isHydrationPending =
-    sessionId !== null &&
-    (!inputQuery.isFetchedAfterMount ||
-      (!statusHydrationReady && !isReadOnly));
+    sessionId !== null && (hydrationState === "pending-input" || hydrationState === "pending-status");
 
   return (
     <section className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-center px-6 pb-[clamp(10px,2vh,48px)] pt-[clamp(9px,1.5vh,36px)] [line-height:normal]">

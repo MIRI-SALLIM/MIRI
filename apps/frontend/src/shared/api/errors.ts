@@ -5,6 +5,7 @@ export type ApiErrorKind =
   | "expired"
   | "validation"
   | "rate-limited"
+  | "timeout"
   | "unavailable"
   | "unknown";
 
@@ -122,6 +123,9 @@ export const createApiError = (response: Response, payload: unknown): ApiError =
 export const createNetworkApiError = (): ApiError =>
   new ApiError({ status: null, code: null, kind: "unavailable" });
 
+export const createTimeoutApiError = (): ApiError =>
+  new ApiError({ status: null, code: null, kind: "timeout" });
+
 export const isTerminalApiError = (error: unknown): boolean =>
   error instanceof ApiError && terminalKinds.includes(error.kind);
 
@@ -130,5 +134,7 @@ export const shouldRetryQuery = (failureCount: number, error: unknown): boolean 
     return false;
   }
 
-  return failureCount < 2 && (error.status === null || error.status >= 500);
+  // A timeout already consumed the request's full wait budget. Retrying it here would
+  // allow one unresponsive operation to block for up to three timeout windows.
+  return failureCount < 2 && error.kind !== "timeout" && (error.status === null || error.status >= 500);
 };

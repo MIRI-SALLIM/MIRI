@@ -2,6 +2,8 @@
 
 2026-09-04. 코드는 로컬 구현, 모의 API 검증 상태다. 이 문서는 운영 활성화 완료 기록이 아니다.
 
+후속 상태: [v2 가상 3건 실호출](handoffs/2026-09-04-deep-money-meeting-v2-live-smoke.md)에서 연결·상한 반영·미정 처리를 확인했다. 이후 중복 질문 지시를 보완한 현재 프롬프트는 `money-meeting-v3-known-answers`이며 실모델 재호출은 하지 않았다. 최신 운영 준비 상태는 [배포 준비 인계](handoffs/2026-09-04-deep-meeting-release-preparation.md)를 따른다.
+
 ## Railway 설정
 
 백엔드 서비스 Variables에만 설정한다. 프론트 번들·Git·대화에 키를 넣지 않는다.

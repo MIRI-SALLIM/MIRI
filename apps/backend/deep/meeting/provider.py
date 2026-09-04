@@ -15,7 +15,7 @@ from deep.meeting.models import ExplanationDraft, MeetingBrief
 from deep.meeting.templates import template_cards
 
 MODEL = "gpt-5.4-mini-2026-03-17"
-PROMPT_VERSION = "money-meeting-v2-ceilings"
+PROMPT_VERSION = "money-meeting-v3-known-answers"
 MAX_OUTPUT_TOKENS = 800
 MAX_REQUEST_BYTES = 16_000
 RESERVED_INPUT_TOKENS = MAX_REQUEST_BYTES + 4096
@@ -28,6 +28,8 @@ Use only the brief and clarifications. Never invent facts, calculate numbers, or
 Numbers are separately rendered from server facts. Null means unknown, never zero.
 initialProposal is negotiable intention; selfReportedLimit is a stated ceiling, not verified affordability.
 adjustableMonthlyWon is a stated negotiation ceiling, not consent to increase contributions. Never pressure beyond it.
+Use already supplied clarifications. Do not ask whether a known initialProposal is a proposal or ceiling again.
+Keep explanations declarative; put the single discussion question only in the question field.
 Be direct about uncovered budget or differing expectations without blaming a partner.
 expectation_a compares A's expectation of B with B's contribution; expectation_b compares B's expectation of A with A's contribution.
 agreementStatus describes current agreement; facts describe original submissions. Do not claim old gaps remain after agreement.
@@ -80,9 +82,9 @@ def request_body(brief: MeetingBrief, clarifications: dict[str, Any]) -> dict[st
         if getattr(shared, role).contributionMeaning == "selfReportedLimit":
             guidance += f'\nMandatory: include the exact phrase "{role}가 밝힌 상한" in an explanation. Treat it as a self-reported ceiling, not a negotiable initial proposal or verified capacity.'
     if guidance:
-        questions = [card.question for card in template_cards(brief, shared.model_dump(mode="json"))]
         guidance += "\nKeep that ceiling fixed in discussion options. Do not ask for a generic redistribution. "
-        guidance += "Use these server-selected discussion directions; do not turn possible adjustments into commitments: " + json.dumps(questions, ensure_ascii=False)
+    questions = [card.question for card in template_cards(brief, shared.model_dump(mode="json"))]
+    guidance += "\nUse these server-selected discussion directions; do not turn possible adjustments into commitments: " + json.dumps(questions, ensure_ascii=False)
     body = {
         "model": MODEL, "instructions": INSTRUCTIONS + guidance,
         "input": json.dumps({"brief": brief.model_dump(mode="json"), "clarifications": shared.model_dump(mode="json")},

@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { DeepCheck } from "./DeepCheck";
 
 type Context = { userId: string; role: "A" | "B"; roomCode: string; expiresAt: string; demo: true };
 
@@ -6,7 +7,7 @@ class RequestError extends Error {
   constructor(readonly status: number) { super("Authentication request failed"); }
 }
 
-async function request(path: string, body?: Record<string, string>): Promise<Context | null> {
+async function request(path: string, body?: Record<string, string | boolean>): Promise<Context | null> {
   const response = await fetch(`/api/v1/auth/${path}`, {
     method: body ? "POST" : "GET",
     credentials: "same-origin", cache: "no-store", redirect: "error",
@@ -35,6 +36,8 @@ function message(error: unknown) {
 
 export function LoginCheck() {
   const [context, setContext] = useState<Context | null>(null);
+  const [regularUser, setRegularUser] = useState<string | null>(null);
+  const [resetConfirmed, setResetConfirmed] = useState(false);
   const [username, setUsername] = useState("judge-a");
   const [password, setPassword] = useState("");
   const [roomCode, setRoomCode] = useState("");
@@ -44,28 +47,38 @@ export function LoginCheck() {
   useEffect(() => {
     let active = true;
     request("reviewer/context").then((data) => { if (active) setContext(data); })
-      .catch((failure: unknown) => {
+      .catch(async (failure: unknown) => {
+        if (failure instanceof RequestError && [403, 404].includes(failure.status)) {
+          try {
+            const response = await fetch("/api/v1/auth/me", { credentials: "same-origin", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000) });
+            if (response.ok) {
+              const data = await response.json();
+              if (typeof data.userId === "string" && active) { setRegularUser(data.userId); return; }
+            }
+          } catch { /* Keep the original safe authentication error. */ }
+        }
         if (active && !(failure instanceof RequestError && failure.status === 401)) setError(message(failure));
       }).finally(() => { if (active) setBusy(false); });
     return () => { active = false; };
   }, []);
 
-  async function run(action: "login" | "context" | "logout") {
+  async function run(action: "login" | "context" | "logout" | "reset") {
     setBusy(true);
     setError("");
-    const body = action === "login"
+    const body: Record<string, string | boolean> | undefined = action === "login"
       ? { username, password, ...(roomCode.trim() ? { roomCode: roomCode.trim() } : {}) }
-      : action === "logout" ? {} : undefined;
+      : action === "logout" ? {} : action === "reset" ? { confirm: true } : undefined;
     setPassword("");
     try {
       const result = await request(action === "logout" ? "logout" : `reviewer/${action}`, body);
       setContext(result);
+      setRegularUser(null);
+      setResetConfirmed(false);
       setRoomCode("");
     } catch (failure) {
-      if (failure instanceof RequestError && [401, 403, 404].includes(failure.status)) {
-        setContext(null);
-        setRoomCode("");
-      }
+      setContext(null);
+      setRegularUser(null);
+      setRoomCode("");
       setError(message(failure));
     } finally { setBusy(false); }
   }
@@ -85,7 +98,7 @@ export function LoginCheck() {
       <p className="text-sm text-ink-muted">로컬 점검 서버의 데이터는 메모리에만 유지되며 서버를 끄면 사라집니다. 운영 Mongo·HTTPS 검증을 대신하지 않습니다.</p>
       {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-800">{error}</p>}
       {busy && <p role="status">확인 중…</p>}
-      {context ? (
+      {regularUser ? <section><p>일반 계정 로그인됨</p><button className={buttonStyle} disabled={busy} onClick={() => void run("logout")}>로그아웃</button></section> : context ? (
         <section className="space-y-4 rounded-xl border border-border p-5" aria-label="로그인 정보">
           <h2 className="text-xl font-bold">로그인됨 · {context.role}</h2>
           <p className="break-all text-sm">계정 식별자: {context.userId}</p>
@@ -96,6 +109,8 @@ export function LoginCheck() {
             <button className={buttonStyle} disabled={busy} onClick={() => void run("context")}>로그인 상태 확인</button>
             <button className={buttonStyle} disabled={busy} onClick={() => void run("logout")}>로그아웃</button>
           </div>
+          <label className="block"><input type="checkbox" checked={resetConfirmed} disabled={busy} onChange={e => setResetConfirmed(e.target.checked)} /> 기존 체험방과 두 사람의 로그인·진단을 종료하고 초기화합니다</label>
+          <button className={buttonStyle} disabled={busy || !resetConfirmed} onClick={() => void run("reset")}>새 체험방으로 초기화</button>
         </section>
       ) : (
         <form onSubmit={submit} className="space-y-4 rounded-xl border border-border p-5">
@@ -108,9 +123,10 @@ export function LoginCheck() {
           <button className={`${buttonStyle} bg-green text-white`} disabled={busy} type="submit">심사용 로그인</button>
         </form>
       )}
+      {!busy && (context || regularUser) && <DeepCheck key={context ? `${context.userId}:${context.roomCode}` : regularUser!} />}
       <section className="space-y-2 border-t border-border pt-5">
-        <button className={buttonStyle} disabled>카카오 로그인 — 설정 대기</button>
-        <p className="text-sm">카카오 키·콜백 주소 설정과 실제 계정 검증은 아직 하지 않았습니다.</p>
+        <a className={`${buttonStyle} inline-block`} href="/api/v1/auth/kakao/start?returnTo=%2Fdeep%2Flogin-check">카카오 로그인 시작</a>
+        <p className="text-sm">키·콜백이 등록된 서버에서만 사용할 수 있습니다. 로컬 메모리 서버는 카카오가 꺼져 있어 404를 반환합니다.</p>
       </section>
     </main>
   );

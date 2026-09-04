@@ -15,6 +15,31 @@ afterEach(() => {
 });
 
 describe("minimal login check", () => {
+  it("recognizes a normal account when reviewer context is unavailable", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(reply({}, 403)).mockResolvedValueOnce(reply({ userId: "kakao-test-user" }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    expect(await screen.findByText("일반 계정 로그인됨")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "진단 만들기" })).toBeInTheDocument();
+    expect(fetcher.mock.calls[1][0]).toBe("/api/v1/auth/me");
+    expect(screen.getByRole("link", { name: "카카오 로그인 시작" })).toHaveAttribute("href", "/api/v1/auth/kakao/start?returnTo=%2Fdeep%2Flogin-check");
+  });
+
+  it("requires explicit reset confirmation and clears the old diagnostic context", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(reply(context)).mockResolvedValueOnce(reply({ id: "old-session" }))
+      .mockResolvedValueOnce(reply({ ...context, userId: "new-user", roomCode: "b".repeat(64) }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await screen.findByText("로그인됨 · A");
+    await userEvent.click(screen.getByRole("button", { name: "진단 만들기" }));
+    expect(await screen.findByLabelText("현재 진단 ID")).toHaveValue("old-session");
+    expect(screen.getByRole("button", { name: "새 체험방으로 초기화" })).toBeDisabled();
+    await userEvent.click(screen.getByLabelText("기존 체험방과 두 사람의 로그인·진단을 종료하고 초기화합니다"));
+    await userEvent.click(screen.getByRole("button", { name: "새 체험방으로 초기화" }));
+    await waitFor(() => expect(screen.getByLabelText("현재 체험방 코드")).toHaveValue("b".repeat(64)));
+    expect(screen.queryByLabelText("현재 진단 ID")).not.toBeInTheDocument();
+    expect(JSON.parse(fetcher.mock.calls[2][1].body)).toEqual({ confirm: true });
+  });
   it("logs in A without a room code, clears the password and logs out", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(reply({}, 401))
       .mockResolvedValueOnce(reply(context)).mockResolvedValueOnce(new Response(null, { status: 204 }));

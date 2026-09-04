@@ -20,6 +20,14 @@ def inputs():
     return brief, {role: {"contributionMeaning": "initialProposal", "adjustableMonthlyWon": None} for role in ("A", "B")}
 
 
+def test_request_guides_questions_from_known_answers_without_requiring_a_ceiling():
+    brief, answers = inputs()
+    body = request_body(brief, answers)
+    assert "A의 초기 제안" in body["instructions"]
+    assert "B의 초기 제안" in body["instructions"]
+    assert "공동 예산과 제안 금액" in body["instructions"]
+
+
 def test_default_disabled_and_invalid_config_fails_closed(monkeypatch):
     monkeypatch.delenv("DEEP_MEETING_AI_ENABLED", raising=False)
     monkeypatch.setenv("OPENAI_API_KEY", "test-not-a-real-key")

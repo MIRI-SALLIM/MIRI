@@ -25,12 +25,11 @@ def template_cards(brief: MeetingBrief, clarifications: dict[str, Any] | None = 
     shared = SharedClarifications.model_validate(clarifications)
     answers = {"A": shared.A, "B": shared.B}
     capped = [role for role, answer in answers.items() if answer.contributionMeaning == "selfReportedLimit"]
-    if not capped:
-        return cards
-    notice = " ".join(f"{role}가 밝힌 상한은 본인 진술이며 검증된 지급 능력은 아닙니다." for role in capped)
-    cards[0].explanation = notice + " " + cards[0].explanation
+    if capped:
+        notice = " ".join(f"{role}가 밝힌 상한은 본인 진술이며 검증된 지급 능력은 아닙니다." for role in capped)
+        cards[0].explanation = notice + " " + cards[0].explanation
     for card in cards:
-        if card.issueId == "contribution_gap":
+        if card.issueId == "contribution_gap" and capped:
             card.question = "현재 합의를 확인하고, 각자의 상한을 유지한다면 공동 예산에서 어떤 항목을 줄일까요?"
             if len(capped) == 1:
                 other = "B" if capped[0] == "A" else "A"
@@ -47,4 +46,6 @@ def template_cards(brief: MeetingBrief, clarifications: dict[str, Any] | None = 
             target = "B" if expecting == "A" else "A"
             if target in capped:
                 card.question = f"{target}의 상한을 존중하면서 {expecting}가 기대한 분담 기준을 다시 확인할까요?"
+            elif answers[target].contributionMeaning == "initialProposal":
+                card.question = f"{target}의 초기 제안과 {expecting}가 기대한 분담 기준의 차이를 어떻게 조율할까요?"
     return cards

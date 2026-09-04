@@ -1,0 +1,62 @@
+{
+  "national": {
+    "mean": 7229.0,
+    "median": 6279.0,
+    "monthlyMedian": 523,
+    "shareOver100M": 21.7,
+    "percentiles": {
+      "p50": 6279
+    }
+  },
+  "byDualIncome": {
+    "dual": {
+      "mean": 8400.0,
+      "median": 7500.0,
+      "monthlyMedian": 625
+    },
+    "single": {
+      "mean": 5200.0,
+      "median": 4800.0,
+      "monthlyMedian": 400
+    }
+  },
+  "hfcs2025": {
+    "byHeadAge": {
+      "age30s": {
+        "headAgeMean": 34.8,
+        "householdSize": 2.13,
+        "incomeMedian": 6219.0,
+        "disposableIncomeMedian": 5085.0,
+        "savingsMedian": 4260.0,
+        "savingsMean": 6989,
+        "debtMedian": 10732.0,
+        "debtHoldingRate": 69.0,
+        "mortgageMedian": 16330.0,
+        "mortgageHoldingRate": 23.8,
+        "creditLoanMedian": 2884.0,
+        "creditLoanHoldingRate": 25.8,
+        "principalInterestMonthly": 82,
+        "disposableRatio": 0.818,
+        "dsr": 0.158
+      }
+    }
+  },
+  "heis2026q1": {
+    "sizeCoefficient": {
+      "includingHousing": 1.7,
+      "excludingHousing": 1.67,
+      "byCategory": {
+        "식료품": 1.5,
+        "보험": 2.366
+      }
+    },
+    "under40": {
+      "income": 5390500.0,
+      "disposableIncome": 4400000.0,
+      "consumption": 2988000.0,
+      "surplus": 1412000.0,
+      "surplusRate": 32.4,
+      "housingRatio": 0.083
+    }
+  }
+}

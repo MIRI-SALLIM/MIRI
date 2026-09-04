@@ -1,0 +1,182 @@
+{
+  "version": "light-v1",
+  "title": "미리살림 라이트 진단 질문 세트",
+  "description": "3분 만에 확인하는 신혼부부 맞춤형 저축여력 추정 및 4대 재무 성향 진단 5대 문항입니다.",
+  "questions": [
+    {
+      "id": "monthly_income",
+      "order": 1,
+      "category": "소득",
+      "target": "self",
+      "text": "본인의 월 실수령 소득 구간을 선택해 주세요.",
+      "subText": "세후 실수령액(월급 기준)을 선택해 주세요.",
+      "type": "range_choice",
+      "options": [
+        {
+          "label": "200만원 미만",
+          "value": "under_200",
+          "rep": 150.0,
+          "description": "월 실수령 200만원 미만"
+        },
+        {
+          "label": "200~300만원",
+          "value": "200_300",
+          "rep": 250.0,
+          "description": "월 실수령 200만원 이상 ~ 300만원 미만"
+        },
+        {
+          "label": "300~450만원",
+          "value": "300_450",
+          "rep": 375.0,
+          "description": "월 실수령 300만원 이상 ~ 450만원 미만"
+        },
+        {
+          "label": "450만원 이상",
+          "value": "over_450",
+          "rep": 550.0,
+          "description": "월 실수령 450만원 이상"
+        }
+      ]
+    },
+    {
+      "id": "saving_ratio",
+      "order": 2,
+      "category": "잉여자금",
+      "target": "self",
+      "text": "본인이 매월 저축이나 투자로 남길 수 있는 잉여자금 구간을 선택해 주세요.",
+      "subText": "월 고정지출과 생활비를 제외하고 남는 여유 자금입니다.",
+      "type": "range_choice",
+      "options": [
+        {
+          "label": "거의 없음 (20만 미만)",
+          "value": "none_or_little",
+          "rep": 10.0,
+          "description": "월 생활비 지출 후 잉여자금 거의 없음"
+        },
+        {
+          "label": "20~60만원",
+          "value": "20_60",
+          "rep": 40.0,
+          "description": "월 20만원 이상 ~ 60만원 미만 저축/투자"
+        },
+        {
+          "label": "60~120만원",
+          "value": "60_120",
+          "rep": 85.0,
+          "description": "월 60만원 이상 ~ 120만원 미만 저축/투자 (평균 수준)"
+        },
+        {
+          "label": "120만원 이상",
+          "value": "over_120",
+          "rep": 160.0,
+          "description": "월 120만원 이상 적극적 저축/투자"
+        }
+      ]
+    },
+    {
+      "id": "spending_style",
+      "order": 3,
+      "category": "시간축 성향",
+      "target": "self",
+      "text": "현재의 소비와 미래의 저축 중 어느 쪽에 더 가치를 두시나요?",
+      "subText": "평소 소비 및 저축 가치관에 가장 가까운 선택지를 골라주세요.",
+      "type": "single_choice",
+      "options": [
+        {
+          "label": "현재 삶과 소비 우선",
+          "value": "spender_strong",
+          "rep": 1.0,
+          "description": "현재의 삶의 질과 경험 소비를 최우선으로 생각합니다."
+        },
+        {
+          "label": "소비에 조금 더 비중",
+          "value": "spender_moderate",
+          "rep": 2.0,
+          "description": "필요한 소비를 즐기되 적정선에서 조율합니다."
+        },
+        {
+          "label": "저축에 조금 더 비중",
+          "value": "saver_moderate",
+          "rep": 4.0,
+          "description": "미래의 안정을 위해 저축에 좀 더 무게를 둡니다."
+        },
+        {
+          "label": "미래 안정과 저축 우선",
+          "value": "saver_strong",
+          "rep": 5.0,
+          "description": "미래를 위한 목돈 마련과 자산 형성을 최우선으로 생각합니다."
+        }
+      ]
+    },
+    {
+      "id": "debt_load",
+      "order": 4,
+      "category": "부채",
+      "target": "self",
+      "text": "현재 보유 중인 총 대출 및 부채 규모를 선택해 주세요.",
+      "subText": "신용대출, 전세자금대출, 학자금대출 등 총 부채 잔액입니다.",
+      "type": "range_choice",
+      "options": [
+        {
+          "label": "부채 없음 (0원)",
+          "value": "none",
+          "rep": 0.0,
+          "description": "보유 중인 대출 및 부채 없음"
+        },
+        {
+          "label": "3천만원 미만",
+          "value": "under_30m",
+          "rep": 1500.0,
+          "description": "총 부채 3천만원 미만 (소액/신용대출 등)"
+        },
+        {
+          "label": "3천만~1억원",
+          "value": "30m_100m",
+          "rep": 6500.0,
+          "description": "총 부채 3천만원 이상 ~ 1억원 미만"
+        },
+        {
+          "label": "1억원 이상",
+          "value": "over_100m",
+          "rep": 15000.0,
+          "description": "총 부채 1억원 이상 (전세자금/주택담보대출 포함)"
+        }
+      ]
+    },
+    {
+      "id": "shared_expense",
+      "order": 5,
+      "category": "관리축 성향",
+      "target": "self",
+      "text": "결혼 후 부부의 돈 관리는 어떤 방식을 선호하시나요?",
+      "subText": "선호하시는 가계 자금 관리 방식을 골라주세요.",
+      "type": "single_choice",
+      "options": [
+        {
+          "label": "완전 각자 개별 관리",
+          "value": "separate_full",
+          "rep": 1.0,
+          "description": "각자의 통장과 지출을 완전히 독립적으로 관리합니다."
+        },
+        {
+          "label": "각자 관리 + 공용 생활비 통장",
+          "value": "separate_shared",
+          "rep": 2.0,
+          "description": "개인 통장을 유지하며 필수 생활비만 공용 통장에 갹출합니다."
+        },
+        {
+          "label": "공동 관리 + 개인 용돈 통장",
+          "value": "joint_allowance",
+          "rep": 4.0,
+          "description": "수입을 하나로 합쳐 관리하고 각자 정해진 용돈을 사용합니다."
+        },
+        {
+          "label": "완전 통합 공동 관리",
+          "value": "joint_full",
+          "rep": 5.0,
+          "description": "모든 소득과 통장을 하나로 합쳐 투명하게 함께 관리합니다."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend.yml"
+  pull_request:
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+      - run: python -m pip install -r requirements.txt
+      - run: python -m ruff check .
+      - run: python -m mypy main.py schemas.py services auth deep tests scripts
+      - run: python scripts/test_local.py -q
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare synthetic local-only build fixtures
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('apps/backend')
+          for relative in (
+              '.reviewer-credentials.local/accounts.json',
+              '.reviewer-credentials.local/railway.env',
+              'config/context-probe.local/credentials.json',
+              'context-probe.local',
+          ):
+              target = root / relative
+              target.parent.mkdir(parents=True, exist_ok=True)
+              with target.open('x', encoding='utf-8') as stream:
+                  stream.write('synthetic-build-context-fixture-not-a-secret')
+          PY
+      - run: docker build -t mirisalim-backend:test apps/backend
+      - name: Verify local-only files are absent from the image
+        run: |
+          docker run --rm --network none -i --entrypoint python mirisalim-backend:test - <<'PY'
+          from pathlib import Path
+          root = Path('/app')
+          assert (root / 'main.py').is_file(), 'Application code missing from image'
+          assert (root / 'auth/reviewer_router.py').is_file(), 'Reviewer routes missing from image'
+          forbidden = (
+              '.reviewer-credentials.local',
+              'config/context-probe.local',
+              'context-probe.local',
+          )
+          assert not any((root / name).exists() for name in forbidden), 'Local-only files entered image'
+          print('Build context privacy: PASS')
+          PY
+
+  deep-mongo:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      ENVIRONMENT: test
+      DEEP_MODE_ENABLED: "false"
+      MONGODB_URI: mongodb://127.0.0.1:27017
+      DEEP_TEST_MONGODB_URI: mongodb://127.0.0.1:27017
+      REQUIRE_DEEP_MONGO_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+      - run: python -m pip install -r apps/backend/requirements.txt
+      - run: python -m pytest tests/integration/test_deep_mongo.py tests/integration/test_deep_v3_mongo.py tests/integration/test_reviewer_mongo.py tests/integration/test_reviewer_https_mongo.py tests/integration/test_mongo_concurrency.py tests/integration/test_result_engine.py -q
+        working-directory: apps/backend

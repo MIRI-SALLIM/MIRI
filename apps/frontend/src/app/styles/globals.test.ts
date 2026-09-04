@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+
+import stylesheet from "./globals.css?raw";
+
+const luminance = (hex: string) => {
+  const channels = hex.match(/[0-9a-f]{2}/gi)?.map((channel) => Number.parseInt(channel, 16) / 255);
+
+  if (!channels || channels.length !== 3) {
+    throw new Error(`유효하지 않은 색상입니다: #${hex}`);
+  }
+
+  const [red, green, blue] = channels.map((channel) =>
+    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+  );
+
+  return red * 0.2126 + green * 0.7152 + blue * 0.0722;
+};
+
+const contrastRatio = (first: string, second: string) => {
+  const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+const themeColor = (name: string) =>
+  stylesheet.match(new RegExp(`--color-${name}:\\s*#([0-9a-f]{6})`, "i"))?.[1];
+
+describe("전역 접근성 토큰", () => {
+  it("Tailwind v4 CSS-first 테마와 기존 토큰을 선언한다", () => {
+    expect(stylesheet).toContain('@import "tailwindcss";');
+    expect(stylesheet).not.toContain("@tailwind base");
+    expect(stylesheet).toContain("@theme");
+    expect(stylesheet).toContain("--color-canvas: #FCFCFB");
+    expect(stylesheet).toContain("--color-green-hover: #2F8460");
+    expect(stylesheet).toContain("--color-border-soft: #F0F0EE");
+    expect(stylesheet).toContain("--color-arrow: #D8D8D6");
+    expect(stylesheet).toContain("--color-green-strong: #237A56");
+    expect(stylesheet).toContain("--radius-card: 20px");
+    expect(stylesheet).toContain("--radius-control: 14px");
+    expect(stylesheet).toContain("--animate-fadeup: fadeup 420ms ease-out both");
+  });
+
+  it("레퍼런스 랜딩과 같은 글자 렌더링 설정을 쓴다", () => {
+    expect(stylesheet).toContain("-webkit-font-smoothing: antialiased");
+  });
+
+  it("포커스 링은 밝은 배경에서 3:1 이상의 대비를 유지한다", () => {
+    const focusRule = stylesheet.match(
+      /:focus-visible\s*{[^}]*outline:\s*3px solid var\(--color-green-strong\)/i,
+    );
+    const focusColor = stylesheet.match(/--color-green-strong:\s*#([0-9a-f]{6})/i)?.[1];
+
+    expect(focusRule, "포커스 링은 green-strong 테마 토큰을 사용해야 합니다").toBeDefined();
+    expect(focusColor, "포커스 링은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(focusColor!, "fcfcfb")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(focusColor!, "ffffff")).toBeGreaterThanOrEqual(3);
+  });
+
+  it("green-strong은 흰 글자에 4.5:1 이상의 대비를 유지한다", () => {
+    const greenStrongColor = themeColor("green-strong");
+
+    expect(greenStrongColor, "green-strong 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(greenStrongColor!, "ffffff")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("본문용 ink-muted는 canvas와 card 양쪽에서 4.5:1 이상의 대비를 유지한다", () => {
+    const canvasColor = themeColor("canvas");
+    const cardColor = themeColor("card");
+    const mutedColor = themeColor("ink-muted");
+
+    expect(canvasColor, "canvas 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(cardColor, "card 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(mutedColor, "ink-muted 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(mutedColor!, canvasColor!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(mutedColor!, cardColor!)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("컨트롤 테두리는 canvas와 card 양쪽에서 3:1 이상의 대비를 유지한다", () => {
+    const canvasColor = themeColor("canvas");
+    const cardColor = themeColor("card");
+    const controlBorderColor = themeColor("border-control");
+
+    expect(canvasColor, "canvas 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(cardColor, "card 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(controlBorderColor, "컨트롤 테두리는 불투명한 6자리 hex 색상 토큰을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(controlBorderColor!, canvasColor!)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(controlBorderColor!, cardColor!)).toBeGreaterThanOrEqual(3);
+  });
+
+});

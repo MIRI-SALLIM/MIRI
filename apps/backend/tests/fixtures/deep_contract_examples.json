@@ -1,0 +1,760 @@
+{
+  "note": "합성 시험 데이터입니다. 실제 계정·자격증명·운영 데이터가 아닙니다.",
+  "createRequest": {},
+  "session": {
+    "id": "example-session",
+    "round": 1,
+    "role": "A",
+    "invitationCode": "INV-example-not-live",
+    "questionVersion": "deep-v2"
+  },
+  "saveRequest": {
+    "expectedRevision": 0,
+    "input": {
+      "income": {
+        "monthlyNetIncome": {
+          "value": 3000000,
+          "status": "known",
+          "precision": "exact"
+        },
+        "annualNetBonus": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "bonusIncludedInMonthlyIncome": false,
+        "bonusMonth": null,
+        "referenceMonth": "2026-09"
+      },
+      "fixedExpenses": {
+        "communication": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "insurance": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "subscriptions": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "familySupport": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "other": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        }
+      },
+      "variableExpenses": {
+        "food": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "transport": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "shopping": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "leisure": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "other": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        }
+      },
+      "housingCost": {
+        "value": 0,
+        "status": "known",
+        "precision": "exact"
+      },
+      "debts": [],
+      "debtsStatus": "known",
+      "assets": [],
+      "assetsStatus": "known",
+      "livingTogether": false,
+      "values": {
+        "D1": 3,
+        "D2": 3,
+        "D3": 3,
+        "D4": 3,
+        "D5": 3,
+        "D6": 3,
+        "D7": 3,
+        "D8": 3,
+        "D9": 3,
+        "D10": 3
+      },
+      "skippedQuestionIds": [],
+      "importantAreas": [],
+      "contextNotes": {}
+    }
+  },
+  "ownInput": {
+    "revision": 1,
+    "input": {
+      "income": {
+        "monthlyNetIncome": {
+          "value": 3000000,
+          "status": "known",
+          "precision": "exact"
+        },
+        "annualNetBonus": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "bonusIncludedInMonthlyIncome": false,
+        "bonusMonth": null,
+        "referenceMonth": "2026-09"
+      },
+      "fixedExpenses": {
+        "communication": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "insurance": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "subscriptions": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "familySupport": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "other": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        }
+      },
+      "variableExpenses": {
+        "food": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "transport": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "shopping": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "leisure": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        },
+        "other": {
+          "value": 0,
+          "status": "known",
+          "precision": "exact"
+        }
+      },
+      "housingCost": {
+        "value": 0,
+        "status": "known",
+        "precision": "exact"
+      },
+      "debts": [],
+      "debtsStatus": "known",
+      "assets": [],
+      "assetsStatus": "known",
+      "livingTogether": false,
+      "values": {
+        "D1": 3,
+        "D2": 3,
+        "D3": 3,
+        "D4": 3,
+        "D5": 3,
+        "D6": 3,
+        "D7": 3,
+        "D8": 3,
+        "D9": 3,
+        "D10": 3
+      },
+      "skippedQuestionIds": [],
+      "importantAreas": [],
+      "contextNotes": {}
+    }
+  },
+  "planUpdateRequest": {
+    "expectedVersion": 1,
+    "plan": {
+      "startMonth": "2026-10",
+      "housingType": "rent",
+      "monthlyHousingCost": {
+        "value": 1000000,
+        "status": "known",
+        "precision": "exact"
+      },
+      "housingPriceWon": {
+        "value": 10000000,
+        "status": "known",
+        "precision": "exact"
+      },
+      "oneOffCostsWon": {
+        "value": 0,
+        "status": "known",
+        "precision": "exact"
+      },
+      "newHousingLoan": null,
+      "target": null
+    }
+  },
+  "plan": {
+    "version": 2,
+    "plan": {
+      "startMonth": "2026-10",
+      "housingType": "rent",
+      "monthlyHousingCost": {
+        "value": 1000000,
+        "status": "known",
+        "precision": "exact"
+      },
+      "housingPriceWon": {
+        "value": 10000000,
+        "status": "known",
+        "precision": "exact"
+      },
+      "oneOffCostsWon": {
+        "value": 0,
+        "status": "known",
+        "precision": "exact"
+      },
+      "newHousingLoan": null,
+      "target": null
+    },
+    "myConfirmed": false,
+    "partnerConfirmed": false,
+    "locked": false
+  },
+  "planConfirmRequest": {
+    "planVersion": 2
+  },
+  "submitRequest": {
+    "expectedRevision": 1,
+    "planVersion": 2,
+    "consentVersion": "deep-sharing-v1",
+    "shareFinance": true,
+    "shareValues": true
+  },
+  "waiting": {
+    "status": "waiting",
+    "partnerCompleted": false
+  },
+  "ready": {
+    "status": "ready",
+    "report": {
+      "versions": {
+        "questionVersion": "deep-v2",
+        "ruleVersion": "deep-rules-v1",
+        "copyVersion": "deep-copy-ko-v1",
+        "consentVersion": "deep-sharing-v1",
+        "round": 1,
+        "planVersion": 2
+      },
+      "cashflow": {
+        "status": "available",
+        "missingFields": [],
+        "assumptions": [
+          "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+        ],
+        "data": {
+          "monthlyIncomeWon": 6000000,
+          "annualizedMonthlyIncomeWon": 6000000,
+          "annualBonusWon": 0,
+          "unallocatedAnnualBonusWon": 0,
+          "fixedExpensesWon": 0,
+          "currentVariableExpensesWon": 0,
+          "scenarioVariableExpensesWon": 0,
+          "scenarioHousingCostWon": 1000000,
+          "existingDebtPaymentWon": 0,
+          "newDebtPaymentWon": 0,
+          "currentMonthlySurplusWon": 6000000,
+          "scenarioMonthlySurplusWon": 5000000,
+          "projection": [
+            {
+              "month": "2026-10",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 5000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2026-11",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 10000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2026-12",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 15000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-01",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 20000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-02",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 25000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-03",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 30000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-04",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 35000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-05",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 40000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-06",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 45000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-07",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 50000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-08",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 55000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            },
+            {
+              "month": "2027-09",
+              "bonusWon": 0,
+              "debtPaymentWon": 0,
+              "surplusWon": 5000000,
+              "cumulativeSurplusWon": 60000000,
+              "missingFields": [],
+              "assumptions": [
+                "합가 후 비주거 변동비에 추정 계수 0.85 적용"
+              ]
+            }
+          ],
+          "netWorthWon": 0,
+          "repaymentToNetIncomeRatio": 0
+        },
+        "reason": null
+      },
+      "housing": {
+        "status": "available",
+        "missingFields": [],
+        "assumptions": [
+          "공동자산은 각자 소유 지분만 입력; 계획 시작월 1일까지 사용 가능한 배정액만 확정 자금에 포함"
+        ],
+        "data": {
+          "requiredWon": 10000000,
+          "confirmedAssetFundingWon": 0,
+          "settlementWon": 0,
+          "newBorrowingWon": 0,
+          "availableWon": 0,
+          "fundingGapWon": 10000000
+        },
+        "reason": null
+      },
+      "goal": {
+        "status": "unavailable",
+        "missingFields": [
+          "plan.target"
+        ],
+        "assumptions": [],
+        "data": null,
+        "reason": null
+      },
+      "values": {
+        "status": "available",
+        "missingFields": [],
+        "assumptions": [],
+        "data": {
+          "jointManagement": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D7",
+              "D8"
+            ],
+            "questionDifferences": {
+              "D7": 0,
+              "D8": 0
+            }
+          },
+          "savings": {
+            "gap": 0.25,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D1",
+              "D2"
+            ],
+            "questionDifferences": {
+              "D1": 0.5,
+              "D2": 0
+            }
+          },
+          "spending": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D3",
+              "D4"
+            ],
+            "questionDifferences": {
+              "D3": 0,
+              "D4": 0
+            }
+          },
+          "debt": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D6",
+              "D10"
+            ],
+            "questionDifferences": {
+              "D6": 0,
+              "D10": 0
+            }
+          },
+          "investment": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D5",
+              "D9"
+            ],
+            "questionDifferences": {
+              "D5": 0,
+              "D9": 0
+            }
+          }
+        },
+        "reason": null
+      },
+      "topics": [
+        {
+          "area": "savings",
+          "title": "함께 정하는 저축 기준",
+          "observation": "이 영역의 다음 질문에서 서로 다른 선택을 했어요. 각자가 생각한 이유와 상황을 함께 확인해 보세요.",
+          "comparisons": [
+            {
+              "questionId": "D1",
+              "questionText": "쓰고 남으면 저축한다 ↔ 저축부터 하고 남는 걸 쓴다",
+              "a": {
+                "answer": 3,
+                "label": "중간 / 보통"
+              },
+              "b": {
+                "answer": 5,
+                "label": "매우 먼저 저축하고 남은 돈을 소비"
+              }
+            }
+          ],
+          "question": "매달 지키고 싶은 저축액과 조정할 수 있는 지출을 함께 정해볼까요?",
+          "options": [
+            "월 목표부터 정하기",
+            "예외 상황부터 이야기하기",
+            "지금은 보류하기"
+          ],
+          "agreementPrompt": "월 목표·예외 조건"
+        }
+      ],
+      "agreementPrompts": [
+        "월 목표·예외 조건"
+      ],
+      "limitations": {
+        "policyMatching": "unavailable",
+        "explanation": "templates_only",
+        "notice": "자기보고 입력과 명시한 가정에 따른 대화 자료입니다. 궁합·결혼 적합성·대출 승인 가능성을 판정하지 않으며 특정 금융상품을 추천하지 않습니다."
+      },
+      "warnings": []
+    }
+  },
+  "financeOptOut": {
+    "status": "ready",
+    "report": {
+      "versions": {
+        "questionVersion": "deep-v2",
+        "ruleVersion": "deep-rules-v1",
+        "copyVersion": "deep-copy-ko-v1",
+        "consentVersion": "deep-sharing-v1",
+        "round": 1,
+        "planVersion": 2
+      },
+      "cashflow": {
+        "status": "unavailable",
+        "missingFields": [],
+        "assumptions": [],
+        "data": null,
+        "reason": "sharing_not_authorized"
+      },
+      "housing": {
+        "status": "unavailable",
+        "missingFields": [],
+        "assumptions": [],
+        "data": null,
+        "reason": "sharing_not_authorized"
+      },
+      "goal": {
+        "status": "unavailable",
+        "missingFields": [],
+        "assumptions": [],
+        "data": null,
+        "reason": "sharing_not_authorized"
+      },
+      "values": {
+        "status": "available",
+        "missingFields": [],
+        "assumptions": [],
+        "data": {
+          "jointManagement": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D7",
+              "D8"
+            ],
+            "questionDifferences": {
+              "D7": 0,
+              "D8": 0
+            }
+          },
+          "savings": {
+            "gap": 0.25,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D1",
+              "D2"
+            ],
+            "questionDifferences": {
+              "D1": 0.5,
+              "D2": 0
+            }
+          },
+          "spending": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D3",
+              "D4"
+            ],
+            "questionDifferences": {
+              "D3": 0,
+              "D4": 0
+            }
+          },
+          "debt": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D6",
+              "D10"
+            ],
+            "questionDifferences": {
+              "D6": 0,
+              "D10": 0
+            }
+          },
+          "investment": {
+            "gap": 0,
+            "status": "complete",
+            "comparedQuestionIds": [
+              "D5",
+              "D9"
+            ],
+            "questionDifferences": {
+              "D5": 0,
+              "D9": 0
+            }
+          }
+        },
+        "reason": null
+      },
+      "topics": [
+        {
+          "area": "savings",
+          "title": "함께 정하는 저축 기준",
+          "observation": "이 영역의 다음 질문에서 서로 다른 선택을 했어요. 각자가 생각한 이유와 상황을 함께 확인해 보세요.",
+          "comparisons": [
+            {
+              "questionId": "D1",
+              "questionText": "쓰고 남으면 저축한다 ↔ 저축부터 하고 남는 걸 쓴다",
+              "a": {
+                "answer": 3,
+                "label": "중간 / 보통"
+              },
+              "b": {
+                "answer": 5,
+                "label": "매우 먼저 저축하고 남은 돈을 소비"
+              }
+            }
+          ],
+          "question": "매달 지키고 싶은 저축액과 조정할 수 있는 지출을 함께 정해볼까요?",
+          "options": [
+            "월 목표부터 정하기",
+            "예외 상황부터 이야기하기",
+            "지금은 보류하기"
+          ],
+          "agreementPrompt": "월 목표·예외 조건"
+        }
+      ],
+      "agreementPrompts": [
+        "월 목표·예외 조건"
+      ],
+      "limitations": {
+        "policyMatching": "unavailable",
+        "explanation": "templates_only",
+        "notice": "자기보고 입력과 명시한 가정에 따른 대화 자료입니다. 궁합·결혼 적합성·대출 승인 가능성을 판정하지 않으며 특정 금융상품을 추천하지 않습니다."
+      },
+      "warnings": []
+    }
+  },
+  "agreementCreateRequest": {
+    "expectedRound": 1,
+    "text": "월 공동비 기준을 다음 달 다시 이야기한다",
+    "reviewOn": "2026-10-01"
+  },
+  "agreement": {
+    "id": "example-agreement",
+    "version": 1,
+    "round": 1,
+    "text": "월 공동비 기준을 다음 달 다시 이야기한다",
+    "reviewOn": "2026-10-01",
+    "status": "proposed",
+    "myConfirmed": false,
+    "partnerConfirmed": false
+  },
+  "agreementConfirmRequest": {
+    "expectedVersion": 1
+  },
+  "agreementEditRequest": {
+    "expectedVersion": 1,
+    "text": "월 공동비와 예외 지출을 함께 정한다",
+    "reviewOn": null
+  },
+  "roundRequest": {
+    "expectedRound": 1
+  },
+  "roundState": {
+    "round": 1,
+    "myRequested": false,
+    "partnerRequested": true
+  },
+  "roundResponse": {
+    "round": 1,
+    "pending": true
+  },
+  "withdrawRequest": {},
+  "closed": {
+    "status": "closed"
+  },
+  "revisionConflict": {
+    "error": {
+      "code": "REVISION_CONFLICT",
+      "message": "상태가 변경되었습니다. 본인의 최신 입력을 다시 확인해 주세요.",
+      "fieldErrors": {}
+    }
+  }
+}

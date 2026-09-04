@@ -1,0 +1,95 @@
+name: frontend
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/frontend.yml"
+      - "apps/backend/**"
+      - "apps/frontend/**"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - ".github/workflows/frontend.yml"
+      - "apps/backend/**"
+      - "apps/frontend/**"
+      - "package.json"
+      - "package-lock.json"
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      CI: true
+      MIRISALLIM_E2E_USE_MONGO: "1"
+      MONGODB_URI: mongodb://127.0.0.1:27017
+      MONGODB_DATABASE: mirisallim_e2e
+      PARTICIPANT_TOKEN_PEPPER: ci-test-pepper
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Install Python dependencies
+        run: python -m pip install -r apps/backend/requirements.txt
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Check generated API types
+        run: npm --workspace @mirisallim/frontend run api:check
+
+      - name: Lint frontend
+        run: npm --workspace @mirisallim/frontend run lint
+
+      - name: Typecheck frontend
+        run: npm --workspace @mirisallim/frontend run typecheck
+
+      - name: Run unit tests
+        run: npm --workspace @mirisallim/frontend run test -- --run
+
+      - name: Build frontend
+        run: npm --workspace @mirisallim/frontend run build
+
+      - name: Run end-to-end tests
+        run: npm --workspace @mirisallim/frontend run test:e2e
+
+      - name: Sanitize Playwright failure evidence
+        if: failure()
+        run: node apps/frontend/scripts/sanitize-playwright-artifacts.mjs
+
+      - name: Upload sanitized Playwright evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-evidence
+          path: apps/frontend/ci-artifacts/failure-summary.txt
+          retention-days: 7

@@ -1,0 +1,18 @@
+{
+  "name": "mirisallim",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "workspaces": [
+    "apps/frontend"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @mirisallim/frontend run dev",
+    "lint": "npm --workspace @mirisallim/frontend run lint",
+    "typecheck": "npm --workspace @mirisallim/frontend run typecheck",
+    "test": "npm --workspace @mirisallim/frontend run test -- --run",
+    "build": "npm --workspace @mirisallim/frontend run build"
+  }
+}

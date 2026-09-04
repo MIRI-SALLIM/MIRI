@@ -1,0 +1,22 @@
+{
+  "cohabitationSpending": {
+    "householdCoefficient": 1.7,
+    "perPersonMultiplier": 0.85,
+    "description": "합가 시 2인 가구 지출 보정 계수 (1인 가구 대비 약 1.7배)"
+  },
+  "lightModeSurplus": {
+    "formula": "0.15 * (incomeA + incomeB) + 0.85 * (surplusA + surplusB)",
+    "incomeWeight": 0.15,
+    "surplusWeight": 0.85,
+    "description": "라이트 모드 합산 월 저축여력 추정 가중치"
+  },
+  "incomeConversion": {
+    "byAge": {
+      "under30": 0.851,
+      "age30s": 0.818,
+      "age40s": 0.816,
+      "all": 0.832
+    },
+    "description": "연령대별 세전 연소득 대비 세후 처분가능소득 환산 비율"
+  }
+}

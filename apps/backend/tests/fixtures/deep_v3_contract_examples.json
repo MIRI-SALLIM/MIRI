@@ -1,0 +1,73 @@
+{
+  "note": "가상 데이터. 원 단위이며 API base는 /api/v1/deep/v3. 전체 입력 교체이므로 GET한 초안과 병합 후 저장한다.",
+  "saveRequest": {
+    "expectedRevision": 0,
+    "input": {
+      "inputVersion": "deep-input-v3",
+      "income": {
+        "monthlyNetIncome": {"status": "known", "value": 3000000},
+        "annualNetBonus": {"status": "known", "value": 0},
+        "bonusIncludedInMonthlyIncome": false,
+        "referenceMonth": "2026-09"
+      },
+      "fixedExpenses": {
+        "communication": {"status": "known", "value": 0},
+        "insurance": {"status": "known", "value": 0},
+        "subscriptions": {"status": "known", "value": 0},
+        "familySupport": {"status": "known", "value": 0},
+        "other": {"status": "known", "value": 0}
+      },
+      "variableExpenses": {
+        "food": {"status": "known", "value": 0},
+        "transport": {"status": "known", "value": 0},
+        "shopping": {"status": "known", "value": 0},
+        "leisure": {"status": "known", "value": 0},
+        "other": {"status": "known", "value": 0}
+      },
+      "housingCost": {"status": "known", "value": 0},
+      "livingTogether": false,
+      "debtsStatus": "known",
+      "debts": [],
+      "assetsStatus": "known",
+      "assets": [{"id": "savings", "kind": "cashSavings", "balance": {"status": "known", "value": 10000000}}],
+      "funding": {
+        "sourcesStatus": "known",
+        "sources": [{"id": "savings", "kind": "cashSavings", "grossAmount": {"status": "known", "value": 10000000},
+          "availableOn": "2026-09-01", "certainty": "available", "housingAllocationWon": 10000000}],
+        "settlementsStatus": "known",
+        "settlements": []
+      },
+      "contribution": {
+        "ownMonthly": {"status": "known", "value": 800000},
+        "expectedPartnerMonthly": {"status": "known", "value": 1200000},
+        "personalSpendingFloor": {"status": "unknown"},
+        "personalSavingFloor": {"status": "unknown"},
+        "discussionState": "notDiscussed"
+      },
+      "constraints": [],
+      "values": {"D1": 3, "D2": 3, "D3": 3, "D4": 3, "D5": 3, "D6": 3, "D7": 3, "D8": 3, "D9": 3, "D10": 3},
+      "skippedQuestionIds": [],
+      "importantAreas": [],
+      "contextNotes": {}
+    }
+  },
+  "planUpdateRequest": {
+    "expectedVersion": 1,
+    "plan": {
+      "planSchemaVersion": "deep-plan-v3", "fundingAsOf": "2026-09-03", "startMonth": "2026-10",
+      "housingType": "rent", "monthlyHousingCost": {"status": "known", "value": 1000000},
+      "housingPriceWon": {"status": "known", "value": 10000000}, "oneOffCostsWon": {"status": "known", "value": 0},
+      "fundingDeadlines": [{"id": "move-in", "dueOn": "2026-10-01", "amount": {"status": "known", "value": 10000000}}],
+      "commonExpensesStatus": "known",
+      "commonExpenses": {"housing": {"status": "known", "value": 1000000}, "food": {"status": "known", "value": 1000000}},
+      "newHousingLoan": null, "target": null
+    }
+  },
+  "submitRequest": {"expectedRevision": 1, "planVersion": 2, "consentVersion": "deep-sharing-v2", "shareFinance": true, "shareValues": true},
+  "agreementCreateRequest": {
+    "expectedRound": 1, "text": "주거비와 식비를 매달 함께 부담한다", "reviewOn": "2026-11-01",
+    "terms": {"topic": "monthlyContribution", "scope": "주거비와 식비", "commonScope": ["housing", "food"],
+      "owner": "both", "startMonth": "2026-10", "dueDay": 1,
+      "monthlyContributions": {"A": 1000000, "B": 1000000}, "exceptions": "소득이 변하면 재논의"}
+  }
+}

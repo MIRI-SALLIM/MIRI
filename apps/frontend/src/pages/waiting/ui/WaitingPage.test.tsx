@@ -165,6 +165,21 @@ describe("WaitingPage", () => {
     expect(await screen.findByText("상대에게 알림을 보냈어요.")).toBeInTheDocument();
   });
 
+  // 이 문구는 사용자에게 하는 약속이라 코드가 조용히 어긋나면 안 된다. 결과가 준비되면
+  // WaitingStatus의 isReady 분기가 `결과 보기` 링크를 렌더링하고 이동은 사용자가 누른다.
+  // "화면이 결과로 바뀐다"고 적었다가 이슈 #49로 고쳤으므로 문구를 고정해 되돌림을 막는다.
+  it("promises the reveal button the ready branch actually renders", async () => {
+    respondWith({ status: () => jsonResponse(sessionStatus({ partnerJoined: true }), 200) });
+
+    renderWaiting();
+
+    expect(
+      await screen.findByText(
+        "상대가 제출하면 여기에 결과 보기 버튼이 바로 나타나요. 기다리기 지루하면 알림을 보내볼까요?",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("explains when the nudge hits the daily limit", async () => {
     respondWith({
       nudge: () => errorResponse("TOO_MANY_REQUESTS", 429),

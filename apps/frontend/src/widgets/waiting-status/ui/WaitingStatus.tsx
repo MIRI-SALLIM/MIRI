@@ -166,7 +166,7 @@ export function WaitingStatus({ sessionId }: WaitingStatusProps) {
               상대가 답을 고르는 중이에요
             </h2>
             <p className="text-sm leading-relaxed text-ink-muted">
-              상대가 제출하면 이 화면이 바로 결과로 바뀌어요. 기다리기 지루하면 알림을 보내볼까요?
+              상대가 제출하면 여기에 결과 보기 버튼이 바로 나타나요. 기다리기 지루하면 알림을 보내볼까요?
             </p>
             <Button disabled={nudge.isPending} onClick={() => nudge.mutate()}>
               알림 보내기

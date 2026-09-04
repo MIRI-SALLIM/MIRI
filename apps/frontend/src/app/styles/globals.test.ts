@@ -74,4 +74,16 @@ describe("전역 접근성 토큰", () => {
     expect(contrastRatio(mutedColor!, cardColor!)).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("컨트롤 테두리는 canvas와 card 양쪽에서 3:1 이상의 대비를 유지한다", () => {
+    const canvasColor = themeColor("canvas");
+    const cardColor = themeColor("card");
+    const controlBorderColor = themeColor("border-control");
+
+    expect(canvasColor, "canvas 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(cardColor, "card 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(controlBorderColor, "컨트롤 테두리는 불투명한 6자리 hex 색상 토큰을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(controlBorderColor!, canvasColor!)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(controlBorderColor!, cardColor!)).toBeGreaterThanOrEqual(3);
+  });
+
 });

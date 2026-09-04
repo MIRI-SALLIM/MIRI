@@ -105,7 +105,7 @@ export function LoginCheck() {
           <label className="block">비밀번호<input className={inputStyle} type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} disabled={busy} /></label>
           <label className="block">체험방 코드 (선택)<input className={inputStyle} autoComplete="off" spellCheck={false} pattern="[0-9a-f]{64}" maxLength={64} value={roomCode} onChange={(e) => setRoomCode(e.target.value)} disabled={busy} /></label>
           <p className="text-sm">첫 로그인은 코드를 비우세요. 상대방과 같은 방에 들어갈 때만 입력합니다. 같은 브라우저에서는 마지막으로 로그인한 계정이 사용됩니다.</p>
-          <button className={`${buttonStyle} bg-green text-white`} disabled={busy} type="submit">심사용 로그인</button>
+          <button className={`${buttonStyle} bg-green-strong text-white`} disabled={busy} type="submit">심사용 로그인</button>
         </form>
       )}
       <section className="space-y-2 border-t border-border pt-5">

@@ -15,6 +15,15 @@ afterEach(() => {
 });
 
 describe("minimal login check", () => {
+  it("uses green-strong with white text for the reviewer login button", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(reply({}, 401)));
+    render(<App />);
+
+    const loginButton = await screen.findByRole("button", { name: "심사용 로그인" });
+
+    expect(loginButton).toHaveClass("bg-green-strong", "text-white");
+  });
+
   it("logs in A without a room code, clears the password and logs out", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(reply({}, 401))
       .mockResolvedValueOnce(reply(context)).mockResolvedValueOnce(new Response(null, { status: 204 }));

@@ -55,6 +55,13 @@ describe("전역 접근성 토큰", () => {
     expect(contrastRatio(focusColor!, "ffffff")).toBeGreaterThanOrEqual(3);
   });
 
+  it("green-strong은 흰 글자에 4.5:1 이상의 대비를 유지한다", () => {
+    const greenStrongColor = themeColor("green-strong");
+
+    expect(greenStrongColor, "green-strong 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(greenStrongColor!, "ffffff")).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("본문용 ink-muted는 canvas와 card 양쪽에서 4.5:1 이상의 대비를 유지한다", () => {
     const canvasColor = themeColor("canvas");
     const cardColor = themeColor("card");

@@ -332,6 +332,90 @@ describe("LightFormPage", () => {
     expect(storageKeys(localStorage)).toEqual([]);
   });
 
+  it("shows an error instead of loading when an already hydrated input fetch fails", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    useLightFormStore.setState({
+      answers: [0, 0, 0],
+      currentStep: 0,
+      guesses: [0, 0, 0],
+      isHydrated: true,
+      isReadOnly: false,
+      saveStatus: "idle",
+      sessionId: "session-a",
+    });
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        return jsonResponse({ error: { code: "INTERNAL_SERVER_ERROR" } }, 503);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    renderLightForm();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("질문을 불러오지 못했어요.");
+    expect(screen.queryByText("질문을 불러오는 중...")).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of loading when an already hydrated question set is empty", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    useLightFormStore.setState({
+      answers: [0, 0, 0],
+      currentStep: 0,
+      guesses: [0, 0, 0],
+      isHydrated: true,
+      isReadOnly: false,
+      saveStatus: "idle",
+      sessionId: "session-a",
+    });
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse({ ...questionSet, questions: [] });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        return jsonResponse({ answers: [null, null, null], guesses: [null, null, null] });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    renderLightForm();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("질문을 불러오지 못했어요.");
+    expect(screen.queryByText("질문을 불러오는 중...")).not.toBeInTheDocument();
+  });
+
   it("keeps the selected value and reports a failed autosave", async () => {
     sessionStorage.setItem("activeSessionId", "session-a");
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {

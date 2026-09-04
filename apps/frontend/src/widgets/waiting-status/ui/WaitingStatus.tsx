@@ -185,7 +185,7 @@ export function WaitingStatus({ sessionId }: WaitingStatusProps) {
               초대 링크를 한 번 더 보내볼까요? 링크를 받은 사람만 이 세션에 참여할 수 있어요.
             </p>
             {inviteUrl === null ? (
-              <p className="text-sm text-ink-subtle">초대 링크를 불러오는 중이에요</p>
+              <p className="text-sm text-ink-muted">초대 링크를 불러오는 중이에요</p>
             ) : (
               <Button onClick={copyInviteUrl} variant="secondary">
                 {isCopied ? "복사됨" : "초대 링크 복사"}

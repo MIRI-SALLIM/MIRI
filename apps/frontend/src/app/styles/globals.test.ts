@@ -1,6 +1,35 @@
-import { describe, expect, it } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
+import { createElement } from "react";
+import { describe, expect, it, vi } from "vitest";
 
+import { WaitingStatus } from "@/widgets/waiting-status";
 import stylesheet from "./globals.css?raw";
+
+const { fetchActiveSessionMock } = vi.hoisted(() => ({
+  fetchActiveSessionMock: vi.fn(() => new Promise(() => {})),
+}));
+
+vi.mock("@/entities/session", () => ({
+  activeSessionQueryKey: ["session", "active"],
+  fetchActiveSession: fetchActiveSessionMock,
+}));
+
+vi.mock("@/features/poll-session-status", () => ({
+  useSessionStatus: () => ({
+    isExpired: false,
+    isFailed: false,
+    isPending: false,
+    isReady: false,
+    status: {
+      expiresAt: "2026-09-04T12:00:00Z",
+      meCompleted: true,
+      partnerCompleted: false,
+      partnerJoined: false,
+      partnerNudgedAt: null,
+    },
+  }),
+}));
 
 const luminance = (hex: string) => {
   const channels = hex.match(/[0-9a-f]{2}/gi)?.map((channel) => Number.parseInt(channel, 16) / 255);
@@ -21,7 +50,26 @@ const contrastRatio = (first: string, second: string) => {
   return (lighter + 0.05) / (darker + 0.05);
 };
 
+const themeColor = (name: string) =>
+  stylesheet.match(new RegExp(`--color-${name}:\\s*#([0-9a-f]{6})`, "i"))?.[1];
+
 describe("전역 접근성 토큰", () => {
+  it("초대 링크 로딩 문구는 본문용 대비 토큰을 사용한다", () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(WaitingStatus, { sessionId: "session-a" }),
+      ),
+    );
+
+    expect(screen.getByText("초대 링크를 불러오는 중이에요")).toHaveClass("text-ink-muted");
+  });
+
   it("Tailwind v4 CSS-first 테마와 기존 토큰을 선언한다", () => {
     expect(stylesheet).toContain('@import "tailwindcss";');
     expect(stylesheet).not.toContain("@tailwind base");
@@ -50,5 +98,26 @@ describe("전역 접근성 토큰", () => {
     expect(focusColor, "포커스 링은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
     expect(contrastRatio(focusColor!, "fcfcfb")).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(focusColor!, "ffffff")).toBeGreaterThanOrEqual(3);
+  });
+
+  it("본문용 ink-muted는 canvas와 card 양쪽에서 4.5:1 이상의 대비를 유지한다", () => {
+    const canvasColor = themeColor("canvas");
+    const cardColor = themeColor("card");
+    const mutedColor = themeColor("ink-muted");
+
+    expect(canvasColor, "canvas 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(cardColor, "card 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(mutedColor, "ink-muted 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(mutedColor!, canvasColor!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(mutedColor!, cardColor!)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("ink-subtle은 card 본문 텍스트에 사용할 수 없는 대비 토큰이다", () => {
+    const cardColor = themeColor("card");
+    const subtleColor = themeColor("ink-subtle");
+
+    expect(cardColor, "card 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(subtleColor, "ink-subtle 색상 토큰은 불투명한 6자리 hex 색상을 사용해야 합니다").toBeDefined();
+    expect(contrastRatio(subtleColor!, cardColor!)).toBeLessThan(4.5);
   });
 });

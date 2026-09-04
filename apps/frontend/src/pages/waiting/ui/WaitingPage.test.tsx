@@ -56,7 +56,7 @@ function respondWith({
   nudge = () => jsonResponse({ message: "알림을 전송했습니다.", status: "success" }, 200),
   status = () => jsonResponse(sessionStatus(), 200),
 }: {
-  me?: () => Response;
+  me?: () => Response | Promise<Response>;
   nudge?: () => Response;
   status?: () => Response;
 }) {
@@ -140,6 +140,14 @@ describe("WaitingPage", () => {
 
     await user.click(screen.getByRole("button", { name: "초대 링크 복사" }));
     await expect(navigator.clipboard.readText()).resolves.toContain("/invite/INV-A");
+  });
+
+  it("uses the body text contrast token while the invitation link is loading", async () => {
+    respondWith({ me: () => new Promise<Response>(() => {}) });
+
+    renderWaiting();
+
+    expect(await screen.findByText("초대 링크를 불러오는 중이에요")).toHaveClass("text-ink-muted");
   });
 
   it("nudges the partner once they joined but have not submitted", async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createApiClient, requestApi } from "./client";
+import { API_REQUEST_TIMEOUT_MS, createApiClient, requestApi } from "./client";
 
 const activeSession = {
   createdAt: "2026-08-14T00:00:00Z",
@@ -53,5 +53,71 @@ describe("apiClient", () => {
       code: "PARTICIPANT_UNAUTHORIZED",
       kind: "unauthorized",
     });
+  });
+
+  it("aborts an unresponsive request at the cap and reports a timeout error", async () => {
+    vi.useFakeTimers();
+
+    try {
+      const fetchMock = vi.fn(
+        (request: Request) =>
+          new Promise<Response>((_, reject) => {
+            request.signal.addEventListener(
+              "abort",
+              () => reject(new DOMException("The request timed out", "AbortError")),
+              { once: true },
+            );
+          }),
+      );
+      const apiClient = createApiClient({ fetch: fetchMock });
+      const request = requestApi(apiClient.GET("/api/v1/me/session"));
+      const rejectedRequest = expect(request).rejects.toMatchObject({
+        kind: "timeout",
+        status: null,
+      });
+
+      await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS);
+
+      const [requestArgument] = fetchMock.mock.calls[0] as [Request];
+      expect(requestArgument.signal.aborted).toBe(true);
+      await rejectedRequest;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not abort a non-GET request after the cap", async () => {
+    vi.useFakeTimers();
+
+    try {
+      let resolveRequest!: (response: Response) => void;
+      const fetchMock = vi.fn(
+        (request: Request) =>
+          new Promise<Response>((resolve, reject) => {
+            resolveRequest = resolve;
+            request.signal.addEventListener(
+              "abort",
+              () => reject(new DOMException("The request timed out", "AbortError")),
+              { once: true },
+            );
+          }),
+      );
+      const apiClient = createApiClient({ fetch: fetchMock });
+      const request = requestApi(
+        apiClient.POST("/api/v1/sessions", {
+          body: { mode: "light" },
+        }),
+      );
+      const requestResult = request.then(() => "resolved", () => "rejected");
+
+      await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS * 2);
+
+      const [requestArgument] = fetchMock.mock.calls[0] as [Request];
+      expect(requestArgument.signal.aborted).toBe(false);
+      resolveRequest(new Response("{}", { status: 200 }));
+      await expect(requestResult).resolves.toBe("resolved");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

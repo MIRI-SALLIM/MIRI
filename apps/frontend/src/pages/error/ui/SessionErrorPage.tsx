@@ -25,6 +25,10 @@ const copy: Record<ApiErrorKind, { description: string; title: string }> = {
     title: "요청이 너무 많아요",
     description: "잠시 후 다시 시도해 주세요.",
   },
+  timeout: {
+    title: "응답이 오래 걸리고 있어요",
+    description: "잠시 후 다시 시도해 주세요.",
+  },
   unavailable: {
     title: "지금은 연결이 원활하지 않아요",
     description: "잠시 후 다시 시도해 주세요.",

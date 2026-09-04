@@ -5,6 +5,7 @@ export {
   ApiError,
   createApiError,
   createNetworkApiError,
+  createTimeoutApiError,
   isTerminalApiError,
   shouldRetryQuery,
 } from "./errors";

@@ -474,7 +474,13 @@ describe("LightFormPage", () => {
         }
 
         if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
-          return new Promise<Response>(() => {});
+          return new Promise<Response>((_, reject) => {
+            request.signal.addEventListener(
+              "abort",
+              () => reject(new DOMException("The request timed out", "AbortError")),
+              { once: true },
+            );
+          });
         }
 
         throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
@@ -489,7 +495,7 @@ describe("LightFormPage", () => {
       expect(screen.getByText("질문을 불러오는 중...")).toBeInTheDocument();
 
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(1_000);
+        await vi.advanceTimersByTimeAsync(10_000);
       });
 
       expect(screen.getByRole("heading", { name: "첫 번째 질문이에요." })).toBeInTheDocument();

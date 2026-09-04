@@ -287,8 +287,11 @@ describe("WaitingPage", () => {
     expect(statusCallCount()).toBe(afterJoin + 1);
   });
 
-  it("keeps both polling intervals inside the three-second reveal budget", () => {
-    // 두 주기 모두 스펙의 3초 공개 예산(vertical-slice-design.md:27)보다 짧게 둔다.
+  it("keeps both polling intervals under the three-second scheduling ceiling", () => {
+    // 스펙의 3초 공개 목표(vertical-slice-design.md:27)에 대한 필요조건만 검사한다.
+    // 주기가 3초 이상이면 다음 tick을 기다리는 것만으로 목표를 넘기므로 상한을 잠근다.
+    // 다만 이것은 충분조건이 아니다 -- 네트워크 왕복, 서버 처리, 렌더 지연, 낡은 응답
+    // 경합은 여기서 검증하지 않으며 그 예산도 정해진 바 없다.
     expect(SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS).toBeLessThan(3_000);
     expect(SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS).toBeLessThan(3_000);
   });

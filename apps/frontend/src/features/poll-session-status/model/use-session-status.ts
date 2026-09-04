@@ -7,8 +7,14 @@ import { fetchSessionStatus, sessionStatusQueryKey, type SessionStatus } from ".
 // 상대가 참여한 뒤에는 양측 제출과 결과 공개를 빠르게 감지해야 하므로 1000ms를 유지한다.
 export const SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS = 1_000;
 
-// 요청 예산은 아직 정해지지 않았지만, 미참여 화면에서 1초 대비 요청 빈도를 절반으로 줄이면서
-// 3초 공개 예산 안에 남도록 2000ms를 사용한다.
+// 이 값이 제한하는 것은 클라이언트 스케줄링 지연뿐이다. 네트워크 왕복·서버 처리·렌더는
+// 포함하지 않으며 그 예산은 정해진 바 없으므로, 상수가 3초보다 작다는 사실만으로 스펙의
+// 공개 약속이 보장되지는 않는다.
+// 이 주기가 공개를 좌우하려면 상대가 한 tick 안에 참여·전 문항 답변·제출을 끝내야 한다.
+// 문항마다 저장 왕복이 있어 현실적이지 않고, 그 창을 넘기면 다음 poll이 참여를 감지해
+// 1000ms로 전환된다. 따라서 실질 공개 지연은 1000ms 주기가 좌우하며 이는 #28과 같다.
+// 다만 이것은 행동적 논거이지 하드 보장이 아니다. 미참여 구간의 요청 빈도를 절반으로
+// 줄이는 대가로 그 불확실성을 감수한다.
 export const SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS = 2_000;
 
 const terminalKinds = ["expired", "not-found", "unauthorized"];

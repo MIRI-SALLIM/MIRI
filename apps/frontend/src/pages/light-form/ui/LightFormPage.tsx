@@ -204,7 +204,8 @@ export function LightFormPage() {
     [],
   );
 
-  const questionCount = questionQuery.data?.questions.length ?? 0;
+  const questions = questionQuery.data?.questions;
+  const questionCount = questions?.length ?? 0;
   const boundedStep = questionCount === 0 ? 0 : Math.min(Math.max(requestedStep - 1, 0), questionCount - 1);
   const statusHydrationReady =
     sessionStatusQuery.isFetchedAfterMount && (sessionStatusQuery.isSuccess || sessionStatusQuery.isError);
@@ -301,6 +302,16 @@ export function LightFormPage() {
   const isLastStep = questionCount > 0 && boundedStep === questionCount - 1;
   const isHydrationPending =
     sessionId !== null && (hydrationState === "pending-input" || hydrationState === "pending-status");
+  // `failed-data` already implies that input fetched; the question guard remains
+  // because questionCount defaults to zero while its fetch is still pending.
+  const hasFailedData = hydrationState === "failed-data" && questionQuery.isFetchedAfterMount;
+  // These render-blocking reads use retry:false, so an error is final: another read
+  // still pending cannot turn the page into a usable form. Show the error first.
+  const hasActiveSessionError = storedSessionId === null && activeSessionQuery.isError;
+  const hasPageError = hasActiveSessionError || questionQuery.isError || inputQuery.isError || hasFailedData;
+  const hasNoSession = sessionId === null && activeSessionQuery.isSuccess && activeSessionQuery.isFetchedAfterMount;
+  const isPageLoading =
+    !hasPageError && (questionQuery.isPending || inputQuery.isPending || isHydrationPending || !isHydrated);
 
   return (
     <section className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-center px-6 pb-[clamp(10px,2vh,48px)] pt-[clamp(9px,1.5vh,36px)] [line-height:normal]">
@@ -320,15 +331,15 @@ export function LightFormPage() {
         </button>
       </div>
 
-      {questionQuery.isPending || inputQuery.isPending || isHydrationPending || !isHydrated ? (
-        <p aria-live="polite" className="rounded-card border border-border bg-card p-6 text-ink-muted" role="status">
-          질문을 불러오는 중...
-        </p>
-      ) : questionQuery.isError || inputQuery.isError || sessionId === null ? (
+      {hasPageError || hasNoSession ? (
         <p className="rounded-card border border-border bg-card p-6 text-red-700" role="alert">
           {pageErrorMessage}
         </p>
-      ) : questionCount === 0 ? (
+      ) : isPageLoading ? (
+        <p aria-live="polite" className="rounded-card border border-border bg-card p-6 text-ink-muted" role="status">
+          질문을 불러오는 중...
+        </p>
+      ) : questions === undefined || questions.length === 0 ? (
         <p className="rounded-card border border-border bg-card p-6 text-red-700" role="alert">
           {pageErrorMessage}
         </p>
@@ -403,7 +414,7 @@ export function LightFormPage() {
             guess={guesses[boundedStep] ?? null}
             onAnswerChange={(value) => updateAnswer("answer", value)}
             onGuessChange={(value) => updateAnswer("guess", value)}
-            question={questionQuery.data.questions[boundedStep]}
+            question={questions[boundedStep]}
           />
 
           {saveStatusMessage ? (

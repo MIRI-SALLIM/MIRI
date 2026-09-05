@@ -60,7 +60,7 @@ export function AppHeader() {
             </nav>
             <a
               className="inline-flex min-h-[42px] items-center rounded-full border border-border bg-card px-5 text-[15px] font-semibold text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus"
-              href="#login"
+              href="/login"
             >
               로그인
             </a>
@@ -99,7 +99,7 @@ export function AppHeader() {
           ))}
           <a
             className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-[14px] border border-border bg-card text-base font-semibold leading-[normal] text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus"
-            href="#login"
+            href="/login"
             onClick={() => setIsMenuOpen(false)}
           >
             로그인

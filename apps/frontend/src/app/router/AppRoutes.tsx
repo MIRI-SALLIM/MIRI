@@ -14,6 +14,10 @@ const LightResultPage = lazy(async () => ({
   default: (await import("@/pages/light-result")).LightResultPage,
 }));
 const SharePage = lazy(async () => ({ default: (await import("@/pages/share")).SharePage }));
+const LoginPage = lazy(async () => ({ default: (await import("@/pages/login")).LoginPage }));
+const DeepEntryPage = lazy(async () => ({
+  default: (await import("@/pages/deep-entry")).DeepEntryPage,
+}));
 
 export function AppRoutes() {
   return (
@@ -21,6 +25,8 @@ export function AppRoutes() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<LandingPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="deep" element={<DeepEntryPage />} />
           <Route path="light/:step" element={<LightFormPage />} />
           <Route path="invite/:code" element={<InvitePage />} />
           <Route path="waiting/:sessionId" element={<WaitingPage />} />

@@ -3,6 +3,7 @@ import type { paths } from "./schema";
 type AllowedMethod = "get" | "post" | "patch";
 
 export const allowedOperations = [
+  { method: "get", path: "/api/v1/auth/me" },
   { method: "post", path: "/api/v1/sessions" },
   { method: "get", path: "/api/v1/me/session" },
   { method: "get", path: "/api/v1/light/questions" },

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { ApiError, isTerminalApiError, shouldRetryQuery } from "./errors";
+import {
+  ApiError,
+  isApiErrorCode,
+  isDeepApiErrorCode,
+  isTerminalApiError,
+  shouldRetryQuery,
+} from "./errors";
 
 const apiError = (status: number | null) => new ApiError({ status, code: null, kind: "unknown" });
 
@@ -17,6 +23,20 @@ describe("API retry policy", () => {
 
   it("does not retry a request timeout", () => {
     expect(shouldRetryQuery(0, new ApiError({ status: null, code: null, kind: "timeout" }))).toBe(false);
+  });
+});
+
+describe("deep API error codes", () => {
+  it("keeps distinct deep conflict codes available to callers", () => {
+    const error = new ApiError({ status: 409, code: "PLAN_LOCKED", kind: "conflict" });
+
+    expect(isApiErrorCode(error, "PLAN_LOCKED")).toBe(true);
+    expect(isDeepApiErrorCode(error, "PLAN_LOCKED")).toBe(true);
+    expect(isDeepApiErrorCode(error, "INPUT_LOCKED")).toBe(false);
+  });
+
+  it("does not treat an ordinary error as a matching API code", () => {
+    expect(isApiErrorCode(new Error("no"), "PLAN_LOCKED")).toBe(false);
   });
 });
 

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Outlet, Route, Routes } from "react-router-dom";
 
 import { SessionErrorPage } from "@/pages/error";
 
@@ -18,6 +18,13 @@ const LoginPage = lazy(async () => ({ default: (await import("@/pages/login")).L
 const DeepEntryPage = lazy(async () => ({
   default: (await import("@/pages/deep-entry")).DeepEntryPage,
 }));
+const DeepPlaceholderPage = lazy(async () => ({
+  default: (await import("@/pages/deep-placeholder")).DeepPlaceholderPage,
+}));
+
+function DeepRouteLayout() {
+  return <Outlet />;
+}
 
 export function AppRoutes() {
   return (
@@ -26,7 +33,17 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<LandingPage />} />
           <Route path="login" element={<LoginPage />} />
-          <Route path="deep" element={<DeepEntryPage />} />
+          <Route path="deep" element={<DeepRouteLayout />}>
+            <Route index element={<DeepEntryPage />} />
+            <Route path="invite/:code" element={<DeepPlaceholderPage />} />
+            <Route path="plan/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="input/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="questions/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="waiting/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="result/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="agreements/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="meeting/:sessionId" element={<DeepPlaceholderPage />} />
+          </Route>
           <Route path="light/:step" element={<LightFormPage />} />
           <Route path="invite/:code" element={<InvitePage />} />
           <Route path="waiting/:sessionId" element={<WaitingPage />} />

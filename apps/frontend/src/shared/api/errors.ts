@@ -11,6 +11,24 @@ export type ApiErrorKind =
 
 export type ApiFieldErrors = Record<string, string[]>;
 
+export const deepApiErrorCodes = [
+  "REVISION_CONFLICT",
+  "INPUT_LOCKED",
+  "PLAN_VERSION_CONFLICT",
+  "PLAN_LOCKED",
+  "ROUND_VERSION_CONFLICT",
+  "AGREEMENT_VERSION_CONFLICT",
+  "IDEMPOTENCY_CONFLICT",
+  "SELF_INVITATION",
+  "SESSION_FULL",
+  "UNTRUSTED_ORIGIN",
+  "INVALID_DEEP_INPUT",
+  "INPUT_INCOMPLETE",
+  "DEEP_UNAVAILABLE",
+] as const;
+
+export type DeepApiErrorCode = (typeof deepApiErrorCodes)[number];
+
 const terminalKinds: ApiErrorKind[] = ["expired", "not-found", "unauthorized"];
 
 export interface ApiErrorInit {
@@ -52,6 +70,19 @@ const codeKinds: Record<string, ApiErrorKind> = {
   VALIDATION_ERROR: "validation",
   TOO_MANY_REQUESTS: "rate-limited",
   INTERNAL_SERVER_ERROR: "unavailable",
+  REVISION_CONFLICT: "conflict",
+  INPUT_LOCKED: "conflict",
+  PLAN_VERSION_CONFLICT: "conflict",
+  PLAN_LOCKED: "conflict",
+  ROUND_VERSION_CONFLICT: "conflict",
+  AGREEMENT_VERSION_CONFLICT: "conflict",
+  IDEMPOTENCY_CONFLICT: "conflict",
+  SELF_INVITATION: "conflict",
+  SESSION_FULL: "conflict",
+  UNTRUSTED_ORIGIN: "unknown",
+  INVALID_DEEP_INPUT: "validation",
+  INPUT_INCOMPLETE: "validation",
+  DEEP_UNAVAILABLE: "unavailable",
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -125,6 +156,16 @@ export const createNetworkApiError = (): ApiError =>
 
 export const createTimeoutApiError = (): ApiError =>
   new ApiError({ status: null, code: null, kind: "timeout" });
+
+export const isApiErrorCode = <Code extends string>(
+  error: unknown,
+  code: Code,
+): error is ApiError & { readonly code: Code } => error instanceof ApiError && error.code === code;
+
+export const isDeepApiErrorCode = (
+  error: unknown,
+  code: DeepApiErrorCode,
+): error is ApiError & { readonly code: DeepApiErrorCode } => isApiErrorCode(error, code);
 
 export const isTerminalApiError = (error: unknown): boolean =>
   error instanceof ApiError && terminalKinds.includes(error.kind);

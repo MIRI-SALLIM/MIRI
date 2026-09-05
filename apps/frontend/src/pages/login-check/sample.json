@@ -1,0 +1,171 @@
+{
+  "input": {
+    "inputVersion": "deep-input-v3",
+    "income": {
+      "monthlyNetIncome": {
+        "status": "known",
+        "value": 3000000
+      },
+      "annualNetBonus": {
+        "status": "known",
+        "value": 0
+      },
+      "bonusIncludedInMonthlyIncome": false,
+      "referenceMonth": "2026-09"
+    },
+    "fixedExpenses": {
+      "communication": {
+        "status": "known",
+        "value": 0
+      },
+      "insurance": {
+        "status": "known",
+        "value": 0
+      },
+      "subscriptions": {
+        "status": "known",
+        "value": 0
+      },
+      "familySupport": {
+        "status": "known",
+        "value": 0
+      },
+      "other": {
+        "status": "known",
+        "value": 0
+      }
+    },
+    "variableExpenses": {
+      "food": {
+        "status": "known",
+        "value": 0
+      },
+      "transport": {
+        "status": "known",
+        "value": 0
+      },
+      "shopping": {
+        "status": "known",
+        "value": 0
+      },
+      "leisure": {
+        "status": "known",
+        "value": 0
+      },
+      "other": {
+        "status": "known",
+        "value": 0
+      }
+    },
+    "housingCost": {
+      "status": "known",
+      "value": 0
+    },
+    "livingTogether": false,
+    "debtsStatus": "known",
+    "debts": [],
+    "assetsStatus": "known",
+    "assets": [
+      {
+        "id": "savings",
+        "kind": "cashSavings",
+        "balance": {
+          "status": "known",
+          "value": 10000000
+        }
+      }
+    ],
+    "funding": {
+      "sourcesStatus": "known",
+      "sources": [
+        {
+          "id": "savings",
+          "kind": "cashSavings",
+          "grossAmount": {
+            "status": "known",
+            "value": 10000000
+          },
+          "availableOn": "2026-09-01",
+          "certainty": "available",
+          "housingAllocationWon": 10000000
+        }
+      ],
+      "settlementsStatus": "known",
+      "settlements": []
+    },
+    "contribution": {
+      "ownMonthly": {
+        "status": "known",
+        "value": 800000
+      },
+      "expectedPartnerMonthly": {
+        "status": "known",
+        "value": 1200000
+      },
+      "personalSpendingFloor": {
+        "status": "unknown"
+      },
+      "personalSavingFloor": {
+        "status": "unknown"
+      },
+      "discussionState": "notDiscussed"
+    },
+    "constraints": [],
+    "values": {
+      "D1": 3,
+      "D2": 3,
+      "D3": 3,
+      "D4": 3,
+      "D5": 3,
+      "D6": 3,
+      "D7": 3,
+      "D8": 3,
+      "D9": 3,
+      "D10": 3
+    },
+    "skippedQuestionIds": [],
+    "importantAreas": [],
+    "contextNotes": {}
+  },
+  "plan": {
+    "planSchemaVersion": "deep-plan-v3",
+    "fundingAsOf": "2026-09-03",
+    "startMonth": "2026-10",
+    "housingType": "rent",
+    "monthlyHousingCost": {
+      "status": "known",
+      "value": 1000000
+    },
+    "housingPriceWon": {
+      "status": "known",
+      "value": 10000000
+    },
+    "oneOffCostsWon": {
+      "status": "known",
+      "value": 0
+    },
+    "fundingDeadlines": [
+      {
+        "id": "move-in",
+        "dueOn": "2026-10-01",
+        "amount": {
+          "status": "known",
+          "value": 10000000
+        }
+      }
+    ],
+    "commonExpensesStatus": "known",
+    "commonExpenses": {
+      "housing": {
+        "status": "known",
+        "value": 1000000
+      },
+      "food": {
+        "status": "known",
+        "value": 1000000
+      }
+    },
+    "newHousingLoan": null,
+    "target": null
+  }
+}

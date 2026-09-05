@@ -322,6 +322,64 @@
         "title": "AssetInput",
         "type": "object"
       },
+      "AvailableExplanation": {
+        "additionalProperties": false,
+        "properties": {
+          "brief": {
+            "$ref": "#/components/schemas/MeetingBrief"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationCard"
+            },
+            "maxItems": 3,
+            "title": "Cards",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "disabled",
+                  "not_generated",
+                  "no_issues",
+                  "pending",
+                  "interrupted",
+                  "budget_exhausted",
+                  "provider_unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "source": {
+            "enum": [
+              "ai",
+              "template"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "const": "ready",
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "reason",
+          "brief",
+          "cards"
+        ],
+        "title": "AvailableExplanation",
+        "type": "object"
+      },
       "CalculationBlock": {
         "additionalProperties": false,
         "properties": {
@@ -389,6 +447,56 @@
           }
         },
         "title": "ClosedDeepResponse",
+        "type": "object"
+      },
+      "CompleteMeeting": {
+        "additionalProperties": false,
+        "properties": {
+          "allowAiProcessing": {
+            "title": "Allowaiprocessing",
+            "type": "boolean"
+          },
+          "answers": {
+            "$ref": "#/components/schemas/MeetingAnswers"
+          },
+          "consentVersion": {
+            "enum": [
+              "money-meeting-consent-v2",
+              "money-meeting-consent-v3"
+            ],
+            "title": "Consentversion",
+            "type": "string"
+          },
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "expectedRound": {
+            "minimum": 1.0,
+            "title": "Expectedround",
+            "type": "integer"
+          },
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "shareWithPartner": {
+            "title": "Sharewithpartner",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consentVersion",
+          "shareWithPartner",
+          "allowAiProcessing",
+          "expectedRound",
+          "planVersion",
+          "expectedRevision",
+          "answers"
+        ],
+        "title": "CompleteMeeting",
         "type": "object"
       },
       "ConfigResponse": {
@@ -1666,6 +1774,119 @@
         "title": "ErrorResponse",
         "type": "object"
       },
+      "ExplanationCard": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "factIds": {
+            "items": {
+              "enum": [
+                "budget",
+                "offered_total",
+                "contribution_gap",
+                "excess",
+                "contribution_a",
+                "contribution_b",
+                "expected_a_for_b",
+                "expected_b_for_a",
+                "expectation_a",
+                "expectation_b",
+                "housing_required",
+                "housing_available",
+                "housing_gap",
+                "housing_expected",
+                "housing_gap_with_expected",
+                "monthly_surplus",
+                "goal_required_saving",
+                "goal_saving_gap"
+              ],
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Factids",
+            "type": "array"
+          },
+          "issueId": {
+            "enum": [
+              "contribution_gap",
+              "contribution_unknown",
+              "excess_contributions",
+              "expectation_a",
+              "expectation_b",
+              "housing_gap",
+              "housing_unknown",
+              "housing_expected",
+              "monthly_deficit",
+              "cashflow_unknown",
+              "goal_saving_gap",
+              "goal_unknown",
+              "condition_discussion"
+            ],
+            "title": "Issueid",
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issueId",
+          "factIds",
+          "explanation",
+          "question"
+        ],
+        "title": "ExplanationCard",
+        "type": "object"
+      },
+      "Fact": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "enum": [
+              "budget",
+              "offered_total",
+              "contribution_gap",
+              "excess",
+              "contribution_a",
+              "contribution_b",
+              "expected_a_for_b",
+              "expected_b_for_a",
+              "expectation_a",
+              "expectation_b",
+              "housing_required",
+              "housing_available",
+              "housing_gap",
+              "housing_expected",
+              "housing_gap_with_expected",
+              "monthly_surplus",
+              "goal_required_saving",
+              "goal_saving_gap"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "valueWon": {
+            "maximum": 9007199254740991.0,
+            "minimum": -9007199254740991.0,
+            "title": "Valuewon",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "valueWon"
+        ],
+        "title": "Fact",
+        "type": "object"
+      },
       "FundingDeadline": {
         "additionalProperties": false,
         "properties": {
@@ -2229,6 +2450,77 @@
         "title": "GoalInput",
         "type": "object"
       },
+      "GuideTopic": {
+        "additionalProperties": false,
+        "properties": {
+          "answerTargets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Answertargets",
+            "type": "array"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "decisionTopic": {
+            "enum": [
+              "monthlyContribution",
+              "housingFunding",
+              "savings",
+              "spending",
+              "investment",
+              "debt",
+              "jointManagement",
+              "other"
+            ],
+            "title": "Decisiontopic",
+            "type": "string"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "title": "Evidence",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "observation": {
+            "title": "Observation",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "relatedAgreementIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Relatedagreementids",
+            "type": "array"
+          },
+          "whyItMatters": {
+            "title": "Whyitmatters",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "observation",
+          "question",
+          "whyItMatters",
+          "answerTargets",
+          "decisionTopic",
+          "evidence",
+          "relatedAgreementIds"
+        ],
+        "title": "GuideTopic",
+        "type": "object"
+      },
       "HealthResponse": {
         "properties": {
           "database": {
@@ -2657,6 +2949,272 @@
         "title": "LightDiagnosisResultData",
         "type": "object"
       },
+      "MeetingAnswers": {
+        "additionalProperties": false,
+        "properties": {
+          "adjustableMonthlyWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustablemonthlywon"
+          },
+          "contributionMeaning": {
+            "enum": [
+              "initialProposal",
+              "selfReportedLimit",
+              "unknown"
+            ],
+            "title": "Contributionmeaning",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contributionMeaning"
+        ],
+        "title": "MeetingAnswers",
+        "type": "object"
+      },
+      "MeetingBrief": {
+        "additionalProperties": false,
+        "properties": {
+          "agreementStatus": {
+            "enum": [
+              "unknown",
+              "notProposed",
+              "proposed",
+              "deferred",
+              "agreed",
+              "conflicting"
+            ],
+            "title": "Agreementstatus",
+            "type": "string"
+          },
+          "basis": {
+            "const": "submitted_intentions_not_affordability",
+            "default": "submitted_intentions_not_affordability",
+            "title": "Basis",
+            "type": "string"
+          },
+          "commonScope": {
+            "items": {
+              "enum": [
+                "housing",
+                "food",
+                "transport",
+                "subscriptions",
+                "gifts",
+                "other"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Commonscope",
+            "type": "array"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/Fact"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "housingGapDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Housinggapdate"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/MeetingIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "scope": {
+            "default": "monthly",
+            "enum": [
+              "monthly",
+              "sharedPlan"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "sourceHasAssumptions": {
+            "title": "Sourcehasassumptions",
+            "type": "boolean"
+          },
+          "sourceRound": {
+            "minimum": 1.0,
+            "title": "Sourceround",
+            "type": "integer"
+          },
+          "startMonth": {
+            "pattern": "^[1-9][0-9]{3}-(0[1-9]|1[0-2])$",
+            "title": "Startmonth",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceRound",
+          "planVersion",
+          "startMonth",
+          "commonScope",
+          "sourceHasAssumptions",
+          "agreementStatus",
+          "facts",
+          "issues"
+        ],
+        "title": "MeetingBrief",
+        "type": "object"
+      },
+      "MeetingCompletion": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "discriminator": {
+              "mapping": {
+                "ready": "#/components/schemas/AvailableExplanation",
+                "waiting": "#/components/schemas/WaitingMeetingContext"
+              },
+              "propertyName": "status"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WaitingMeetingContext"
+              },
+              {
+                "$ref": "#/components/schemas/AvailableExplanation"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "own": {
+            "$ref": "#/components/schemas/OwnMeeting"
+          }
+        },
+        "required": [
+          "own",
+          "explanation"
+        ],
+        "title": "MeetingCompletion",
+        "type": "object"
+      },
+      "MeetingIssue": {
+        "additionalProperties": false,
+        "properties": {
+          "factIds": {
+            "items": {
+              "enum": [
+                "budget",
+                "offered_total",
+                "contribution_gap",
+                "excess",
+                "contribution_a",
+                "contribution_b",
+                "expected_a_for_b",
+                "expected_b_for_a",
+                "expectation_a",
+                "expectation_b",
+                "housing_required",
+                "housing_available",
+                "housing_gap",
+                "housing_expected",
+                "housing_gap_with_expected",
+                "monthly_surplus",
+                "goal_required_saving",
+                "goal_saving_gap"
+              ],
+              "type": "string"
+            },
+            "title": "Factids",
+            "type": "array"
+          },
+          "id": {
+            "enum": [
+              "contribution_gap",
+              "contribution_unknown",
+              "excess_contributions",
+              "expectation_a",
+              "expectation_b",
+              "housing_gap",
+              "housing_unknown",
+              "housing_expected",
+              "monthly_deficit",
+              "cashflow_unknown",
+              "goal_saving_gap",
+              "goal_unknown",
+              "condition_discussion"
+            ],
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "factIds"
+        ],
+        "title": "MeetingIssue",
+        "type": "object"
+      },
+      "MeetingQuestion": {
+        "additionalProperties": false,
+        "properties": {
+          "helpText": {
+            "title": "Helptext",
+            "type": "string"
+          },
+          "id": {
+            "enum": [
+              "contributionMeaning",
+              "adjustableMonthlyWon"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "options": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "object"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "helpText",
+          "required"
+        ],
+        "title": "MeetingQuestion",
+        "type": "object"
+      },
       "NudgeResponse": {
         "properties": {
           "message": {
@@ -2711,6 +3269,77 @@
           "input"
         ],
         "title": "OwnInputV3",
+        "type": "object"
+      },
+      "OwnMeeting": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeetingAnswers"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecordedMeetingConsent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consentNotice": {
+            "title": "Consentnotice",
+            "type": "string"
+          },
+          "consentVersion": {
+            "default": "money-meeting-consent-v3",
+            "enum": [
+              "money-meeting-consent-v2",
+              "money-meeting-consent-v3"
+            ],
+            "title": "Consentversion",
+            "type": "string"
+          },
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/MeetingQuestion"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "revision": {
+            "minimum": 0.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "round": {
+            "minimum": 1.0,
+            "title": "Round",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "round",
+          "planVersion",
+          "revision",
+          "answers",
+          "consent",
+          "questions",
+          "consentNotice"
+        ],
+        "title": "OwnMeeting",
         "type": "object"
       },
       "PersonalFunding": {
@@ -3185,6 +3814,92 @@
         "title": "ReadyDeepResult",
         "type": "object"
       },
+      "ReadyGuide": {
+        "additionalProperties": false,
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/AgreementResponseV3"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "inputChangeNotice": {
+            "title": "Inputchangenotice",
+            "type": "string"
+          },
+          "operatingStatus": {
+            "additionalProperties": true,
+            "title": "Operatingstatus",
+            "type": "object"
+          },
+          "priorityIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Priorityids",
+            "type": "array"
+          },
+          "report": {
+            "$ref": "#/components/schemas/ReportV3"
+          },
+          "status": {
+            "const": "ready",
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/GuideTopic"
+            },
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "report",
+          "topics",
+          "priorityIds",
+          "decisions",
+          "operatingStatus",
+          "inputChangeNotice"
+        ],
+        "title": "ReadyGuide",
+        "type": "object"
+      },
+      "ReadyMeetingContext": {
+        "additionalProperties": false,
+        "properties": {
+          "brief": {
+            "$ref": "#/components/schemas/MeetingBrief"
+          },
+          "clarifications": {
+            "$ref": "#/components/schemas/SharedClarifications"
+          },
+          "providerStatus": {
+            "default": "disabled",
+            "enum": [
+              "disabled",
+              "configured"
+            ],
+            "title": "Providerstatus",
+            "type": "string"
+          },
+          "status": {
+            "const": "ready",
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "brief",
+          "clarifications"
+        ],
+        "title": "ReadyMeetingContext",
+        "type": "object"
+      },
       "ReadyResultV3": {
         "additionalProperties": false,
         "properties": {
@@ -3216,6 +3931,40 @@
           "operatingStatus"
         ],
         "title": "ReadyResultV3",
+        "type": "object"
+      },
+      "RecordedMeetingConsent": {
+        "additionalProperties": false,
+        "properties": {
+          "allowAiProcessing": {
+            "title": "Allowaiprocessing",
+            "type": "boolean"
+          },
+          "consentVersion": {
+            "enum": [
+              "money-meeting-consent-v2",
+              "money-meeting-consent-v3"
+            ],
+            "title": "Consentversion",
+            "type": "string"
+          },
+          "recordedAt": {
+            "format": "date-time",
+            "title": "Recordedat",
+            "type": "string"
+          },
+          "shareWithPartner": {
+            "title": "Sharewithpartner",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consentVersion",
+          "shareWithPartner",
+          "allowAiProcessing",
+          "recordedAt"
+        ],
+        "title": "RecordedMeetingConsent",
         "type": "object"
       },
       "ReportV3": {
@@ -3591,6 +4340,83 @@
         "title": "SaveInputV3",
         "type": "object"
       },
+      "SaveMeetingAnswers": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "$ref": "#/components/schemas/MeetingAnswers"
+          },
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "expectedRound": {
+            "minimum": 1.0,
+            "title": "Expectedround",
+            "type": "integer"
+          },
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expectedRound",
+          "planVersion",
+          "expectedRevision",
+          "answers"
+        ],
+        "title": "SaveMeetingAnswers",
+        "type": "object"
+      },
+      "SaveMeetingConsent": {
+        "additionalProperties": false,
+        "properties": {
+          "allowAiProcessing": {
+            "title": "Allowaiprocessing",
+            "type": "boolean"
+          },
+          "consentVersion": {
+            "enum": [
+              "money-meeting-consent-v2",
+              "money-meeting-consent-v3"
+            ],
+            "title": "Consentversion",
+            "type": "string"
+          },
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "expectedRound": {
+            "minimum": 1.0,
+            "title": "Expectedround",
+            "type": "integer"
+          },
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "shareWithPartner": {
+            "title": "Sharewithpartner",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consentVersion",
+          "shareWithPartner",
+          "allowAiProcessing",
+          "expectedRound",
+          "planVersion",
+          "expectedRevision"
+        ],
+        "title": "SaveMeetingConsent",
+        "type": "object"
+      },
       "ScaleConfig": {
         "properties": {
           "leftLabel": {
@@ -3860,6 +4686,23 @@
           "amountWon"
         ],
         "title": "SettlementPart",
+        "type": "object"
+      },
+      "SharedClarifications": {
+        "additionalProperties": false,
+        "properties": {
+          "A": {
+            "$ref": "#/components/schemas/MeetingAnswers"
+          },
+          "B": {
+            "$ref": "#/components/schemas/MeetingAnswers"
+          }
+        },
+        "required": [
+          "A",
+          "B"
+        ],
+        "title": "SharedClarifications",
         "type": "object"
       },
       "SharedPlan-Input": {
@@ -4631,6 +5474,32 @@
           "partnerCompleted"
         ],
         "title": "WaitingDeepResult",
+        "type": "object"
+      },
+      "WaitingGuide": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "waiting",
+            "default": "waiting",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "WaitingGuide",
+        "type": "object"
+      },
+      "WaitingMeetingContext": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "waiting",
+            "default": "waiting",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "WaitingMeetingContext",
         "type": "object"
       }
     },
@@ -9204,6 +10073,1143 @@
           }
         ],
         "summary": "Submit",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/complete": {
+      "post": {
+        "operationId": "complete_api_v1_deep_v3_sessions__session_id__meeting_complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteMeeting"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingCompletion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Complete",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/context": {
+      "get": {
+        "operationId": "get_context_api_v1_deep_v3_sessions__session_id__meeting_context_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "ready": "#/components/schemas/ReadyMeetingContext",
+                      "waiting": "#/components/schemas/WaitingMeetingContext"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WaitingMeetingContext"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReadyMeetingContext"
+                    }
+                  ],
+                  "title": "Response Get Context Api V1 Deep V3 Sessions  Session Id  Meeting Context Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Context",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/explanation": {
+      "get": {
+        "operationId": "get_explanation_api_v1_deep_v3_sessions__session_id__meeting_explanation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "ready": "#/components/schemas/AvailableExplanation",
+                      "waiting": "#/components/schemas/WaitingMeetingContext"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WaitingMeetingContext"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AvailableExplanation"
+                    }
+                  ],
+                  "title": "Response Get Explanation Api V1 Deep V3 Sessions  Session Id  Meeting Explanation Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Explanation",
+        "tags": [
+          "deep-v3"
+        ]
+      },
+      "post": {
+        "operationId": "generate_explanation_api_v1_deep_v3_sessions__session_id__meeting_explanation_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "ready": "#/components/schemas/AvailableExplanation",
+                      "waiting": "#/components/schemas/WaitingMeetingContext"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WaitingMeetingContext"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AvailableExplanation"
+                    }
+                  ],
+                  "title": "Response Generate Explanation Api V1 Deep V3 Sessions  Session Id  Meeting Explanation Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Generate Explanation",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/guide": {
+      "get": {
+        "operationId": "get_guide_api_v1_deep_v3_sessions__session_id__meeting_guide_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "ready": "#/components/schemas/ReadyGuide",
+                      "waiting": "#/components/schemas/WaitingGuide"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ReadyGuide"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WaitingGuide"
+                    }
+                  ],
+                  "title": "Response Get Guide Api V1 Deep V3 Sessions  Session Id  Meeting Guide Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Guide",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/me": {
+      "get": {
+        "operationId": "own_meeting_api_v1_deep_v3_sessions__session_id__meeting_me_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnMeeting"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Own Meeting",
+        "tags": [
+          "deep-v3"
+        ]
+      },
+      "patch": {
+        "operationId": "save_answers_api_v1_deep_v3_sessions__session_id__meeting_me_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveMeetingAnswers"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnMeeting"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Save Answers",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/me/consent": {
+      "delete": {
+        "operationId": "revoke_consent_api_v1_deep_v3_sessions__session_id__meeting_me_consent_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnMeeting"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Revoke Consent",
+        "tags": [
+          "deep-v3"
+        ]
+      },
+      "post": {
+        "operationId": "save_consent_api_v1_deep_v3_sessions__session_id__meeting_me_consent_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveMeetingConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnMeeting"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Save Consent",
         "tags": [
           "deep-v3"
         ]

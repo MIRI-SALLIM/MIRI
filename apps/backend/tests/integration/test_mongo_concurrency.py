@@ -218,6 +218,27 @@ async def test_mongo_http_api_patch_vs_submit_concurrency(real_mongo_db):
 
 
 @pytest.mark.anyio
+async def test_mongo_same_join_key_recovers_one_credential_after_concurrent_responses(real_mongo_db):
+    repo = SessionRepository(real_mongo_db)
+    await repo.ensure_indexes()
+    now = utc_now()
+    created, _ = await repo.create(nickname=None, mode="light", question_set_version="light-v1",
+                                  question_count=5, idempotency_key=str(uuid.uuid4()), pepper=PEPPER,
+                                  now=now, ttl_days=7)
+    args: dict[str, Any] = {"invitation_code": created["invitationCode"], "nickname": None, "question_count": 5,
+                            "pepper": PEPPER, "now": now, "idempotency_key": str(uuid.uuid4())}
+    results = await asyncio.gather(*(repo.join(**args) for _ in range(4)))
+    assert all(document is not None and token is not None for document, token in results)
+    assert len({token for _, token in results}) == 1
+    restarted = SessionRepository(real_mongo_db)
+    document, token = await restarted.join(**args)
+    assert document is not None and token is not None
+    assert token == results[0][1]
+    assert len(document["participants"]) == 2
+    assert await restarted.get_by_id_and_token(document["id"], digest_participant_token(token, PEPPER)) is not None
+
+
+@pytest.mark.anyio
 async def test_mongo_join_concurrency_two_guests_exact_one_winner(real_mongo_db):
     """
     [Task 6 동시 Join 검증]

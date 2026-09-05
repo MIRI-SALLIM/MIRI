@@ -17,6 +17,12 @@ MISSING = object()
 def read_path(document, path):
     current = document
     for part in path.split("."):
+        if isinstance(current, list) and part.isdigit():
+            index = int(part)
+            if index >= len(current):
+                return MISSING
+            current = current[index]
+            continue
         if not isinstance(current, dict) or part not in current:
             return MISSING
         current = current[part]
@@ -107,6 +113,11 @@ class MemoryCollection:
                     values = [] if previous is MISSING else list(previous)
                     if value not in values:
                         values.append(value)
+                    write_path(candidate, path, values)
+                elif operator == "$push":
+                    previous = read_path(candidate, path)
+                    values = [] if previous is MISSING else list(previous)
+                    values.append(value)
                     write_path(candidate, path, values)
                 else:
                     raise AssertionError(f"Unsupported fake update: {operator}")

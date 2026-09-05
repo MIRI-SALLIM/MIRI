@@ -16,6 +16,9 @@ python-dotenv>=1.2.0
 # HTTPX: FastAPI TestClient 및 비동기 HTTP 요청 지원
 httpx>=0.27.0
 
+# Official Responses API adapter (disabled by default).
+openai>=2.0,<3
+
 # Pytest: 단위 및 통합 테스트 실행 프레임워크
 pytest>=8.0.0
 

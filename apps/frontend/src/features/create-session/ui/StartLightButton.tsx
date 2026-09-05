@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { ApiError } from "@/shared/api";
+import { ApiError, createIdempotencyKey } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 
 import {
@@ -30,10 +30,15 @@ export function StartLightButton({
 }: StartLightButtonProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const attemptKey = useRef<string | null>(null);
 
   const startSession = useMutation({
-    mutationFn: createSession,
+    mutationFn: () => {
+      attemptKey.current ??= createIdempotencyKey();
+      return createSession(attemptKey.current);
+    },
     onSuccess: async (session) => {
+      attemptKey.current = null;
       // 공개 세션 ID만 남긴다.
       sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, session.id);
       await queryClient.invalidateQueries({ queryKey: activeSessionQueryKey });

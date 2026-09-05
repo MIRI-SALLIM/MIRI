@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -38,11 +38,9 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function renderInvite() {
-  const queryClient = new QueryClient({
+function renderInvite(queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
-  });
-
+  })) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={["/invite/INV-A"]}>
@@ -74,6 +72,33 @@ beforeEach(() => {
 });
 
 describe("InvitePage", () => {
+  it("preserves join recovery when a background preview refetch sees the occupied invitation", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const keys: (string | null)[] = [];
+    let previews = 0;
+    fetchMock.mockImplementation(async (request: Request) => {
+      if (request.method === "GET") {
+        previews += 1;
+        return previews === 1 ? jsonResponse(invitation)
+          : jsonResponse({ error: { code: "INVITATION_NOT_FOUND", message: "없음" } }, 404);
+      }
+      keys.push(request.headers.get("Idempotency-Key"));
+      if (keys.length === 1) throw new TypeError("response lost after successful join");
+      return jsonResponse(joinedSession);
+    });
+    const user = userEvent.setup();
+    renderInvite(queryClient);
+    await user.click(await screen.findByRole("button", { name: "참여하고 시작하기" }));
+    expect(await screen.findByText("참여하지 못했어요. 잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
+    await act(async () => { await queryClient.invalidateQueries({ queryKey: ["invitation", "INV-A"] }); });
+    expect(previews).toBe(2);
+    expect(keys).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "참여하고 시작하기" }));
+    expect(await screen.findByRole("heading", { name: "라이트 질문" })).toBeInTheDocument();
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).toBe(keys[0]);
+  });
+
   it("explains the anonymous partner invitation and simultaneous privacy before joining", async () => {
     renderInvite();
 

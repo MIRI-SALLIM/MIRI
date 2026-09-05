@@ -13,18 +13,16 @@ class RequestTimeoutError extends Error {}
 type ApiFetch = NonNullable<ClientOptions["fetch"]>;
 
 const withRequestTimeout = (fetch: ApiFetch): ApiFetch => async (input) => {
-  if (input.method !== "GET") {
-    // #42 targets render-blocking reads, which are GET requests. Aborting a request with
-    // side effects leaves the client unable to know whether the server applied it.
-    // Join cannot recover from that: the backend declares an Idempotency-Key header on
-    // POST /invitations/{code}/join (apps/backend/main.py:803) but never passes it to
-    // repository.join (:826), so a retry after a lost response is answered 409 forever.
-    return fetch(input);
-  }
-
   if (input.signal.aborted) {
     return fetch(input);
   }
+
+  // The cap applies to reads and Light mutations. POST /sessions and POST /invitations/{code}/join
+  // replay their Idempotency-Key; PATCH /sessions/{id}/me/input replaces the complete answer and
+  // guess arrays; POST /sessions/{id}/me/submit returns the persisted completedAt when already
+  // submitted; and POST /sessions/{id}/nudge atomically records at most one nudge per 24 hours
+  // on the production Mongo path
+  // (a replay may return its documented 429, but cannot apply a duplicate nudge).
 
   const controller = new AbortController();
   let didTimeout = false;

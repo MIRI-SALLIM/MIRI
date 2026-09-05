@@ -2,7 +2,7 @@
 
 2026-09-04. 코드는 로컬 구현, 모의 API 검증 상태다. 이 문서는 운영 활성화 완료 기록이 아니다.
 
-후속 상태: [v2 가상 3건 실호출](handoffs/2026-09-04-deep-money-meeting-v2-live-smoke.md)에서 연결·상한 반영·미정 처리를 확인했다. 이후 중복 질문 보완 v3를 거쳐 현재 로컬 프롬프트는 `money-meeting-v4-discussion-direction`이다. 답변에 따른 다음 결정을 강조했고 실모델 재호출은 하지 않았다. 운영 준비의 이전 확인은 [배포 준비 인계](handoffs/2026-09-04-deep-meeting-release-preparation.md), 새 완료 경로의 누적 설정은 아래 절을 따른다.
+후속 상태: [v2 가상 3건 실호출](handoffs/2026-09-04-deep-money-meeting-v2-live-smoke.md) 이후 현재 로컬 프롬프트는 `money-meeting-v7-selected-evidence-slots`다. 서버가 선택한 근거 슬롯만 전송하고 AI는 해설·질문 텍스트만 반환한다. 서버가 쟁점·fact ID를 결합하므로 AI가 근거 식별자를 선택하거나 바꿀 수 없다. v7 합성 사례 한 건은 입력 875·출력 296토큰, 추정 $0.001989로 형식·근거 결합을 통과했다. 이는 운영 승인이나 다수 사례 품질 평가가 아니다. 운영 준비의 이전 확인은 [배포 준비 인계](handoffs/2026-09-04-deep-meeting-release-preparation.md), 새 완료 경로의 누적 설정은 아래 절을 따른다.
 
 ## Railway 설정
 

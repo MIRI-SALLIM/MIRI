@@ -13,7 +13,7 @@
 | F5 | ✅ 병합됨 | #8 | #13 | 초대·대기·폴링·nudge. 무기명 진입 |
 | F6 | ✅ 병합됨 | #15 | #19 | 동시공개 결과 화면. 병합 커밋 `ab81a1c`. `pages/light-result`, `widgets/result-summary`, `widgets/result-comparison`, `widgets/result-topics` |
 | F7 | ✅ 병합됨 | #20 | #21 | 개인정보 제한 공유 카드. 병합 커밋 `b77d667`. `pages/share`, `widgets/share-card`, `features/download-share-card` |
-| F8 | ✅ 완료 | #22 | #23 | Task 1~6 병합 후 프로덕션 스모크까지 통과해 완료 게이트를 충족했다(2026-09-03, 종료 코드 0, 2 passed, 호스트 `miri-sallim.vercel.app`). 첫 스모크가 이슈 #24(결과 페이지 되튕김)로 중단돼 PR #25로 수정하고 후속 4건을 병합했다 — #26/PR #29(스모크 3초 예산 한정), #27/PR #30(캐시된 결과 보존), #28/PR #31(폴링 주기 단축), #32/PR #35(CI 산발 실패 제거). 게이트와 별개로 후속 개선 이슈 #33(나중 제출자의 3초 보장), #34(적응형 폴링 주기)가 열려 있다. |
+| F8 | ✅ 완료 | #22 | #23 | Task 1~6 병합 후 프로덕션 스모크를 통과해 완료 게이트를 충족했다(2026-09-03, 종료 코드 0, 2 passed, 호스트 `miri-sallim.vercel.app`). 그 뒤 후속 이슈 18건을 처리했다 — #24/PR #25(결과 페이지 되튕김), #26/PR #29(스모크 3초 예산 한정), #27/PR #30(캐시된 결과 보존), #28/PR #31(폴링 주기 단축), #32/PR #35(CI 산발 실패 제거), #36·#38/PR #37·#39(계획서 동기화), #33/PR #41(제출 후 대기 화면 이동), #34/PR #45(적응형 폴링), #46/PR #48(대기 화면 색 대비), #49/PR #50(대기 화면 문구), #42/PR #52(요청 상한), #44/PR #55(hydration 단순화), #54/PR #56(조회 실패 시 오류 표시), #47/PR #58(로그인 버튼 대비), #53/PR #60(포커스 refetch), #57/PR #61(컨트롤 테두리 대비), #59/PR #62(재조회 입력 보존). #43은 현상 유지로 닫았다. **게이트 상태: 충족.** 2026-09-05 스모크를 재실행해 통과했다(종료 코드 0, 2 passed 43.8s, `desktop-chromium` 40.5s·`mobile-chromium` 40.8s, 호스트 `miri-sallim.vercel.app`, 기준 `a4461a2`). 이번 실행이 #42·#44·#54·#53·#57·#59를 프로덕션에서 처음 함께 검증했다. 특히 #42의 GET 상한은 스모크의 모든 조회에 적용되므로 통과가 곧 상한이 정상 응답을 끊지 않는다는 실측이다 — 단위 테스트로는 확인할 수 없는 부분이다. 남은 항목은 백엔드 이슈 #51(join의 `Idempotency-Key` 미사용)뿐이다. |
 
 **병렬 트랙 구성**(`## 진행 방식` 섹션 참고): 트랙 A(F3→F4)와 트랙 B(F5→F6→F7) 모두 완료되어 종료됐다. 두 트랙이 `develop`에서 만난 뒤 F8을 단독으로 진행해 마쳤다.
 
@@ -447,7 +447,7 @@ git commit -m "feat(web): complete variable light questionnaire"
 **인터페이스:**
 - 소비: 백엔드 B5의 초대, 참가, 상태, nudge 엔드포인트.
 - **참가 요청에 `nickname`을 보내지 않는다.** 설계 스펙 2.3의 무기명 진입이 최종 동작이다.
-- 산출물: 대기 중일 때만 1000ms 간격으로 폴링하는 `useSessionStatus(sessionId)`. 이 화면에서 준비를 알아내는 수단이 폴링뿐이라 주기가 공개 지연의 하한이고, 3000ms로는 대기 중인 참가자가 다음 tick을 기다리는 동안 스펙의 3초 예산을 다 쓸 수 있어 줄였다. 대기가 얼마나 길어지는지는 프론트엔드가 통제하지 못해 폴링 요청 총량에 상한이 없으며, 1000ms는 그 비용을 감수하고 고른 값이다(요청 예산은 미정).
+- 산출물: 대기 중일 때 `partnerJoined`에 따라 주기를 나누는 `useSessionStatus(sessionId)`. 상대 미참여 상태에서는 2000ms, 참여가 감지된 뒤에는 1000ms 간격으로 폴링하며, 준비 완료·terminal 오류·언마운트에서는 멈춘다. 참여 전 화면은 초대 링크 재공유 상태를 보여 주므로 요청 빈도를 절반으로 줄여 2000ms를 쓴다. 상수가 3초보다 작다는 것은 필요조건일 뿐이며 네트워크 왕복·서버 처리·렌더 예산은 정해진 바 없다. 이 주기가 공개를 좌우하려면 상대가 한 tick 안에 참여·전 문항 답변·제출을 끝내야 하는데 문항마다 저장 왕복이 있어 현실적이지 않고, 그 창을 넘기면 다음 poll이 참여를 감지해 1000ms로 전환된다. 즉 실질 공개 지연은 1000ms 주기가 좌우하며 이는 주기 단축 이전과 같다. 이것은 행동적 논거이지 하드 보장이 아니다.
 - 제약: 닉네임을 수집하지 않으므로 저장·렌더링 문제 자체가 없다. 다만 응답 `SessionResponse.participants[].nickname`이 존재하더라도 **어떤 화면에도 렌더링하지 않는다.** 초대·대기 화면은 스펙 2.3대로 일반 카피(`파트너가 함께 해보자고 초대했어요`)를 유지한다. `SessionStatusResponse`는 닉네임을 담지 않고 `partnerJoined`/`partnerCompleted` boolean만 주므로, 대기 화면 구현은 이 플래그만으로 충분하다. 프라이버시 테스트는 응답에 상대 닉네임을 일부러 넣고 화면에 렌더링되지 않음을 확인하는 방식으로 검증했다(`InvitePage.test.tsx`).
 
 - [x] **Step 1: 실패하는 InvitePage 테스트 작성**
@@ -470,7 +470,7 @@ git commit -m "feat(web): complete variable light questionnaire"
 
 - [x] **Step 5: 대기와 nudge 구현**
 
-TanStack Query는 준비되지 않은 동안에만 1000ms 간격으로 폴링하고, unmount되거나 준비 완료되면 멈춘다. 주기가 공개 지연의 하한이므로 3000ms로는 스펙의 3초 예산을 지키지 못할 수 있어 1000ms로 줄였고, 폴링 요청 총량에 상한이 없다는 트레이드오프를 감수한다. 파트너가 참가하기 전에는 nudge 대신 링크 재공유를 보여준다. 참가 후에는 nudge 뮤테이션을 허용하고, 429는 다음 가능 시점 안내로 매핑한다.
+TanStack Query는 `partnerJoined: false`일 때 2000ms, `true`일 때 1000ms 간격으로 폴링하고, unmount되거나 준비 완료·terminal 오류가 되면 멈춘다. 참여 전에는 초대 링크 재공유 카드가 유지되므로 2000ms는 이 화면을 최대 2초 동안 보여 줄 수 있다는 선택이며, 별도 요청 예산이 없는 상태에서 기존 1000ms 대비 요청 빈도를 절반으로 낮추면서 3초 공개 예산도 보존한다. 참여 감지 뒤에는 1000ms 주기로 전환해 결과 공개 지연을 제한한다. 파트너가 참가하기 전에는 nudge 대신 링크 재공유를 보여준다. 참가 후에는 nudge 뮤테이션을 허용하고, 429는 다음 가능 시점 안내로 매핑한다.
 
 - [x] **Step 6: 검증 및 커밋**
 
@@ -500,29 +500,29 @@ git commit -m "feat(web): join and wait for partner"
 - 산출물: 결과 엔티티를 생성하지 않는 대기 리다이렉트/상태, 또는 동적 `questionCount`를 사용하는 준비 완료 결과 UI.
 - 이미 있는 것: F2가 `src/shared/api/result.type-test.ts`로 판별 유니온의 waiting 분기가 `result`에 접근하지 못함을 타입 수준에서 고정해 두었다. Step 5의 프라이버시 검증은 이 위에 런타임 검증(접근성 트리, 렌더된 HTML 문자열)을 얹는 것이다.
 
-- [ ] **Step 1: 실패하는 판별 응답 테스트 작성**
+- [x] **Step 1: 실패하는 판별 응답 테스트 작성**
 
 `status: waiting`일 때는 타입 카드, 점수, 비교, 파트너 답변이 전혀 나타나지 않고 페이지가 waiting으로 라우팅되는지 검증한다. `status: ready`일 때는 결과가 렌더링되는지 검증한다.
 
-- [ ] **Step 2: 실패하는 동적 점수 테스트 작성**
+- [x] **Step 2: 실패하는 동적 점수 테스트 작성**
 
 `mutualHitCount=4`, `questionCount=7`을 모킹한다. 분모를 하드코딩하지 않고 `4 / 7` 표시와 `4/7`에서 도출된 너비를 검증한다.
 
-- [ ] **Step 3: 테스트 실행**
+- [x] **Step 3: 테스트 실행**
 
 `npm --workspace @mirisallim/frontend run test -- --run src/pages/light-result`을 실행한다.
 
 예상 결과: 결과 페이지가 없으므로 FAIL.
 
-- [ ] **Step 4: 결과 위젯 구현**
+- [x] **Step 4: 결과 위젯 구현**
 
 결과 배지/헤더, 점수 카드, 진행률, 중립적인 두 타입 카드, 개인화된 3열 비교, 격차 주제, 공유 CTA, 15분 모드 업셀을 렌더링한다. 우열을 나타내지 않고 본인은 Green, 파트너는 Purple을 사용한다.
 
-- [ ] **Step 5: 프라이버시 검증 추가**
+- [x] **Step 5: 프라이버시 검증 추가**
 
 waiting 목업의 접근성 트리와 렌더링된 HTML에서 파트너 답변 문자열을 검사한다. 준비 완료 전에는 둘 다 존재하지 않는지 검증한다. 준비 완료 결과를 local storage에 저장하지 않는다.
 
-- [ ] **Step 6: 검증 및 커밋**
+- [x] **Step 6: 검증 및 커밋**
 
 포커스 테스트, lint, typecheck, build를 실행한다.
 
@@ -549,7 +549,7 @@ git commit -m "feat(web): render simultaneous light results"
 - 산출물: `ShareCardModel = {leftType, rightType, tagline, mutualHitCount, questionCount, ratio}`.
 - 산출물: 9:16 또는 1:1 PNG 다운로드.
 
-- [ ] **Step 1: 실패하는 모델 프라이버시 테스트 작성**
+- [x] **Step 1: 실패하는 모델 프라이버시 테스트 작성**
 
 ~~~ts
 const model = toShareCardModel(readyResult, "square");
@@ -564,25 +564,25 @@ expect(Object.keys(model).sort()).toEqual([
 expect(JSON.stringify(model)).not.toMatch(/amount|income|debt|saving/i);
 ~~~
 
-- [ ] **Step 2: 테스트 실행**
+- [x] **Step 2: 테스트 실행**
 
 `npm --workspace @mirisallim/frontend run test -- --run src/features/download-share-card`를 실행한다.
 
 예상 결과: 제한된 mapper가 없으므로 FAIL.
 
-- [ ] **Step 3: 모델과 비율 구현**
+- [x] **Step 3: 모델과 비율 구현**
 
 `ShareCard`가 오직 `ShareCardModel`만 받도록 만든다. 서비스 로고, 두 타입, 중립적인 tagline, 점수, 서비스 슬로건, 도메인을 담은 정확한 9:16, 1:1 프레임을 렌더링한다.
 
-- [ ] **Step 4: 테스트된 PNG 다운로드 구현**
+- [x] **Step 4: 테스트된 PNG 다운로드 구현**
 
 `document.fonts.ready`를 대기한 뒤 고정된 pixel ratio로 `html-to-image.toPng`를 호출하고, 로컬 anchor를 생성해 사용자 입력이 전혀 포함되지 않은 파일명으로 다운로드한다. 테스트에서는 렌더러와 클릭 둘 다 모킹한다.
 
-- [ ] **Step 5: 프라이버시 문구 검증**
+- [x] **Step 5: 프라이버시 문구 검증**
 
 `금액, 부채, 저축액 같은 재무 정보는 카드에 담기지 않아요` 문구가 보이는지, 렌더링된 카드에 숨겨진 금액 텍스트가 없는지 검증한다.
 
-- [ ] **Step 6: 검증 및 커밋**
+- [x] **Step 6: 검증 및 커밋**
 
 포커스 테스트, lint, typecheck, build를 실행한다.
 
@@ -611,19 +611,19 @@ git commit -m "feat(web): download privacy-safe result cards"
 - 산출물: `npm --workspace @mirisallim/frontend run test:e2e`.
 - 산출물: 동일 출처 `/api` rewrite를 사용하는 Vercel 프로덕션 프론트엔드.
 
-- [ ] **Step 1: 두 브라우저 E2E 작성**
+- [x] **Step 1: 두 브라우저 E2E 작성**
 
 독립적인 A, B 컨텍스트를 생성한다. 랜딩, 세션 생성, 전체 질문, 초대 참가, A 선제출 잠금, B 제출, 동시 결과, PNG 다운로드를 거친다.
 
-- [ ] **Step 2: 네트워크 프라이버시 검사 추가**
+- [x] **Step 2: 네트워크 프라이버시 검사 추가**
 
 A만 제출한 시점에서 A의 응답을 캡처한다. 본인 입력이 아닌 응답에 `answers`, `guesses`, `result`, `type`, `score`가 포함되면 실패 처리한다.
 
-- [ ] **Step 3: 접근성과 반응형 검사 추가**
+- [x] **Step 3: 접근성과 반응형 검사 추가**
 
 모든 라우트에서 `@axe-core/playwright`를 실행하고, 모든 컨트롤을 키보드로 조작하며, 390px와 1280px 뷰포트를 테스트하고, 900px에서 헤더 내비게이션이 전환되는지 검증한다.
 
-- [ ] **Step 4: 프론트엔드 CI와 헤더 구성**
+- [x] **Step 4: 프론트엔드 CI와 헤더 구성**
 
 CI는 OpenAPI 생성 clean-diff(`api:check`), ESLint/FSD, TypeScript, Vitest, build, Playwright를 실행한다. Vercel은 CSP, HSTS, `nosniff`, `Referrer-Policy: no-referrer`를 설정하고 `/api/(.*)`를 실제 배포된 백엔드 오리진으로 rewrite한다.
 
@@ -631,11 +631,11 @@ CI는 OpenAPI 생성 clean-diff(`api:check`), ESLint/FSD, TypeScript, Vitest, bu
 
 // 배포 오리진 확인 필요: 백엔드 CORS 기본값은 Render(`https://mirisalim-backend.onrender.com`)를 가리키지만, 원래 설계 스펙은 Railway를 가정했다. rewrite 대상을 하드코딩하기 전에 인프라 담당자에게 실제 프로덕션 배포처(Render vs Railway)를 재확인한다.
 
-- [ ] **Step 5: Vercel 배포 및 smoke 테스트**
+- [x] **Step 5: Vercel 배포 및 smoke 테스트**
 
 Vercel 프로젝트 `mirisallim`을 `apps/frontend` 루트로 생성하고, rewrite에 사용할 오리진을 Step 4에서 확인한 실제 배포처(Render 또는 Railway)로 설정한 뒤 배포한다. 이후 정확한 프로덕션 URL을 대상으로 Playwright smoke 프로젝트를 실행한다.
 
-- [ ] **Step 6: 문서화 및 커밋**
+- [x] **Step 6: 문서화 및 커밋**
 
 preview/prod 환경 분리, rewrite 검증, CSP 유지보수, Vercel 롤백, 프로덕션 smoke 명령어를 문서화한다. 로컬 개발용 `MIRISALLIM_API_PROXY_TARGET` 환경변수(F2가 추가, 기본 `http://127.0.0.1:8000`)도 여기서 함께 문서화한다 — 현재 어디에도 설명이 없다.
 

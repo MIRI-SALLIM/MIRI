@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -24,7 +24,6 @@ import { Button } from "@/shared/ui/button";
 import { SubmitLightButton } from "@/features/submit-light-form";
 
 const pageErrorMessage = "질문을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
-const SESSION_STATUS_HYDRATION_TIMEOUT_MS = 1_000;
 
 function parseStep(value: string | undefined): number {
   const parsed = Number(value);
@@ -36,6 +35,76 @@ function normalizeInput(input: NonNullable<Awaited<ReturnType<typeof getLightInp
     answers: Array.from({ length: questionCount }, (_, index) => input.answers?.[index] ?? null),
     guesses: Array.from({ length: questionCount }, (_, index) => input.guesses?.[index] ?? null),
   };
+}
+
+type LightFormHydrationState = "failed-data" | "pending-input" | "pending-status" | "ready";
+
+function getLightFormHydrationState({
+  hasInput,
+  inputFetched,
+  isReadOnly,
+  questionCount,
+  sessionId,
+  statusReady,
+}: {
+  hasInput: boolean;
+  inputFetched: boolean;
+  isReadOnly: boolean;
+  questionCount: number;
+  sessionId: string | null;
+  statusReady: boolean;
+}): LightFormHydrationState {
+  if (sessionId === null || !inputFetched) {
+    return "pending-input";
+  }
+
+  if (!statusReady && !isReadOnly) {
+    return "pending-status";
+  }
+
+  if (!hasInput || questionCount === 0) {
+    return "failed-data";
+  }
+
+  return "ready";
+}
+
+function shouldHydrateLightForm({
+  hydratedSessionId,
+  hasUnsavedInput,
+  isHydrated,
+  isReadOnly,
+  serverReadOnly,
+  sessionId,
+  state,
+}: {
+  hydratedSessionId: string | null;
+  hasUnsavedInput: boolean;
+  isHydrated: boolean;
+  isReadOnly: boolean;
+  serverReadOnly: boolean | undefined;
+  sessionId: string | null;
+  state: LightFormHydrationState;
+}): boolean {
+  if (state !== "ready") {
+    return false;
+  }
+
+  if (!isHydrated || hydratedSessionId !== sessionId) {
+    return true;
+  }
+
+  // Failed saves remain protected until a new edit retries them; an explicit submitted
+  // status still hydrates so a remote completion can restore the read-only lock.
+  if (hasUnsavedInput && serverReadOnly !== true) {
+    return false;
+  }
+
+  // The backend only changes completedAt from null to a timestamp: submit sets it,
+  // and PATCH rejects an already-submitted participant; no API path clears it.
+  // Keep the server value authoritative when it is explicit, while hydrate's session
+  // comparison resets a stale lock when a different session is opened.
+  return !isReadOnly || serverReadOnly === false;
 }
 
 export function LightFormPage() {
@@ -68,6 +137,8 @@ export function LightFormPage() {
     enabled: sessionId !== null,
     queryFn: () => getLightInput(sessionId!),
     queryKey: ["light-input", sessionId],
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
     retry: false,
   });
   const sessionStatusQuery = useQuery({
@@ -85,7 +156,6 @@ export function LightFormPage() {
   const guesses = useLightFormStore((state) => state.guesses);
   const isHydrated = useLightFormStore((state) => state.isHydrated);
   const isReadOnly = useLightFormStore((state) => state.isReadOnly);
-  const hydratedSessionId = useLightFormStore((state) => state.sessionId);
   const saveStatus = useLightFormStore((state) => state.saveStatus);
   const hydrate = useLightFormStore((state) => state.hydrate);
   const setAnswer = useLightFormStore((state) => state.setAnswer);
@@ -93,7 +163,6 @@ export function LightFormPage() {
   const setGuess = useLightFormStore((state) => state.setGuess);
   const setReadOnly = useLightFormStore((state) => state.setReadOnly);
   const setSaveStatus = useLightFormStore((state) => state.setSaveStatus);
-  const [hydrationTimeoutSessionId, setHydrationTimeoutSessionId] = useState<string | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: ({ input, session }: { input: LightInput; session: string }) => saveLightInput(session, input),
@@ -144,56 +213,55 @@ export function LightFormPage() {
     [],
   );
 
-  const questionCount = questionQuery.data?.questions.length ?? 0;
+  const questions = questionQuery.data?.questions;
+  const questionCount = questions?.length ?? 0;
   const boundedStep = questionCount === 0 ? 0 : Math.min(Math.max(requestedStep - 1, 0), questionCount - 1);
   const statusHydrationReady =
     sessionStatusQuery.isFetchedAfterMount && (sessionStatusQuery.isSuccess || sessionStatusQuery.isError);
-  const hasHydrationTimedOut = sessionId !== null && hydrationTimeoutSessionId === sessionId;
-
+  const serverReadOnly =
+    statusHydrationReady && sessionStatusQuery.isSuccess ? sessionStatusQuery.data.meCompleted : undefined;
+  const hydrationState = getLightFormHydrationState({
+    hasInput: inputQuery.data !== undefined,
+    inputFetched: inputQuery.isFetchedAfterMount,
+    isReadOnly,
+    questionCount,
+    sessionId,
+    statusReady: statusHydrationReady,
+  });
+  // Read saveStatus at effect time so save completion cannot rehydrate stale cached input.
   useEffect(() => {
-    if (sessionId === null || isReadOnly || statusHydrationReady) {
+    if (!inputQuery.data || sessionId === null) {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => {
-      setHydrationTimeoutSessionId(sessionId);
-    }, SESSION_STATUS_HYDRATION_TIMEOUT_MS);
+    const currentStoreState = useLightFormStore.getState();
+    const shouldHydrate = shouldHydrateLightForm({
+      hydratedSessionId: currentStoreState.sessionId,
+      hasUnsavedInput:
+        currentStoreState.saveStatus === "saving" || currentStoreState.saveStatus === "error",
+      isHydrated: currentStoreState.isHydrated,
+      isReadOnly: currentStoreState.isReadOnly,
+      serverReadOnly,
+      sessionId,
+      state: hydrationState,
+    });
 
-    return () => window.clearTimeout(timeoutId);
-  }, [isReadOnly, sessionId, statusHydrationReady]);
-
-  useEffect(() => {
-    if (isReadOnly && isHydrated && hydratedSessionId === sessionId) {
+    if (!shouldHydrate) {
       return;
     }
 
-    if (
-      inputQuery.data &&
-      questionCount > 0 &&
-      sessionId !== null &&
-      inputQuery.isFetchedAfterMount &&
-      (statusHydrationReady || hasHydrationTimedOut || isReadOnly)
-    ) {
-      hydrate(normalizeInput(inputQuery.data, questionCount), {
-        isReadOnly:
-          statusHydrationReady && sessionStatusQuery.isSuccess && !isReadOnly
-            ? sessionStatusQuery.data.meCompleted
-            : undefined,
-        sessionId,
-      });
-    }
+    hydrate(normalizeInput(inputQuery.data, questionCount), {
+      isReadOnly: serverReadOnly,
+      sessionId,
+    });
   }, [
     hydrate,
-    hydratedSessionId,
+    hydrationState,
     inputQuery.data,
     inputQuery.isFetchedAfterMount,
     questionCount,
     sessionId,
-    sessionStatusQuery.data,
-    sessionStatusQuery.isSuccess,
-    hasHydrationTimedOut,
-    isHydrated,
-    isReadOnly,
+    serverReadOnly,
     statusHydrationReady,
   ]);
 
@@ -252,9 +320,17 @@ export function LightFormPage() {
 
   const isLastStep = questionCount > 0 && boundedStep === questionCount - 1;
   const isHydrationPending =
-    sessionId !== null &&
-    (!inputQuery.isFetchedAfterMount ||
-      (!statusHydrationReady && !hasHydrationTimedOut && !isReadOnly));
+    sessionId !== null && (hydrationState === "pending-input" || hydrationState === "pending-status");
+  // `failed-data` already implies that input fetched; the question guard remains
+  // because questionCount defaults to zero while its fetch is still pending.
+  const hasFailedData = hydrationState === "failed-data" && questionQuery.isFetchedAfterMount;
+  // These render-blocking reads use retry:false, so an error is final: another read
+  // still pending cannot turn the page into a usable form. Show the error first.
+  const hasActiveSessionError = storedSessionId === null && activeSessionQuery.isError;
+  const hasPageError = hasActiveSessionError || questionQuery.isError || inputQuery.isError || hasFailedData;
+  const hasNoSession = sessionId === null && activeSessionQuery.isSuccess && activeSessionQuery.isFetchedAfterMount;
+  const isPageLoading =
+    !hasPageError && (questionQuery.isPending || inputQuery.isPending || isHydrationPending || !isHydrated);
 
   return (
     <section className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-center px-6 pb-[clamp(10px,2vh,48px)] pt-[clamp(9px,1.5vh,36px)] [line-height:normal]">
@@ -274,15 +350,15 @@ export function LightFormPage() {
         </button>
       </div>
 
-      {questionQuery.isPending || inputQuery.isPending || isHydrationPending || !isHydrated ? (
-        <p aria-live="polite" className="rounded-card border border-border bg-card p-6 text-ink-muted" role="status">
-          질문을 불러오는 중...
-        </p>
-      ) : questionQuery.isError || inputQuery.isError || sessionId === null ? (
+      {hasPageError || hasNoSession ? (
         <p className="rounded-card border border-border bg-card p-6 text-red-700" role="alert">
           {pageErrorMessage}
         </p>
-      ) : questionCount === 0 ? (
+      ) : isPageLoading ? (
+        <p aria-live="polite" className="rounded-card border border-border bg-card p-6 text-ink-muted" role="status">
+          질문을 불러오는 중...
+        </p>
+      ) : questions === undefined || questions.length === 0 ? (
         <p className="rounded-card border border-border bg-card p-6 text-red-700" role="alert">
           {pageErrorMessage}
         </p>
@@ -357,7 +433,7 @@ export function LightFormPage() {
             guess={guesses[boundedStep] ?? null}
             onAnswerChange={(value) => updateAnswer("answer", value)}
             onGuessChange={(value) => updateAnswer("guess", value)}
-            question={questionQuery.data.questions[boundedStep]}
+            question={questions[boundedStep]}
           />
 
           {saveStatusMessage ? (

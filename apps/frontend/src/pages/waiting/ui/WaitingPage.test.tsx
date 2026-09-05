@@ -5,7 +5,10 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { lightResultQueryKey } from "@/features/get-light-result";
-import { SESSION_STATUS_POLL_INTERVAL_MS } from "@/features/poll-session-status";
+import {
+  SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS,
+  SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS,
+} from "@/features/poll-session-status";
 
 import { WaitingPage } from "./WaitingPage";
 
@@ -53,7 +56,7 @@ function respondWith({
   nudge = () => jsonResponse({ message: "알림을 전송했습니다.", status: "success" }, 200),
   status = () => jsonResponse(sessionStatus(), 200),
 }: {
-  me?: () => Response;
+  me?: () => Response | Promise<Response>;
   nudge?: () => Response;
   status?: () => Response;
 }) {
@@ -139,6 +142,14 @@ describe("WaitingPage", () => {
     await expect(navigator.clipboard.readText()).resolves.toContain("/invite/INV-A");
   });
 
+  it("uses the body text contrast token while the invitation link is loading", async () => {
+    respondWith({ me: () => new Promise<Response>(() => {}) });
+
+    renderWaiting();
+
+    expect(await screen.findByText("초대 링크를 불러오는 중이에요")).toHaveClass("text-ink-muted");
+  });
+
   it("nudges the partner once they joined but have not submitted", async () => {
     respondWith({ status: () => jsonResponse(sessionStatus({ partnerJoined: true }), 200) });
 
@@ -152,6 +163,21 @@ describe("WaitingPage", () => {
     await user.click(screen.getByRole("button", { name: "알림 보내기" }));
 
     expect(await screen.findByText("상대에게 알림을 보냈어요.")).toBeInTheDocument();
+  });
+
+  // 이 문구는 사용자에게 하는 약속이라 코드가 조용히 어긋나면 안 된다. 결과가 준비되면
+  // WaitingStatus의 isReady 분기가 `결과 보기` 링크를 렌더링하고 이동은 사용자가 누른다.
+  // "화면이 결과로 바뀐다"고 적었다가 이슈 #49로 고쳤으므로 문구를 고정해 되돌림을 막는다.
+  it("promises the reveal button the ready branch actually renders", async () => {
+    respondWith({ status: () => jsonResponse(sessionStatus({ partnerJoined: true }), 200) });
+
+    renderWaiting();
+
+    expect(
+      await screen.findByText(
+        "상대가 제출하면 여기에 결과 보기 버튼이 바로 나타나요. 기다리기 지루하면 알림을 보내볼까요?",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("explains when the nudge hits the daily limit", async () => {
@@ -230,7 +256,7 @@ describe("WaitingPage", () => {
     expect(screen.getByRole("button", { name: "초대 링크 복사" })).toBeInTheDocument();
   });
 
-  it("polls the session status at the configured interval while waiting", async () => {
+  it("polls the session status at a slower interval before the partner joins", async () => {
     vi.useFakeTimers();
     renderWaiting();
     await flush();
@@ -238,16 +264,59 @@ describe("WaitingPage", () => {
     expect(screen.getByText("아직 상대가 들어오지 않았어요")).toBeInTheDocument();
     const before = statusCallCount();
 
-    await flush(SESSION_STATUS_POLL_INTERVAL_MS);
+    await flush(SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS);
 
     expect(statusCallCount()).toBe(before + 1);
   });
 
-  it("polls well inside the three-second reveal budget", () => {
-    // 스펙의 3초 공개 예산(vertical-slice-design.md:27)보다 주기가 크거나 같으면
-    // 대기 중인 참가자가 다음 tick을 기다리는 것만으로 예산을 넘긴다.
-    // 하한은 잠그지 않는다 -- 요청 예산이 정해지지 않아 어떤 값도 임의가 된다.
-    expect(SESSION_STATUS_POLL_INTERVAL_MS).toBeLessThan(3_000);
+  it("polls the session status at the fast interval after the partner joins", async () => {
+    respondWith({ status: () => jsonResponse(sessionStatus({ partnerJoined: true }), 200) });
+
+    vi.useFakeTimers();
+    renderWaiting();
+    await flush();
+
+    expect(screen.getByText("상대가 답을 고르는 중이에요")).toBeInTheDocument();
+    const before = statusCallCount();
+
+    await flush(SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS);
+
+    expect(statusCallCount()).toBe(before + 1);
+  });
+
+  it("switches to the fast interval when the partner joins", async () => {
+    let hasJoined = false;
+    respondWith({
+      status: () => {
+        const response = jsonResponse(sessionStatus({ partnerJoined: hasJoined }), 200);
+        hasJoined = true;
+        return response;
+      },
+    });
+
+    vi.useFakeTimers();
+    renderWaiting();
+    await flush();
+
+    const beforeJoin = statusCallCount();
+    await flush(SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS);
+
+    expect(screen.getByText("상대가 답을 고르는 중이에요")).toBeInTheDocument();
+    expect(statusCallCount()).toBe(beforeJoin + 1);
+
+    const afterJoin = statusCallCount();
+    await flush(SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS);
+
+    expect(statusCallCount()).toBe(afterJoin + 1);
+  });
+
+  it("keeps both polling intervals under the three-second scheduling ceiling", () => {
+    // 스펙의 3초 공개 목표(vertical-slice-design.md:27)에 대한 필요조건만 검사한다.
+    // 주기가 3초 이상이면 다음 tick을 기다리는 것만으로 목표를 넘기므로 상한을 잠근다.
+    // 다만 이것은 충분조건이 아니다 -- 네트워크 왕복, 서버 처리, 렌더 지연, 낡은 응답
+    // 경합은 여기서 검증하지 않으며 그 예산도 정해진 바 없다.
+    expect(SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS).toBeLessThan(3_000);
+    expect(SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS).toBeLessThan(3_000);
   });
 
   it("stops polling once the result is ready", async () => {

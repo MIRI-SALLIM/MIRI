@@ -40,6 +40,33 @@ describe("minimal login check", () => {
     expect(screen.queryByLabelText("현재 진단 ID")).not.toBeInTheDocument();
     expect(JSON.parse(fetcher.mock.calls[2][1].body)).toEqual({ confirm: true });
   });
+  it("uses green-strong with white text for the reviewer login button", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(reply({}, 401)));
+    render(<App />);
+
+    const loginButton = await screen.findByRole("button", { name: "심사용 로그인" });
+
+    expect(loginButton).toHaveClass("bg-green-strong", "text-white");
+  });
+
+  it("gives active form controls a contrast-safe boundary token", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(reply({}, 401)));
+    render(<App />);
+
+    expect(await screen.findByLabelText("계정")).toHaveClass("border-border-control");
+    expect(screen.getByLabelText("비밀번호")).toHaveClass("border-border-control");
+    expect(screen.getByLabelText("체험방 코드 (선택)")).toHaveClass("border-border-control");
+  });
+
+  it("gives active border-only actions a contrast-safe boundary token", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(reply(context)));
+    render(<App />);
+
+    expect(await screen.findByText("로그인됨 · A")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "로그인 상태 확인" })).toHaveClass("border-border-control");
+    expect(screen.getByRole("button", { name: "로그아웃" })).toHaveClass("border-border-control");
+  });
+
   it("logs in A without a room code, clears the password and logs out", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(reply({}, 401))
       .mockResolvedValueOnce(reply(context)).mockResolvedValueOnce(new Response(null, { status: 204 }));

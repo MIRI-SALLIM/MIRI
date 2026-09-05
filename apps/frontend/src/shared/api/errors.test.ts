@@ -14,6 +14,10 @@ describe("API retry policy", () => {
     expect(shouldRetryQuery(1, apiError(500))).toBe(true);
     expect(shouldRetryQuery(2, apiError(503))).toBe(false);
   });
+
+  it("does not retry a request timeout", () => {
+    expect(shouldRetryQuery(0, new ApiError({ status: null, code: null, kind: "timeout" }))).toBe(false);
+  });
 });
 
 describe("terminal API errors", () => {

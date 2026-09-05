@@ -1,4 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  focusManager,
+  onlineManager,
+} from "@tanstack/react-query";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
@@ -332,6 +337,178 @@ describe("LightFormPage", () => {
     expect(storageKeys(localStorage)).toEqual([]);
   });
 
+  it("shows an error instead of loading when the initial input fetch fails", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        return jsonResponse({ error: { code: "INTERNAL_SERVER_ERROR" } }, 503);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    renderLightForm();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("질문을 불러오지 못했어요.");
+    expect(screen.queryByText("질문을 불러오는 중...")).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of loading when the initial question fetch fails", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse({ error: { code: "INTERNAL_SERVER_ERROR" } }, 503);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        return jsonResponse({ answers: [null, null, null], guesses: [null, null, null] });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    renderLightForm();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("질문을 불러오지 못했어요.");
+    expect(screen.queryByText("질문을 불러오는 중...")).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of loading when the initial active session fetch fails", async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/me/session") {
+        return jsonResponse({ error: { code: "INTERNAL_SERVER_ERROR" } }, 503);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    renderLightForm();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("질문을 불러오지 못했어요.");
+    expect(screen.queryByText("질문을 불러오는 중...")).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of loading when an already hydrated input fetch fails", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    useLightFormStore.setState({
+      answers: [0, 0, 0],
+      currentStep: 0,
+      guesses: [0, 0, 0],
+      isHydrated: true,
+      isReadOnly: false,
+      saveStatus: "idle",
+      sessionId: "session-a",
+    });
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        return jsonResponse({ error: { code: "INTERNAL_SERVER_ERROR" } }, 503);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    renderLightForm();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("질문을 불러오지 못했어요.");
+    expect(screen.queryByText("질문을 불러오는 중...")).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of loading when an already hydrated question set is empty", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    useLightFormStore.setState({
+      answers: [0, 0, 0],
+      currentStep: 0,
+      guesses: [0, 0, 0],
+      isHydrated: true,
+      isReadOnly: false,
+      saveStatus: "idle",
+      sessionId: "session-a",
+    });
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse({ ...questionSet, questions: [] });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        return jsonResponse({ answers: [null, null, null], guesses: [null, null, null] });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    renderLightForm();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("질문을 불러오지 못했어요.");
+    expect(screen.queryByText("질문을 불러오는 중...")).not.toBeInTheDocument();
+  });
+
   it("keeps the selected value and reports a failed autosave", async () => {
     sessionStorage.setItem("activeSessionId", "session-a");
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -474,7 +651,13 @@ describe("LightFormPage", () => {
         }
 
         if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
-          return new Promise<Response>(() => {});
+          return new Promise<Response>((_, reject) => {
+            request.signal.addEventListener(
+              "abort",
+              () => reject(new DOMException("The request timed out", "AbortError")),
+              { once: true },
+            );
+          });
         }
 
         throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
@@ -489,7 +672,7 @@ describe("LightFormPage", () => {
       expect(screen.getByText("질문을 불러오는 중...")).toBeInTheDocument();
 
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(1_000);
+        await vi.advanceTimersByTimeAsync(10_000);
       });
 
       expect(screen.getByRole("heading", { name: "첫 번째 질문이에요." })).toBeInTheDocument();
@@ -560,5 +743,124 @@ describe("LightFormPage", () => {
       ).toBeDisabled();
       expect(screen.getByRole("button", { name: "입력 완료하기" })).toBeDisabled();
     });
+  });
+
+  it("preserves local edits when input refetches on window focus", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    let inputRequestCount = 0;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        inputRequestCount += 1;
+        return jsonResponse({
+          answers: [inputRequestCount === 1 ? null : 1, null, null],
+          guesses: [null, null, null],
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      if (request.method === "PATCH") {
+        return jsonResponse(await request.json());
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    focusManager.setFocused(false);
+
+    try {
+      const { user } = renderLightForm();
+      await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
+      const choice = within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+        name: "첫 번째 선택",
+      });
+
+      await user.click(choice);
+      expect(choice).toHaveAttribute("aria-pressed", "true");
+
+      await act(async () => {
+        focusManager.setFocused(true);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(inputRequestCount).toBe(1);
+      await waitFor(() => expect(choice).toHaveAttribute("aria-pressed", "true"));
+    } finally {
+      focusManager.setFocused(undefined);
+    }
+  });
+
+  it("preserves local edits when input refetches on reconnect", async () => {
+    sessionStorage.setItem("activeSessionId", "session-a");
+    let inputRequestCount = 0;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input.clone() : new Request(input, init);
+      const url = new URL(request.url);
+
+      if (request.method === "GET" && url.pathname === "/api/v1/light/questions") {
+        return jsonResponse(questionSet);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/me/input") {
+        inputRequestCount += 1;
+        return jsonResponse({
+          answers: [inputRequestCount === 1 ? null : 1, null, null],
+          guesses: [null, null, null],
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/sessions/session-a/status") {
+        return jsonResponse({
+          expiresAt: null,
+          meCompleted: false,
+          partnerCompleted: false,
+          partnerJoined: false,
+          partnerNudgedAt: null,
+        });
+      }
+
+      if (request.method === "PATCH") {
+        return jsonResponse(await request.json());
+      }
+
+      throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
+    });
+
+    onlineManager.setOnline(true);
+
+    try {
+      const { user } = renderLightForm();
+      await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
+      const choice = within(screen.getByRole("group", { name: "내 답" })).getByRole("button", {
+        name: "첫 번째 선택",
+      });
+
+      await user.click(choice);
+      expect(choice).toHaveAttribute("aria-pressed", "true");
+
+      await act(async () => {
+        onlineManager.setOnline(false);
+        onlineManager.setOnline(true);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(inputRequestCount).toBe(1);
+      await waitFor(() => expect(choice).toHaveAttribute("aria-pressed", "true"));
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 });

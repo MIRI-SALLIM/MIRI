@@ -16,7 +16,9 @@ from deep.meeting.contracts import (
 )
 from deep.meeting.generation import explanation
 from deep.meeting.guide import MeetingGuide, meeting_guide
+from deep.meeting.proposals import PreviewRequest, ProposalPreview, preview_proposal
 from deep.meeting.service import meeting_context
+from deep.meeting.standards import MeetingStandards, meeting_standards
 from deep.meeting.storage import MeetingStorage
 from deep.router import MUTATION, DeepRoute
 
@@ -26,6 +28,16 @@ router = APIRouter(prefix="/sessions/{session_id}/meeting", route_class=DeepRout
 @router.get("/guide", response_model=MeetingGuide)
 async def get_guide(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
     return await meeting_guide(service, session_id, principal.user_id)
+
+
+@router.post("/preview", response_model=ProposalPreview, dependencies=MUTATION)
+async def preview(session_id: str, body: PreviewRequest, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
+    return await preview_proposal(service, session_id, principal.user_id, body)
+
+
+@router.get("/standards", response_model=MeetingStandards)
+async def get_standards(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
+    return await meeting_standards(service, session_id, principal.user_id)
 
 
 @router.post("/complete", response_model=MeetingCompletion, dependencies=MUTATION)

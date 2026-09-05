@@ -44,6 +44,8 @@ export const allowedOperations = [
   { method: "get", path: "/api/v1/deep/v3/sessions/{session_id}/meeting/explanation" },
   { method: "post", path: "/api/v1/deep/v3/sessions/{session_id}/meeting/explanation" },
   { method: "post", path: "/api/v1/deep/v3/sessions/{session_id}/meeting/complete" },
+  { method: "get", path: "/api/v1/deep/v3/sessions/{session_id}/meeting/standards" },
+  { method: "post", path: "/api/v1/deep/v3/sessions/{session_id}/meeting/preview" },
 ] as const satisfies ReadonlyArray<{ method: AllowedMethod; path: string }>;
 
 export type AllowedOperation = (typeof allowedOperations)[number];

@@ -713,6 +713,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview */
+        post: operations["preview_api_v1_deep_v3_sessions__session_id__meeting_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/standards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Standards */
+        get: operations["get_standards_api_v1_deep_v3_sessions__session_id__meeting_standards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/deep/v3/sessions/{session_id}/plan": {
         parameters: {
             query?: never;
@@ -1156,6 +1190,47 @@ export interface components {
              * @enum {string}
              */
             status: "ready";
+        };
+        /** BudgetComparison */
+        BudgetComparison: {
+            /** Achangewon */
+            aChangeWon?: number | null;
+            /** Bchangewon */
+            bChangeWon?: number | null;
+            /** Baselinegapwon */
+            baselineGapWon?: number | null;
+            /**
+             * Basis
+             * @default calculation_only_not_affordability_or_agreement
+             * @constant
+             */
+            basis: "calculation_only_not_affordability_or_agreement";
+            /** Budgetchangewon */
+            budgetChangeWon?: number | null;
+            /** Proposalexcesswon */
+            proposalExcessWon?: number | null;
+            /** Proposalgapwon */
+            proposalGapWon?: number | null;
+            /** Reason */
+            reason?: "scope_or_month_mismatch" | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "available" | "partial" | "unavailable";
+        };
+        /** BudgetOption */
+        BudgetOption: {
+            /** Awon */
+            aWon: number | null;
+            /** Bwon */
+            bWon: number | null;
+            /** Budgetwon */
+            budgetWon: number | null;
+            /** Commonscope */
+            commonScope: ("housing" | "food" | "transport" | "subscriptions" | "gifts" | "other")[];
+            /** Startmonth */
+            startMonth: string;
         };
         /** CalculationBlock */
         CalculationBlock: {
@@ -2098,6 +2173,19 @@ export interface components {
             /** @description 성향 유형 분류 결과 */
             typeClassification: components["schemas"]["TypeClassificationResult"];
         };
+        /** LimitReview */
+        LimitReview: {
+            /** Excesswon */
+            excessWon?: number | null;
+            /** Limitwon */
+            limitWon?: number | null;
+            /**
+             * Status
+             * @default unknown
+             * @enum {string}
+             */
+            status: "unknown" | "within" | "exceeds";
+        };
         /** MeetingAnswers */
         MeetingAnswers: {
             /** Adjustablemonthlywon */
@@ -2178,6 +2266,15 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** MeetingReference */
+        MeetingReference: {
+            /** Planversion */
+            planVersion: number;
+            /** Round */
+            round: number;
+            /** Sourcereportid */
+            sourceReportId: string;
+        };
         /** NudgeResponse */
         NudgeResponse: {
             /**
@@ -2247,6 +2344,11 @@ export interface components {
              */
             sourcesStatus: "known" | "unknown" | "withheld";
         };
+        /** PersonalNeeds */
+        PersonalNeeds: {
+            personalSavingFloor: components["schemas"]["Amount"];
+            personalSpendingFloor: components["schemas"]["Amount"];
+        };
         /** PlanConstraint */
         PlanConstraint: {
             /** Allowborrowing */
@@ -2286,6 +2388,44 @@ export interface components {
             plan: components["schemas"]["SharedPlanV3-Output"];
             /** Version */
             version: number;
+        };
+        /** PreviewRequest */
+        PreviewRequest: {
+            /** Expectedround */
+            expectedRound: number;
+            /** Planversion */
+            planVersion: number;
+            proposal: components["schemas"]["BudgetOption"];
+            /** Sourcereportid */
+            sourceReportId: string;
+        };
+        /** ProposalPreview */
+        ProposalPreview: {
+            baseline: components["schemas"]["BudgetOption"];
+            /** Baselineassumptions */
+            baselineAssumptions: string[];
+            /** Baselinemissingfields */
+            baselineMissingFields: string[];
+            comparison: components["schemas"]["BudgetComparison"];
+            decisionSeed: components["schemas"]["DecisionTerms"] | null;
+            /** Existingdecisions */
+            existingDecisions: components["schemas"]["AgreementResponseV3"][];
+            limits: components["schemas"]["SharedLimitReview"];
+            /**
+             * Nextaction
+             * @enum {string}
+             */
+            nextAction: "revise_plan" | "revise_inputs" | "complete_numbers" | "review_limits" | "review_agreements" | "propose_agreement";
+            /** Notice */
+            notice: string;
+            /** Operatingstatus */
+            operatingStatus: {
+                [key: string]: unknown;
+            };
+            personalNeeds: components["schemas"]["SharedPersonalNeeds"] | null;
+            proposal: components["schemas"]["BudgetOption"];
+            reference: components["schemas"]["MeetingReference"];
+            unchangedCalculations: components["schemas"]["UnchangedCalculations"];
         };
         /** QuestionComparisonItem */
         QuestionComparisonItem: {
@@ -2470,8 +2610,10 @@ export interface components {
             operatingStatus: {
                 [key: string]: unknown;
             };
+            personalNeeds: components["schemas"]["SharedPersonalNeeds"] | null;
             /** Priorityids */
             priorityIds: string[];
+            reference: components["schemas"]["MeetingReference"];
             report: components["schemas"]["ReportV3"];
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -2511,6 +2653,34 @@ export interface components {
              * @enum {string}
              */
             status: "ready";
+        };
+        /** ReadyStandards */
+        ReadyStandards: {
+            /** Confirmed */
+            confirmed: components["schemas"]["AgreementResponseV3"][];
+            /** Deferred */
+            deferred: components["schemas"]["AgreementResponseV3"][];
+            /** Discussionitems */
+            discussionItems: components["schemas"]["GuideTopic"][];
+            /** Nextreviewon */
+            nextReviewOn: string | null;
+            /** Notice */
+            notice: string;
+            /** Operatingstatus */
+            operatingStatus: {
+                [key: string]: unknown;
+            };
+            personalNeeds: components["schemas"]["SharedPersonalNeeds"] | null;
+            /** Proposed */
+            proposed: components["schemas"]["AgreementResponseV3"][];
+            reference: components["schemas"]["MeetingReference"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "ready";
+            /** Submittedcontributiongapwon */
+            submittedContributionGapWon: number | null;
         };
         /** RecordedMeetingConsent */
         RecordedMeetingConsent: {
@@ -2888,6 +3058,16 @@ export interface components {
             A: components["schemas"]["MeetingAnswers"];
             B: components["schemas"]["MeetingAnswers"];
         };
+        /** SharedLimitReview */
+        SharedLimitReview: {
+            A: components["schemas"]["LimitReview"];
+            B: components["schemas"]["LimitReview"];
+        };
+        /** SharedPersonalNeeds */
+        SharedPersonalNeeds: {
+            A: components["schemas"]["PersonalNeeds"];
+            B: components["schemas"]["PersonalNeeds"];
+        };
         /** SharedPlan */
         "SharedPlan-Input": {
             housingPriceWon?: components["schemas"]["Amount"];
@@ -3161,6 +3341,12 @@ export interface components {
              * @example 함께 모으는 든든한 동반자형
              */
             typeName: string;
+        };
+        /** UnchangedCalculations */
+        UnchangedCalculations: {
+            cashflow: components["schemas"]["CalculationBlock"];
+            goal: components["schemas"]["CalculationBlock"];
+            housing: components["schemas"]["CalculationBlock"];
         };
         /** UpdatePlanV3 */
         UpdatePlanV3: {
@@ -7553,6 +7739,198 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnMeeting"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    preview_api_v1_deep_v3_sessions__session_id__meeting_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalPreview"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_standards_api_v1_deep_v3_sessions__session_id__meeting_standards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadyStandards"] | components["schemas"]["WaitingGuide"];
                 };
             };
             /** @description Unauthorized */

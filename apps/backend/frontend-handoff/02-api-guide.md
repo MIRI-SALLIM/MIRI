@@ -1,5 +1,20 @@
 # Deep v3: 입력 → 공동 분담 → 리포트
 
+## 2026-09-06 조정안·기준표 연결 추가
+
+이번 변경은 백엔드 로컬 구현이며 프론트 UI/배포 완료가 아니다. 아래 이전 날짜의 운영 상태 설명은 당시 기록이다.
+
+- `/result` ready → `GET /meeting/guide` → `POST /meeting/preview` → 기존 `/agreements` 제안/수정/양측 확인 → `GET /meeting/standards`.
+- guide의 `reference`와 `personalNeeds`를 사용한다. 합의 인식 차이와 개인비·저축 확인 질문은 기존 입력에서 나온다. 불변 report에는 추가하지 않는다.
+- preview는 분담 공백 전후 비교다. 월 적자/주거 부족/목표 부족은 `unchangedCalculations`로 그대로 남는다. 예산·월·항목 변경은 새 라운드 확인이 필요하다.
+- `nextAction`과 `decisionSeed`를 따라 연결한다. 기존 월 분담 기준이 있으면 `review_agreements`/`existingDecisions`로 기존 안을 선택해 수정하고 자동 중복 생성하지 않는다.
+- standards의 confirmed/proposed/deferred를 구분한다. reviewOn과 담당자·시작월·납부일·예외는 기존 terms를 유지한다. 수정하면 양측 확인이 해제된다.
+- 양측 재무 공유 없이 수치를 노출하지 않는다. 추가 답변 상한은 양측 같은 버전의 상대 공유 동의가 필요하고, AI 동의는 필요 없다. unknown은 0/무제한이 아니다.
+- preview/standards는 저장·AI 유료 호출을 하지 않는다. `/meeting/complete`의 기존 AI 흐름은 유지한다.
+
+요청 JSON, 오류 및 nextAction별 상세 동작은 [최신 추가 API 계약](../../../docs/deep-meeting-api.md#2026-09-06-추가-조정안--우리-돈의-기준표)을 따른다.
+현재 `04-openapi.json`은 이번 필드/엔드포인트를 포함한다. 개인비·저축을 기존 지출에서 중복 차감하지 않는다.
+
 > 2026-09-04 후속: [우리 돈의 기준회의 추가 질문·동의 API](../../../docs/deep-meeting-api.md)가 로컬에 추가되었다.
 > `04-openapi.json`은 이 경로를 포함하도록 재생성했다. 아래 기존 입력 예제는 그대로 사용할 수 있다.
 > 추가 질문·동의 v2·AI 생성/조회 API와 기본 해설 대체까지 로컬 구현했다. AI는 기본 비활성이며 실제 모델 품질·프론트 화면·운영 배포 완료는 아니다.

@@ -380,6 +380,196 @@
         "title": "AvailableExplanation",
         "type": "object"
       },
+      "BudgetComparison": {
+        "additionalProperties": false,
+        "properties": {
+          "aChangeWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": -9007199254740991.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achangewon"
+          },
+          "bChangeWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": -9007199254740991.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bchangewon"
+          },
+          "baselineGapWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baselinegapwon"
+          },
+          "basis": {
+            "const": "calculation_only_not_affordability_or_agreement",
+            "default": "calculation_only_not_affordability_or_agreement",
+            "title": "Basis",
+            "type": "string"
+          },
+          "budgetChangeWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": -9007199254740991.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgetchangewon"
+          },
+          "proposalExcessWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposalexcesswon"
+          },
+          "proposalGapWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposalgapwon"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "const": "scope_or_month_mismatch",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "partial",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "BudgetComparison",
+        "type": "object"
+      },
+      "BudgetOption": {
+        "additionalProperties": false,
+        "properties": {
+          "aWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awon"
+          },
+          "bWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bwon"
+          },
+          "budgetWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgetwon"
+          },
+          "commonScope": {
+            "items": {
+              "enum": [
+                "housing",
+                "food",
+                "transport",
+                "subscriptions",
+                "gifts",
+                "other"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Commonscope",
+            "type": "array"
+          },
+          "startMonth": {
+            "pattern": "^[1-9][0-9]{3}-(0[1-9]|1[0-2])$",
+            "title": "Startmonth",
+            "type": "string"
+          }
+        },
+        "required": [
+          "commonScope",
+          "startMonth",
+          "budgetWon",
+          "aWon",
+          "bWon"
+        ],
+        "title": "BudgetOption",
+        "type": "object"
+      },
       "CalculationBlock": {
         "additionalProperties": false,
         "properties": {
@@ -2949,6 +3139,49 @@
         "title": "LightDiagnosisResultData",
         "type": "object"
       },
+      "LimitReview": {
+        "additionalProperties": false,
+        "properties": {
+          "excessWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excesswon"
+          },
+          "limitWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limitwon"
+          },
+          "status": {
+            "default": "unknown",
+            "enum": [
+              "unknown",
+              "within",
+              "exceeds"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "LimitReview",
+        "type": "object"
+      },
       "MeetingAnswers": {
         "additionalProperties": false,
         "properties": {
@@ -3215,6 +3448,34 @@
         "title": "MeetingQuestion",
         "type": "object"
       },
+      "MeetingReference": {
+        "additionalProperties": false,
+        "properties": {
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "round": {
+            "minimum": 1.0,
+            "title": "Round",
+            "type": "integer"
+          },
+          "sourceReportId": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Sourcereportid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "round",
+          "planVersion",
+          "sourceReportId"
+        ],
+        "title": "MeetingReference",
+        "type": "object"
+      },
       "NudgeResponse": {
         "properties": {
           "message": {
@@ -3385,6 +3646,23 @@
         "title": "PersonalFunding",
         "type": "object"
       },
+      "PersonalNeeds": {
+        "additionalProperties": false,
+        "properties": {
+          "personalSavingFloor": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "personalSpendingFloor": {
+            "$ref": "#/components/schemas/Amount"
+          }
+        },
+        "required": [
+          "personalSpendingFloor",
+          "personalSavingFloor"
+        ],
+        "title": "PersonalNeeds",
+        "type": "object"
+      },
       "PlanConstraint": {
         "additionalProperties": false,
         "properties": {
@@ -3483,6 +3761,141 @@
           "locked"
         ],
         "title": "PlanResponseV3",
+        "type": "object"
+      },
+      "PreviewRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedRound": {
+            "minimum": 1.0,
+            "title": "Expectedround",
+            "type": "integer"
+          },
+          "planVersion": {
+            "minimum": 1.0,
+            "title": "Planversion",
+            "type": "integer"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/BudgetOption"
+          },
+          "sourceReportId": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Sourcereportid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expectedRound",
+          "planVersion",
+          "sourceReportId",
+          "proposal"
+        ],
+        "title": "PreviewRequest",
+        "type": "object"
+      },
+      "ProposalPreview": {
+        "additionalProperties": false,
+        "properties": {
+          "baseline": {
+            "$ref": "#/components/schemas/BudgetOption"
+          },
+          "baselineAssumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Baselineassumptions",
+            "type": "array"
+          },
+          "baselineMissingFields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Baselinemissingfields",
+            "type": "array"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/BudgetComparison"
+          },
+          "decisionSeed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionTerms"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "existingDecisions": {
+            "items": {
+              "$ref": "#/components/schemas/AgreementResponseV3"
+            },
+            "title": "Existingdecisions",
+            "type": "array"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SharedLimitReview"
+          },
+          "nextAction": {
+            "enum": [
+              "revise_plan",
+              "revise_inputs",
+              "complete_numbers",
+              "review_limits",
+              "review_agreements",
+              "propose_agreement"
+            ],
+            "title": "Nextaction",
+            "type": "string"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string"
+          },
+          "operatingStatus": {
+            "additionalProperties": true,
+            "title": "Operatingstatus",
+            "type": "object"
+          },
+          "personalNeeds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SharedPersonalNeeds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/BudgetOption"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/MeetingReference"
+          },
+          "unchangedCalculations": {
+            "$ref": "#/components/schemas/UnchangedCalculations"
+          }
+        },
+        "required": [
+          "reference",
+          "baseline",
+          "baselineAssumptions",
+          "baselineMissingFields",
+          "proposal",
+          "comparison",
+          "personalNeeds",
+          "limits",
+          "existingDecisions",
+          "operatingStatus",
+          "unchangedCalculations",
+          "nextAction",
+          "decisionSeed",
+          "notice"
+        ],
+        "title": "ProposalPreview",
         "type": "object"
       },
       "QuestionComparisonItem": {
@@ -3833,12 +4246,25 @@
             "title": "Operatingstatus",
             "type": "object"
           },
+          "personalNeeds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SharedPersonalNeeds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "priorityIds": {
             "items": {
               "type": "string"
             },
             "title": "Priorityids",
             "type": "array"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/MeetingReference"
           },
           "report": {
             "$ref": "#/components/schemas/ReportV3"
@@ -3858,6 +4284,8 @@
           }
         },
         "required": [
+          "reference",
+          "personalNeeds",
           "report",
           "topics",
           "priorityIds",
@@ -3931,6 +4359,106 @@
           "operatingStatus"
         ],
         "title": "ReadyResultV3",
+        "type": "object"
+      },
+      "ReadyStandards": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed": {
+            "items": {
+              "$ref": "#/components/schemas/AgreementResponseV3"
+            },
+            "title": "Confirmed",
+            "type": "array"
+          },
+          "deferred": {
+            "items": {
+              "$ref": "#/components/schemas/AgreementResponseV3"
+            },
+            "title": "Deferred",
+            "type": "array"
+          },
+          "discussionItems": {
+            "items": {
+              "$ref": "#/components/schemas/GuideTopic"
+            },
+            "title": "Discussionitems",
+            "type": "array"
+          },
+          "nextReviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextreviewon"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string"
+          },
+          "operatingStatus": {
+            "additionalProperties": true,
+            "title": "Operatingstatus",
+            "type": "object"
+          },
+          "personalNeeds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SharedPersonalNeeds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposed": {
+            "items": {
+              "$ref": "#/components/schemas/AgreementResponseV3"
+            },
+            "title": "Proposed",
+            "type": "array"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/MeetingReference"
+          },
+          "status": {
+            "const": "ready",
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
+          },
+          "submittedContributionGapWon": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submittedcontributiongapwon"
+          }
+        },
+        "required": [
+          "reference",
+          "confirmed",
+          "proposed",
+          "deferred",
+          "nextReviewOn",
+          "personalNeeds",
+          "discussionItems",
+          "operatingStatus",
+          "submittedContributionGapWon",
+          "notice"
+        ],
+        "title": "ReadyStandards",
         "type": "object"
       },
       "RecordedMeetingConsent": {
@@ -4705,6 +5233,40 @@
         "title": "SharedClarifications",
         "type": "object"
       },
+      "SharedLimitReview": {
+        "additionalProperties": false,
+        "properties": {
+          "A": {
+            "$ref": "#/components/schemas/LimitReview"
+          },
+          "B": {
+            "$ref": "#/components/schemas/LimitReview"
+          }
+        },
+        "required": [
+          "A",
+          "B"
+        ],
+        "title": "SharedLimitReview",
+        "type": "object"
+      },
+      "SharedPersonalNeeds": {
+        "additionalProperties": false,
+        "properties": {
+          "A": {
+            "$ref": "#/components/schemas/PersonalNeeds"
+          },
+          "B": {
+            "$ref": "#/components/schemas/PersonalNeeds"
+          }
+        },
+        "required": [
+          "A",
+          "B"
+        ],
+        "title": "SharedPersonalNeeds",
+        "type": "object"
+      },
       "SharedPlan-Input": {
         "additionalProperties": false,
         "properties": {
@@ -5305,6 +5867,27 @@
           "recommendation"
         ],
         "title": "TypeClassificationResult",
+        "type": "object"
+      },
+      "UnchangedCalculations": {
+        "additionalProperties": false,
+        "properties": {
+          "cashflow": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          },
+          "goal": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          },
+          "housing": {
+            "$ref": "#/components/schemas/CalculationBlock"
+          }
+        },
+        "required": [
+          "cashflow",
+          "housing",
+          "goal"
+        ],
+        "title": "UnchangedCalculations",
         "type": "object"
       },
       "UpdatePlanV3": {
@@ -11210,6 +11793,265 @@
           }
         ],
         "summary": "Save Consent",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/preview": {
+      "post": {
+        "operationId": "preview_api_v1_deep_v3_sessions__session_id__meeting_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Preview",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/meeting/standards": {
+      "get": {
+        "operationId": "get_standards_api_v1_deep_v3_sessions__session_id__meeting_standards_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "ready": "#/components/schemas/ReadyStandards",
+                      "waiting": "#/components/schemas/WaitingGuide"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ReadyStandards"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WaitingGuide"
+                    }
+                  ],
+                  "title": "Response Get Standards Api V1 Deep V3 Sessions  Session Id  Meeting Standards Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Standards",
         "tags": [
           "deep-v3"
         ]

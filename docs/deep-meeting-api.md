@@ -1,5 +1,91 @@
 # 우리 돈의 기준회의 — 추가 질문·동의·AI 해설 API
 
+## 2026-09-06 추가: 조정안 → 우리 돈의 기준표
+
+이번 추가는 백엔드 로컬 구현 계약이다. 프론트 화면 연결·원격 반영·운영 배포는 별도다.
+아래 이전 날짜의 배포/비활성 설명은 당시 기록이며 현재 운영 상태 판정에 사용하지 않는다.
+
+1. `/result` ready 후 `GET /meeting/guide`에서 전체 질문과 `reference`를 읽는다.
+2. 사용자가 바꿔 보고 싶은 분담액·예산을 `POST /meeting/preview`로 보낸다. 원안은 서버가 가져온다.
+3. `nextAction`에 따라 숫자 보완, 계획 재확인 또는 기존 기준표 제안/수정으로 연결한다.
+4. `GET /meeting/standards`로 양측 확인한 기준, 제안 중인 기준, 보류한 기준과 재검토일을 표시한다.
+
+계산 미리보기와 요약은 저장·합의·유료 AI 호출을 하지 않는다. 기존 `/complete`의 AI 흐름은 그대로이며,
+미리보기할 때마다 AI를 생성하거나 이번 보완 필드를 자동으로 공급자에게 전송하지 않는다.
+
+### 가이드에 추가된 필드
+
+- `reference`: `{round, planVersion, sourceReportId}`. 미리보기에 그대로 사용한다.
+- `personalNeeds`: `{A, B}` 각각 `personalSpendingFloor`, `personalSavingFloor`의 `Amount`. 양측 재무 공유가 아니면 null.
+  known 0과 unknown/withheld는 다르며 `precision=estimate`도 표시한다. 희망액은 기존 지출/저축과 중복될 수 있어 다시 차감하지 않는다.
+- `DISCUSSION_PERCEPTION_DIFFERENCE`: 서로 다른 알려진 대화 상태일 때 “금액, 포함 항목, 시작일 중 어디까지 함께 정했다고 생각했나요?”
+- `PERSONAL_NEEDS_REVIEW`: 이미 받은 개인비·저축 기준을 이번 안에서도 지킬 수 있는지 확인한다. 반복 입력이나 지급 능력 판정이 아니다.
+
+이 보완은 guide에만 적용한다. 기존 `report`, 계산/질문 버전, 기존 방의 제출·동의·AI 근거는 바뀌지 않는다.
+`priorityIds`는 guide 자체의 topics 상위 세 개를 따른다. 전체 질문을 report.topics 세 개로 대체하지 않는다.
+
+### POST `/meeting/preview`
+
+기본 세션 경로는 `/api/v1/deep/v3/sessions/{id}`다. 로그인 쿠키와 신뢰 Origin을 사용한다.
+
+```json
+{
+  "expectedRound": 1,
+  "planVersion": 2,
+  "sourceReportId": "guide.reference.sourceReportId의 실제 값",
+  "proposal": {
+    "commonScope": ["housing", "food"],
+    "startMonth": "2026-10",
+    "budgetWon": 2000000,
+    "aWon": 1000000,
+    "bWon": 800000
+  }
+}
+```
+
+- 금액은 원 단위 정수 또는 null. 음수/불리언/안전 범위를 넘는 합계는 422. 클라이언트 `baseline`은 허용하지 않는다.
+- 응답 `baseline`은 제출 당시 원안, `proposal`은 입력한 조정안이다. 현재 합의는 별도 `operatingStatus`/`existingDecisions`로 표시한다.
+- `comparison`: 상태, 원안/조정안 분담 공백, 초과 분담, 예산/각자 분담 변화량. 월 또는 공동비 항목이 다르면 unavailable이며 공백 수치를 비교하지 않는다.
+- `baselineAssumptions`/`baselineMissingFields`: 추정·누락 근거. available은 입력으로 산술 비교가 가능하다는 뜻이지 실제 지급 능력이 검증됐다는 뜻이 아니다.
+- `limits.A/B`: `unknown / within / exceeds`, `limitWon`, `excessWon`. 양측이 같은 지원 버전으로 추가 답변 공유에 동의해야 반환한다. AI 동의는 불필요하다.
+  미공유/철회/버전 혼합이면 양쪽 모두 unknown/null이며 미정 상한을 0이나 무제한으로 표시하지 않는다.
+- `unchangedCalculations`: 원래 cashflow/housing/goal 블록. 이번 계산으로 바뀌지 않았다는 뜻이며 개선 결과로 표시하지 않는다.
+
+| nextAction | 프론트 연결 |
+| --- | --- |
+| complete_numbers | 미정 값을 보완. 빈 예산은 기존 계획 삭제가 아님 |
+| revise_inputs | 조정안은 완성됐지만 원안 분담액이 미정. 양쪽 새 라운드 후 해당 개인 입력 보완/재제출 |
+| revise_plan | 예산·월·항목 변경. 양쪽 새 라운드 → 계획 수정 → 각자 재확인/제출 |
+| review_limits | 조정안이 공유한 자기보고 상한을 초과. 자동 증액/합의 금지 |
+| review_agreements | 기존 월 분담 기준이 있음. existingDecisions의 안을 선택하고 최신 version으로 PATCH |
+| propose_agreement | 기존 월 분담 기준이 없음. 사용자 확인 후 기존 POST /agreements로 제안 |
+
+`decisionSeed`는 비교 가능한 숫자에서 상한 초과가 없을 때 제공하는 `terms` 초안이다. 납부일·예외·재검토일은 사용자가 정한다.
+기존 안 수정 시 기존 납부일/예외/reviewOn을 초안의 기본 null/빈 값으로 덮어쓰지 말고, 사용자가 바꾼 필드만 기존 terms에 병합한다.
+제안의 `text`와 `expectedRound`, 수정의 `expectedVersion`은 기존 agreement 계약대로 보낸다. 조회·미리보기만으로 저장하지 않는다.
+기준표에 추가 확인이 남거나 분담 공백이 0이 아니어도 제안은 가능하다. proposed와 agreed는 반드시 구분한다.
+
+예: 원안 공동비 200만/A 80만/B 80만이면 공백 40만. A 100만/B 80만 안은 20만.
+예산 180만 안은 0이지만 `revise_plan`이며 월 적자/주거 부족/목표 부족의 해소를 뜻하지 않는다.
+
+오류: 409 `ROUND_VERSION_CONFLICT`, `PLAN_VERSION_CONFLICT`, `REVISION_CONFLICT`는 현재 가이드를 다시 읽는다.
+`MEETING_REPORT_NOT_READY`는 공동 결과 준비, `MEETING_FINANCE_NOT_SHARED`는 재무 공유 상태를 확인한다.
+`MEETING_BUDGET_NOT_READY`는 공동비 범위나 안전한 원안 계산이 없어 비교 불가이므로 계획 입력을 보완한다.
+401/403/404/410/422는 기존 인증/Origin/권한/종료/입력 오류 처리와 같다. 실패 후 이전 민감 결과를 계속 보여주지 않는다.
+
+### GET `/meeting/standards`
+
+미완료는 `{status:"waiting"}`. ready는 `reference`, `confirmed`, `proposed`, `deferred`, `nextReviewOn`,
+`personalNeeds`, `discussionItems`, `operatingStatus`, `submittedContributionGapWon`, `notice`를 반환한다.
+
+- 세 그룹의 원소는 기존 `AgreementResponseV3`: text/terms/담당자/시작월/납부일/예외/reviewOn/양측 확인/버전 유지.
+- `nextReviewOn`은 confirmed 중 가장 이른 날짜이며 지난 날짜도 숨기지 않는다. 자동 알림 발송 기능은 아니다.
+- `discussionItems`는 전체 가이드 질문. `relatedAgreementIds`는 주제 연결이지 해결 증거가 아니다. 같은 주제에 합의가 있다고 자동 체크 완료하지 않는다.
+- 원래 분담 공백은 `submittedContributionGapWon`, 현재 양측 합의 기준은 `operatingStatus`로 구분한다. 여러 월 분담 합의는 conflicting이며 임의로 합치지 않는다.
+- 한쪽이 수정하면 confirmed에서 proposed로 이동하고 양쪽 확인이 풀린다. 새 라운드/철회에서는 이전 기준표를 노출하지 않는다.
+
+---
+
 2026-09-04, C단계 로컬 구현. AI 어댑터는 연결했지만 기본 비활성이며 실제 유료 호출·운영 배포는 아직 없다.
 기존 Deep v3 공동 리포트가 ready이고 양측 재무 공개가 유효해야 시작한다.
 기본 경로: `/api/v1/deep/v3/sessions/{id}/meeting`.

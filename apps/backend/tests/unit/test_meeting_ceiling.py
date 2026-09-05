@@ -49,3 +49,30 @@ def test_unknown_contribution_meaning_still_gets_clarified():
     answers = {role: {"contributionMeaning": "unknown", "adjustableMonthlyWon": None} for role in ("A", "B")}
     cards = template_cards(build_brief(ready_result(), granted()), answers)
     assert "상한인지" in next(card.question for card in cards if card.issueId == "expectation_b")
+
+
+@pytest.mark.parametrize("a,b", [(800_000, 800_000), (900_000, 1_000_000)])
+def test_known_adjustment_ceilings_below_budget_lead_to_budget_discussion(a, b):
+    answers = {role: {"contributionMeaning": "initialProposal", "adjustableMonthlyWon": value}
+               for role, value in (("A", a), ("B", b))}
+    gap = template_cards(build_brief(ready_result(), granted()), answers)[0]
+    assert "최대 금액" in gap.explanation and "못 미칩니다" in gap.explanation
+    assert "예산" in gap.question and "줄일" in gap.question
+    assert "상한을 확인" not in gap.question
+
+
+def test_known_adjustment_range_is_an_option_not_a_commitment():
+    answers = {role: {"contributionMeaning": "initialProposal", "adjustableMonthlyWon": 1_000_000} for role in ("A", "B")}
+    gap = template_cards(build_brief(ready_result(), granted()), answers)[0]
+    assert "조정 가능 범위 안" in gap.question
+    assert "확정된 약속은 아닙니다" in gap.explanation
+    assert "상한을 확인" not in gap.question
+
+
+@pytest.mark.parametrize("unknown", ["A", "B"])
+def test_only_missing_adjustment_range_is_asked(unknown):
+    answers = {role: {"contributionMeaning": "initialProposal", "adjustableMonthlyWon": None if role == unknown else 1_000_000}
+               for role in ("A", "B")}
+    gap = template_cards(build_brief(ready_result(), granted()), answers)[0]
+    assert f"{unknown}의 조정 가능 여부" in gap.question
+    assert "각자의 상한을 확인" not in gap.question

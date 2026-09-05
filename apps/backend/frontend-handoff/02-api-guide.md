@@ -10,6 +10,21 @@
 
 이 문서는 새 백엔드 연결 계약이다. 프론트 화면 구현·운영 배포 완료를 의미하지 않는다.
 
+## 2026-09-05 프론트 연결 전 최종 추가
+
+- `GET /sessions/{id}/meeting/guide`: AI 동의 없이 전체 공개 쟁점, 상위 세 개 ID, 다음 질문/저장 대상,
+  기준표 topic과 현재 제안·확인·보류를 한 번에 읽는다. 기존 `/result`를 먼저 ready로 만든 뒤 호출한다.
+- `GET /meeting/me`가 알려 주는 최신 `consentVersion`은 `money-meeting-consent-v3`다.
+  새 화면은 응답값을 그대로 POST하고 하드코딩하지 않는다. 저장된 v2끼리는 월 분담용으로 호환되지만 v2/v3 혼합은 waiting이다.
+- v3 해설은 최초 날짜의 주거자금 공백(누적 공백 합산 금지), 계획 후 월 잔액/적자,
+  목표 월 적립 필요·부족, 불확실성·조건 존재까지 다룬다. 숫자는 `brief.facts`를 렌더링하고 AI 문장에서 파싱하지 않는다.
+- `brief.housingGapDate`는 해당 부족액의 날짜다. null/필드 없음은 0이 아니며 화면에서 “확인 필요”로 구분한다.
+- AI 카드는 우선순위 세 개일 뿐 전체 목록이 아니다. 나머지 쟁점은 guide topics에서 계속 보여 준다.
+- 기준 제안은 기존 `/agreements`를 사용한다. 양쪽이 동일 버전을 확인해야 agreed이며 수정은 확인을 초기화한다.
+  제안 또는 AI 해설이 원래 리포트의 계산이나 제출 내용을 자동 수정하지 않는다.
+- 응답의 `consentNotice`를 답변 종료 하단에 노출하고 상대 공유/AI 선택은 각각 기본 미선택으로 둔다.
+  별도 AI 생성 버튼은 필요 없으며 `/meeting/complete`의 명시적 마지막 동작에 자연스럽게 연결한다.
+
 2026-09-03 상태: [Railway API 서버](https://mirisalim-backend-production.up.railway.app)에 v3 코드는 배포됐지만 **Deep·심사용 로그인은 운영 설정 전으로 비활성(404)**이다. 예제 기반 UI 작업은 가능하며 실제 인증 연결은 프론트 origin 확정 후 진행한다. 검증 근거와 남은 설정은 [최신 배포 인계](https://github.com/MIRI-SALLIM/MIRI/blob/9ef22135757b70b9db9bce17e06e23893bd02703/docs/handoffs/2026-09-03-deep-v3-release-progress.md)를 참고한다.
 
 ## 시작과 인증

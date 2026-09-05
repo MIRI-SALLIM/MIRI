@@ -15,7 +15,7 @@ from deep.meeting.models import ExplanationDraft, MeetingBrief
 from deep.meeting.templates import template_cards
 
 MODEL = "gpt-5.4-mini-2026-03-17"
-PROMPT_VERSION = "money-meeting-v3-known-answers"
+PROMPT_VERSION = "money-meeting-v5-shared-plan"
 MAX_OUTPUT_TOKENS = 800
 MAX_REQUEST_BYTES = 16_000
 RESERVED_INPUT_TOKENS = MAX_REQUEST_BYTES + 4096
@@ -31,11 +31,22 @@ adjustableMonthlyWon is a stated negotiation ceiling, not consent to increase co
 Use already supplied clarifications. Do not ask whether a known initialProposal is a proposal or ceiling again.
 Keep explanations declarative; put the single discussion question only in the question field.
 Be direct about uncovered budget or differing expectations without blaming a partner.
+Connect the observed fact to its significance for the shared plan, then to a decision the couple can discuss.
+Use everyday Korean; explain any necessary financial term in context. Do not assume marriage, cohabitation, or motives.
+Brevity alone is not the goal: preserve the uncomfortable fact and explain a useful next step, not generic encouragement.
 expectation_a compares A's expectation of B with B's contribution; expectation_b compares B's expectation of A with A's contribution.
-agreementStatus describes current agreement; facts describe original submissions. Do not claim old gaps remain after agreement.
+agreementStatus describes only the current monthly contribution agreement, never housing or savings agreement.
+Facts describe original submissions. Do not claim old gaps remain after agreement.
 Ask one concrete discussion question per card. Never announce agreement, fairness, personality or relationship quality,
 loan approval, investment advice, or policy entitlement. No outside knowledge, links, or markdown.
 If evidence is incomplete say it needs confirmation. Produce at most three short cards.
+For sharedPlan scope, use the first three supplied issues in order, starting with the first issue.
+Include every supplied factId for each of those issues; omit no core fact and add no other fact.
+housing_gap refers only to the first dated shortfall, never the sum of cumulative deadlines.
+housing_expected is uncertain future funding, not money available now. housing_unknown prevents a complete conclusion.
+monthly_surplus is a scenario assuming current non-housing expenses and planned repayments, not verified disposable income.
+goal_saving_gap and housing_gap are separate needs; never add them or count the same asset twice.
+condition_discussion only states that a constraint needs discussion; never invent its content or owner.
 """
 
 
@@ -45,6 +56,9 @@ class AiSettings:
     api_key: str = field(default="", repr=False)
     daily_micro_usd: int = 250_000
     daily_calls: int = 20
+    total_micro_usd: int | None = None
+    prior_micro_usd: int = 0
+    extended_enabled: bool = False
 
     @classmethod
     def load(cls) -> "AiSettings":
@@ -53,10 +67,20 @@ class AiSettings:
             calls = int(os.environ.get("DEEP_MEETING_AI_DAILY_CALLS", "20"))
             if not 0 <= budget <= 5_000_000 or not 0 <= calls <= 200:
                 raise ValueError
+            total_raw = os.environ.get("DEEP_MEETING_AI_TOTAL_MICRO_USD")
+            prior_raw = os.environ.get("DEEP_MEETING_AI_PRIOR_MICRO_USD")
+            total, prior = None, 0
+            if total_raw is not None or prior_raw is not None:
+                if total_raw is None or prior_raw is None:
+                    raise ValueError
+                total, prior = int(total_raw), int(prior_raw)
+                if not 0 <= prior <= total <= 5_000_000:
+                    raise ValueError
         except ValueError:
             return cls()
         key = os.environ.get("OPENAI_API_KEY", "").strip()
-        return cls(os.environ.get("DEEP_MEETING_AI_ENABLED", "false") == "true" and bool(key), key, budget, calls)
+        return cls(os.environ.get("DEEP_MEETING_AI_ENABLED", "false") == "true" and bool(key), key, budget, calls, total, prior,
+                   os.environ.get('DEEP_MEETING_AI_EXTENDED_ENABLED', 'false') == 'true')
 
 
 class ProviderFailure(Exception):
@@ -79,7 +103,7 @@ def request_body(brief: MeetingBrief, clarifications: dict[str, Any]) -> dict[st
         raise ProviderFailure() from None
     guidance = ""
     for role in ("A", "B"):
-        if getattr(shared, role).contributionMeaning == "selfReportedLimit":
+        if getattr(shared, role).contributionMeaning == "selfReportedLimit" and has_monthly_cards(brief):
             guidance += f'\nMandatory: include the exact phrase "{role}가 밝힌 상한" in an explanation. Treat it as a self-reported ceiling, not a negotiable initial proposal or verified capacity.'
     if guidance:
         guidance += "\nKeep that ceiling fixed in discussion options. Do not ask for a generic redistribution. "
@@ -118,11 +142,16 @@ class OpenAIProvider:
         generated = parse_response(response, brief)
         shared = SharedClarifications.model_validate(clarifications)
         for role in ("A", "B"):
-            if (getattr(shared, role).contributionMeaning == "selfReportedLimit"
+            if (getattr(shared, role).contributionMeaning == "selfReportedLimit" and has_monthly_cards(brief)
                     and not any(f"{role}가 밝힌 상한" in card.explanation for card in generated.draft.cards)):
                 # Required acknowledgment only; not a semantic truth/safety guarantee.
                 raise ProviderFailure()
         return generated
+
+
+def has_monthly_cards(brief: MeetingBrief) -> bool:
+    return any(issue.id in {'contribution_gap', 'contribution_unknown', 'excess_contributions', 'expectation_a', 'expectation_b'}
+               for issue in brief.issues[:3])
 
 
 def parse_response(response: Any, brief: MeetingBrief) -> GeneratedExplanation:

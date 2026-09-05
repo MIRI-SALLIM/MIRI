@@ -4,6 +4,8 @@
 
 ## 먼저 읽을 문서
 
+최신 백엔드 완결: [프론트 전달 전 최종 인계](handoffs/2026-09-05-deep-backend-handoff-final.md). 전체 대화 가이드와 기준표 생명주기, 동의 v3, 주거/월 잔액/목표/조건 최소 근거 해설을 로컬 구현했다. 이전 [하단 완료 API](handoffs/2026-09-05-deep-service-completion.md)와 [승인된 방향](superpowers/specs/2026-09-05-deep-service-flow-design.md)을 잇는다. 프론트 E2E·실모델 품질 평가·운영 변수/배포·develop 병합은 아직 아니다.
+
 최신 백엔드 수정: [Light 초대 참여 응답 유실 복구 — #51](handoffs/2026-09-05-light-join-recovery.md). 같은 요청 키의 join 복구와 프론트 재클릭 키 재사용을 구현했다. 원격 반영은 Git 이력으로 확인하며 운영 배포와 딥모드 UX 계획의 구현은 별도다.
 
 최신 후속 작업: [중복 질문 보완·배포 준비](handoffs/2026-09-04-deep-meeting-release-preparation.md). 이미 받은 초기 제안을 재질문하지 않도록 기본 질문과 AI 지시문을 보완하고 프롬프트를 v3로 갱신했다. 실제 v3 유료 호출·운영 배포는 하지 않았다. Railway는 여전히 fix2를 자동 배포 대상으로 사용하며 심사용 로그인·Deep 활성화 설정은 별도 준비가 필요하다.

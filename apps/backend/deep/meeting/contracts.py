@@ -6,8 +6,9 @@ from pydantic import Field, StrictBool, StrictInt, model_validator
 from deep.meeting.models import ExplanationCard, MeetingBrief
 from deep.schemas import Money, StrictModel
 
-ConsentVersion = Literal["money-meeting-consent-v2"]
-CURRENT_CONSENT_VERSION = "money-meeting-consent-v2"
+ConsentVersion = Literal["money-meeting-consent-v2", "money-meeting-consent-v3"]
+CURRENT_CONSENT_VERSION = "money-meeting-consent-v3"
+SUPPORTED_CONSENT_VERSIONS = ("money-meeting-consent-v2", CURRENT_CONSENT_VERSION)
 Revision = Annotated[StrictInt, Field(ge=0)]
 PositiveVersion = Annotated[StrictInt, Field(ge=1)]
 
@@ -49,6 +50,10 @@ class SaveMeetingConsent(MeetingWrite, MeetingConsent):
     pass
 
 
+class CompleteMeeting(SaveMeetingAnswers, MeetingConsent):
+    pass
+
+
 class RecordedMeetingConsent(MeetingConsent):
     recordedAt: datetime
 
@@ -68,7 +73,7 @@ class OwnMeeting(StrictModel):
     answers: MeetingAnswers | None
     consent: RecordedMeetingConsent | None
     questions: list[MeetingQuestion]
-    consentVersion: ConsentVersion = "money-meeting-consent-v2"
+    consentVersion: ConsentVersion = "money-meeting-consent-v3"
     consentNotice: str
 
 
@@ -100,3 +105,8 @@ class AvailableExplanation(StrictModel):
 
 
 MeetingExplanation = Annotated[WaitingMeetingContext | AvailableExplanation, Field(discriminator="status")]
+
+
+class MeetingCompletion(StrictModel):
+    own: OwnMeeting
+    explanation: MeetingExplanation

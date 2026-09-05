@@ -4,7 +4,10 @@ from typing import Any
 from fastapi import APIRouter
 
 from deep.dependencies import PrincipalDependency, ServiceDependency
+from deep.meeting.completion import complete_meeting
 from deep.meeting.contracts import (
+    CompleteMeeting,
+    MeetingCompletion,
     MeetingContext,
     MeetingExplanation,
     OwnMeeting,
@@ -12,11 +15,22 @@ from deep.meeting.contracts import (
     SaveMeetingConsent,
 )
 from deep.meeting.generation import explanation
+from deep.meeting.guide import MeetingGuide, meeting_guide
 from deep.meeting.service import meeting_context
 from deep.meeting.storage import MeetingStorage
 from deep.router import MUTATION, DeepRoute
 
 router = APIRouter(prefix="/sessions/{session_id}/meeting", route_class=DeepRoute)
+
+
+@router.get("/guide", response_model=MeetingGuide)
+async def get_guide(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
+    return await meeting_guide(service, session_id, principal.user_id)
+
+
+@router.post("/complete", response_model=MeetingCompletion, dependencies=MUTATION)
+async def complete(session_id: str, body: CompleteMeeting, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
+    return await complete_meeting(service, session_id, principal.user_id, body)
 
 
 @router.get("/me", response_model=OwnMeeting)

@@ -9,7 +9,7 @@ from pymongo.errors import DuplicateKeyError
 
 from deep.errors import DeepError
 from deep.meeting.explanation import validate_grounding
-from deep.meeting.ledger import reserve_budget
+from deep.meeting.ledger import TOTAL_BUDGET_ID, reserve_budget
 from deep.meeting.models import ExplanationDraft, MeetingBrief
 from deep.meeting.provider import (
     MAX_OUTPUT_TOKENS,
@@ -39,8 +39,10 @@ class Snapshot:
     clarifications: dict[str, Any]
 
 
-async def snapshot(service: DeepService, session_id: str, user_id: str) -> Snapshot | None:
+async def snapshot(service: DeepService, session_id: str, user_id: str, *, expected_revision: int | None = None) -> Snapshot | None:
     document, result, context = await prepared_context(service, session_id, user_id)
+    if expected_revision is not None and meeting_state(document)["members"][member_role(document, user_id)]["revision"] != expected_revision:
+        raise DeepError("REVISION_CONFLICT")
     if context["status"] == "waiting":
         return None
     role = member_role(document, user_id)
@@ -69,12 +71,13 @@ async def still_current(service: DeepService, session_id: str, user_id: str, key
     return current
 
 
-async def explanation(service: DeepService, session_id: str, user_id: str, *, generate: bool = False) -> dict[str, Any]:
-    current = await snapshot(service, session_id, user_id)
+async def explanation(service: DeepService, session_id: str, user_id: str, *, generate: bool = False,
+                      expected_revision: int | None = None, require_total_budget: bool = False) -> dict[str, Any]:
+    current = await snapshot(service, session_id, user_id, expected_revision=expected_revision)
     if current is None:
         return {"status": "waiting"}
     settings = AiSettings.load()
-    if not settings.enabled:
+    if not settings.enabled or (current.brief.scope == 'sharedPlan' and not settings.extended_enabled):
         return fallback(current, "disabled")
     if not current.brief.issues:
         return fallback(current, "no_issues")
@@ -97,6 +100,8 @@ async def explanation(service: DeepService, session_id: str, user_id: str, *, ge
         return fallback(current, "interrupted" if reason == "completed" else reason)
     if not generate:
         return fallback(current, "not_generated")
+    if (require_total_budget or current.brief.scope == 'sharedPlan') and settings.total_micro_usd is None:
+        return fallback(current, "budget_exhausted")
 
     now = utcnow()
     attempt_key = current.key
@@ -128,6 +133,7 @@ async def explanation(service: DeepService, session_id: str, user_id: str, *, ge
         except ProviderFailure as error:
             if error.budget_violation:
                 await budgets.find_one_and_update({"_id": day}, {"$set": {"halted": True}})
+                await budgets.find_one_and_update({"_id": TOTAL_BUDGET_ID}, {"$set": {"halted": True}})
             await finish("provider_unavailable")
             current = await still_current(service, session_id, user_id, current.key)
             return fallback(current, "provider_unavailable")

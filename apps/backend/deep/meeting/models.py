@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated, Literal, Self
 
 from pydantic import Field, StrictBool, StrictInt, field_validator, model_validator
@@ -10,8 +11,12 @@ SignedMoney = Annotated[StrictInt, Field(ge=-MAX_MONEY, le=MAX_MONEY)]
 FactId = Literal[
     "budget", "offered_total", "contribution_gap", "excess", "contribution_a", "contribution_b",
     "expected_a_for_b", "expected_b_for_a", "expectation_a", "expectation_b",
+    "housing_required", "housing_available", "housing_gap", "housing_expected", "housing_gap_with_expected",
+    "monthly_surplus", "goal_required_saving", "goal_saving_gap",
 ]
-IssueId = Literal["contribution_gap", "contribution_unknown", "excess_contributions", "expectation_a", "expectation_b"]
+IssueId = Literal["contribution_gap", "contribution_unknown", "excess_contributions", "expectation_a", "expectation_b",
+                  "housing_gap", "housing_unknown", "housing_expected", "monthly_deficit", "cashflow_unknown",
+                  "goal_saving_gap", "goal_unknown", "condition_discussion"]
 AgreementStatus = Literal["unknown", "notProposed", "proposed", "deferred", "agreed", "conflicting"]
 
 
@@ -33,6 +38,8 @@ class MeetingIssue(StrictModel):
 
 
 class MeetingBrief(StrictModel):
+    scope: Literal["monthly", "sharedPlan"] = "monthly"
+    housingGapDate: date | None = None
     sourceRound: Annotated[StrictInt, Field(ge=1)]
     planVersion: Annotated[StrictInt, Field(ge=1)]
     startMonth: Month

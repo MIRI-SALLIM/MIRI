@@ -4,6 +4,8 @@
 
 ## 먼저 읽을 문서
 
+최신 운영 배포: [Railway develop 운영 배포](handoffs/2026-09-05-railway-develop-production.md). Railway 백엔드를 `develop`에 연결하고 운영 프론트 origin과 Kakao 인증 설정을 적용했다. `/health`, 운영 프론트의 `/api` 프록시, Kakao 로그인 시작·운영 콜백 이동을 검증했다. 로그인 이후 전체 사용자 여정과 운영 AI 활성화는 별도 검증 범위다.
+
 최신 백엔드 완결: [프론트 전달 전 최종 인계](handoffs/2026-09-05-deep-backend-handoff-final.md). 전체 대화 가이드와 기준표 생명주기, 동의 v3, 주거/월 잔액/목표/조건 최소 근거 해설을 로컬 구현했다. 이전 [하단 완료 API](handoffs/2026-09-05-deep-service-completion.md)와 [승인된 방향](superpowers/specs/2026-09-05-deep-service-flow-design.md)을 잇는다. 프론트 E2E·실모델 품질 평가·운영 변수/배포·develop 병합은 아직 아니다.
 
 최신 백엔드 수정: [Light 초대 참여 응답 유실 복구 — #51](handoffs/2026-09-05-light-join-recovery.md). 같은 요청 키의 join 복구와 프론트 재클릭 키 재사용을 구현했다. 원격 반영은 Git 이력으로 확인하며 운영 배포와 딥모드 UX 계획의 구현은 별도다.

@@ -37,6 +37,7 @@ function message(error: unknown) {
 export function LoginCheck() {
   const [context, setContext] = useState<Context | null>(null);
   const [regularUser, setRegularUser] = useState<string | null>(null);
+  const [authAvailable, setAuthAvailable] = useState<boolean | null>(null);
   const [resetConfirmed, setResetConfirmed] = useState(false);
   const [username, setUsername] = useState("judge-a");
   const [password, setPassword] = useState("");
@@ -46,16 +47,26 @@ export function LoginCheck() {
 
   useEffect(() => {
     let active = true;
-    request("reviewer/context").then((data) => { if (active) setContext(data); })
+    request("reviewer/context").then((data) => {
+      if (active) {
+        setAuthAvailable(true);
+        setContext(data);
+      }
+    })
       .catch(async (failure: unknown) => {
         if (failure instanceof RequestError && [403, 404].includes(failure.status)) {
           try {
             const response = await fetch("/api/v1/auth/me", { credentials: "same-origin", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000) });
+            if (active) setAuthAvailable(response.ok || response.status === 401);
             if (response.ok) {
               const data = await response.json();
               if (typeof data.userId === "string" && active) { setRegularUser(data.userId); return; }
             }
-          } catch { /* Keep the original safe authentication error. */ }
+          } catch {
+            if (active) setAuthAvailable(false);
+          }
+        } else if (active) {
+          setAuthAvailable(failure instanceof RequestError && failure.status === 401);
         }
         if (active && !(failure instanceof RequestError && failure.status === 401)) setError(message(failure));
       }).finally(() => { if (active) setBusy(false); });
@@ -71,11 +82,13 @@ export function LoginCheck() {
     setPassword("");
     try {
       const result = await request(action === "logout" ? "logout" : `reviewer/${action}`, body);
+      setAuthAvailable(true);
       setContext(result);
       setRegularUser(null);
       setResetConfirmed(false);
       setRoomCode("");
     } catch (failure) {
+      if (failure instanceof RequestError && failure.status === 404) setAuthAvailable(false);
       setContext(null);
       setRegularUser(null);
       setRoomCode("");
@@ -124,10 +137,17 @@ export function LoginCheck() {
         </form>
       )}
       {!busy && (context || regularUser) && <DeepCheck key={context ? `${context.userId}:${context.roomCode}` : regularUser!} />}
-      <section className="space-y-2 border-t border-border pt-5">
-        <a className={`${buttonStyle} inline-block`} href="/api/v1/auth/kakao/start?returnTo=%2Fdeep%2Flogin-check">카카오 로그인 시작</a>
-        <p className="text-sm">키·콜백이 등록된 서버에서만 사용할 수 있습니다. 로컬 메모리 서버는 카카오가 꺼져 있어 404를 반환합니다.</p>
-      </section>
+      {!busy && authAvailable === true && (
+        <section className="space-y-2 border-t border-border pt-5">
+          <a className={`${buttonStyle} inline-block`} href="/api/v1/auth/kakao/start?returnTo=%2Fdeep%2Flogin-check">카카오 로그인 시작</a>
+          <p className="text-sm">키·콜백이 등록된 서버에서만 사용할 수 있습니다. 로컬 메모리 서버는 카카오가 꺼져 있어 404를 반환합니다.</p>
+        </section>
+      )}
+      {!busy && authAvailable === false && (
+        <p className="border-t border-border pt-5 text-sm text-ink-muted" role="status">
+          카카오 로그인을 시작할 수 없어요. 인증 기능이 활성화된 서버에서만 이용할 수 있습니다.
+        </p>
+      )}
     </main>
   );
 }

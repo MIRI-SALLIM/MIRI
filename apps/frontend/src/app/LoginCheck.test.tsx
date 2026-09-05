@@ -25,6 +25,17 @@ describe("minimal login check", () => {
     expect(screen.getByRole("link", { name: "카카오 로그인 시작" })).toHaveAttribute("href", "/api/v1/auth/kakao/start?returnTo=%2Fdeep%2Flogin-check");
   });
 
+  it("hides Kakao login when the account auth endpoint is disabled", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(reply({}, 404)).mockResolvedValueOnce(reply({ detail: "사용할 수 없는 기능입니다." }, 404));
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+
+    expect(await screen.findByLabelText("비밀번호")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "카카오 로그인 시작" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("카카오 로그인을 시작할 수 없어요");
+    expect(fetcher.mock.calls[1][0]).toBe("/api/v1/auth/me");
+  });
+
   it("requires explicit reset confirmation and clears the old diagnostic context", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(reply(context)).mockResolvedValueOnce(reply({ id: "old-session" }))
       .mockResolvedValueOnce(reply({ ...context, userId: "new-user", roomCode: "b".repeat(64) }));

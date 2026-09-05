@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { components } from "@/shared/api";
-import { isCalendarDate } from "@/shared/lib";
+import { isCalendarDate, isServerDecimal } from "@/shared/lib";
 
 const SAFE_MONEY = Number.MAX_SAFE_INTEGER;
 const STORAGE_AS_OF = "9999-12-31";
@@ -13,30 +13,16 @@ const monthSchema = z.string().regex(/^[1-9][0-9]{3}-(0[1-9]|1[0-2])$/);
 
 const calendarDateSchema = z.string().refine(isCalendarDate, "유효하지 않은 날짜입니다.");
 
-const isServerDecimal = (value: string | number) => {
-  const match = value
-    .toString()
-    .match(/^([+-]?)(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$/);
-
-  if (!match) {
-    return false;
-  }
-
-  const [, sign, integerDigits = "", fractionDigitsFromInteger, fractionDigitsWithoutInteger, exponentText = "0"] = match;
-  const fractionDigits = fractionDigitsFromInteger ?? fractionDigitsWithoutInteger ?? "";
-  const significantDigits = `${integerDigits}${fractionDigits}`.replace(/^0+/, "") || "0";
-  const exponent = Number.parseInt(exponentText, 10);
-  const decimalPlaces = Math.max(fractionDigits.length - exponent, 0);
-
-  return sign !== "-" || significantDigits === "0"
-    ? significantDigits.length <= 14 && decimalPlaces <= 10
-    : false;
-};
+// apps/backend/deep/schemas.py 의 DebtInput.annualRate 제약이다.
+const ANNUAL_RATE_LIMITS = { maxDigits: 14, decimalPlaces: 10 } as const;
 
 const annualRateSchema = z
-  .union([z.number().min(0).finite(), z.string(), z.null()])
+  .union([z.number().finite(), z.string(), z.null()])
   .optional()
-  .refine((value) => value == null || isServerDecimal(value), "유효하지 않은 연이율입니다.");
+  .refine(
+    (value) => value == null || isServerDecimal(value, ANNUAL_RATE_LIMITS),
+    "유효하지 않은 연이율입니다.",
+  );
 
 const amountSchema = z
   .object({

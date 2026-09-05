@@ -9,6 +9,7 @@ import {
   SESSION_STATUS_PARTNER_JOINED_POLL_INTERVAL_MS,
   SESSION_STATUS_PARTNER_NOT_JOINED_POLL_INTERVAL_MS,
 } from "@/features/poll-session-status";
+import { createTimeoutApiError } from "@/shared/api";
 
 import { WaitingPage } from "./WaitingPage";
 
@@ -193,6 +194,26 @@ describe("WaitingPage", () => {
 
     expect(
       await screen.findByText("알림은 24시간에 한 번만 보낼 수 있어요. 내일 다시 시도해 주세요."),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps a nudge timeout outcome unresolved without inviting a retry", async () => {
+    respondWith({
+      nudge: () => {
+        throw createTimeoutApiError();
+      },
+      status: () => jsonResponse(sessionStatus({ partnerJoined: true }), 200),
+    });
+
+    const user = userEvent.setup();
+    renderWaiting();
+
+    await user.click(await screen.findByRole("button", { name: "알림 보내기" }));
+
+    expect(
+      await screen.findByText(
+        "알림 전송 결과를 확인하지 못했어요. 24시간 제한이 있으니 다시 누르지 말고 상대에게 직접 확인해 주세요.",
+      ),
     ).toBeInTheDocument();
   });
 

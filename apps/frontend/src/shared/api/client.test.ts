@@ -86,15 +86,13 @@ describe("apiClient", () => {
     }
   });
 
-  it("does not abort a non-GET request after the cap", async () => {
+  it("aborts a non-GET request at the cap and reports a timeout error", async () => {
     vi.useFakeTimers();
 
     try {
-      let resolveRequest!: (response: Response) => void;
       const fetchMock = vi.fn(
         (request: Request) =>
           new Promise<Response>((resolve, reject) => {
-            resolveRequest = resolve;
             request.signal.addEventListener(
               "abort",
               () => reject(new DOMException("The request timed out", "AbortError")),
@@ -108,14 +106,18 @@ describe("apiClient", () => {
           body: { mode: "light" },
         }),
       );
-      const requestResult = request.then(() => "resolved", () => "rejected");
-
-      await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS * 2);
+      const requestResult = request.then(
+        () => ({ outcome: "resolved" as const }),
+        (error) => ({ error, outcome: "rejected" as const }),
+      );
+      await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS);
 
       const [requestArgument] = fetchMock.mock.calls[0] as [Request];
-      expect(requestArgument.signal.aborted).toBe(false);
-      resolveRequest(new Response("{}", { status: 200 }));
-      await expect(requestResult).resolves.toBe("resolved");
+      expect(requestArgument.signal.aborted).toBe(true);
+      await expect(requestResult).resolves.toMatchObject({
+        error: { kind: "timeout", status: null },
+        outcome: "rejected",
+      });
     } finally {
       vi.useRealTimers();
     }

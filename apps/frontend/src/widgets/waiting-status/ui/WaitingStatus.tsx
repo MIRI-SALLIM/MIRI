@@ -18,6 +18,10 @@ const COPIED_FEEDBACK_MS = 1_600;
 const cardClassName = "flex flex-col gap-4 rounded-card border border-border bg-card p-6 sm:p-8";
 
 function toNudgeMessage(error: unknown): string {
+  if (error instanceof ApiError && error.kind === "timeout") {
+    return "알림 전송 결과를 확인하지 못했어요. 24시간 제한이 있으니 다시 누르지 말고 상대에게 직접 확인해 주세요.";
+  }
+
   if (error instanceof ApiError && error.kind === "rate-limited") {
     return "알림은 24시간에 한 번만 보낼 수 있어요. 내일 다시 시도해 주세요.";
   }

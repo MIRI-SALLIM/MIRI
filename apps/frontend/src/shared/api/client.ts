@@ -7,15 +7,40 @@ import { ApiError, createApiError, createNetworkApiError, createTimeoutApiError 
 // Ten seconds is an evidence-limited operational default for releasing no-response waits,
 // not a performance guarantee; replace it after measuring a request-level SLA.
 export const API_REQUEST_TIMEOUT_MS = 10_000;
+export const API_OPERATION_TIMEOUT_MS = 30_000;
+
+const operationTimeouts = [
+  {
+    method: "POST",
+    path: "/api/v1/deep/v3/sessions/{session_id}/meeting/complete",
+    timeoutMs: API_OPERATION_TIMEOUT_MS,
+  },
+] as const;
 
 class RequestTimeoutError extends Error {}
 
 type ApiFetch = NonNullable<ClientOptions["fetch"]>;
 
+const pathSegmentPattern = (segment: string) =>
+  segment.startsWith("{") && segment.endsWith("}") ? "[^/]+" : segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const timeoutForRequest = (input: Request): number => {
+  const requestPath = new URL(input.url, globalThis.location?.origin).pathname;
+  const operation = operationTimeouts.find(
+    ({ method, path }) =>
+      method === input.method.toUpperCase() &&
+      new RegExp(`^${path.split("/").map(pathSegmentPattern).join("/")}$`).test(requestPath),
+  );
+
+  return operation?.timeoutMs ?? API_REQUEST_TIMEOUT_MS;
+};
+
 const withRequestTimeout = (fetch: ApiFetch): ApiFetch => async (input) => {
   if (input.signal.aborted) {
     return fetch(input);
   }
+
+  const timeoutMs = timeoutForRequest(input);
 
   // The cap applies to reads and Light mutations. POST /sessions and POST /invitations/{code}/join
   // replay their Idempotency-Key; PATCH /sessions/{id}/me/input replaces the complete answer and
@@ -29,7 +54,7 @@ const withRequestTimeout = (fetch: ApiFetch): ApiFetch => async (input) => {
   const timeoutId = globalThis.setTimeout(() => {
     didTimeout = true;
     controller.abort();
-  }, API_REQUEST_TIMEOUT_MS);
+  }, timeoutMs);
   const abortFromCaller = () => controller.abort(input.signal.reason);
   input.signal.addEventListener("abort", abortFromCaller, { once: true });
 

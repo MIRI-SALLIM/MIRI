@@ -30,7 +30,7 @@ describe("minimal login check", () => {
     vi.stubGlobal("fetch", fetcher);
     render(<App />);
 
-    expect(await screen.findByLabelText("비밀번호")).toBeInTheDocument();
+    expect(await screen.findByText("카카오 로그인을 시작할 수 없어요. 인증 기능이 활성화된 서버에서만 이용할 수 있습니다.")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "카카오 로그인 시작" })).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("카카오 로그인을 시작할 수 없어요");
     expect(fetcher.mock.calls[1][0]).toBe("/api/v1/auth/me");

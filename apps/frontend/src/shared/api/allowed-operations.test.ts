@@ -5,6 +5,7 @@ import { allowedOperations } from "./allowed-operations";
 describe("F2 API operation allowlist", () => {
   it("contains only the operations used by the frontend", () => {
     expect(allowedOperations).toEqual([
+      { method: "get", path: "/api/v1/auth/me" },
       { method: "post", path: "/api/v1/sessions" },
       { method: "get", path: "/api/v1/me/session" },
       { method: "get", path: "/api/v1/light/questions" },

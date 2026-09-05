@@ -83,7 +83,8 @@ describe("minimal login check", () => {
       .mockResolvedValueOnce(reply(context)).mockResolvedValueOnce(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetcher);
     render(<App />);
-    await userEvent.type(await screen.findByLabelText("비밀번호"), "synthetic-password-a");
+    await waitFor(() => expect(screen.getByRole("button", { name: "심사용 로그인" })).toBeEnabled());
+    await userEvent.type(screen.getByLabelText("비밀번호"), "synthetic-password-a");
     await userEvent.click(screen.getByRole("button", { name: "심사용 로그인" }));
     expect(await screen.findByText("로그인됨 · A")).toBeInTheDocument();
     const [, options] = fetcher.mock.calls[1];
@@ -101,7 +102,8 @@ describe("minimal login check", () => {
     vi.stubGlobal("fetch", fetcher);
     const storage = vi.spyOn(Storage.prototype, "setItem");
     render(<App />);
-    await userEvent.selectOptions(await screen.findByLabelText("계정"), "judge-b");
+    await waitFor(() => expect(screen.getByRole("button", { name: "심사용 로그인" })).toBeEnabled());
+    await userEvent.selectOptions(screen.getByLabelText("계정"), "judge-b");
     await userEvent.type(screen.getByLabelText("비밀번호"), "synthetic-password-b");
     await userEvent.type(screen.getByLabelText("체험방 코드 (선택)"), room);
     await userEvent.click(screen.getByRole("button", { name: "심사용 로그인" }));
@@ -116,7 +118,8 @@ describe("minimal login check", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(reply({}, 401))
       .mockResolvedValueOnce(reply({ error: { message: "DO_NOT_ECHO_PROVIDER_DETAIL" } }, status)));
     render(<App />);
-    await userEvent.type(await screen.findByLabelText("비밀번호"), "synthetic-password-a");
+    await waitFor(() => expect(screen.getByRole("button", { name: "심사용 로그인" })).toBeEnabled());
+    await userEvent.type(screen.getByLabelText("비밀번호"), "synthetic-password-a");
     await userEvent.click(screen.getByRole("button", { name: "심사용 로그인" }));
     expect(await screen.findByRole("alert")).not.toHaveTextContent("DO_NOT_ECHO_PROVIDER_DETAIL");
     expect(screen.getByLabelText("비밀번호")).toHaveValue("");

@@ -4,6 +4,8 @@
 
 ## 먼저 읽을 문서
 
+최신 백엔드 보완: [조정안·우리 돈의 기준표 인계](handoffs/2026-09-06-deep-proposal-flow.md). guide의 개인비/저축·합의 인식 질문, 읽기 전용 preview/standards API와 프론트 계약을 로컬 구현했다. 신규 18개 포함 관련 236개 테스트 통과. 기존 불변 리포트/AI 흐름은 유지하며 이번 변경의 커밋·푸시·배포·프론트 화면 연결은 아직 하지 않았다. 아래 이전 날짜의 운영 상태는 역사적 기록이므로 현재 배포 상태와 구분한다.
+
 최신 운영 배포: [Railway develop 운영 배포](handoffs/2026-09-05-railway-develop-production.md). Railway 백엔드를 `develop`에 연결하고 운영 프론트 origin과 Kakao 인증 설정을 적용했다. `/health`, 운영 프론트의 `/api` 프록시, Kakao 로그인 시작·운영 콜백 이동을 검증했다. 로그인 이후 전체 사용자 여정과 운영 AI 활성화는 별도 검증 범위다.
 
 최신 백엔드 완결: [프론트 전달 전 최종 인계](handoffs/2026-09-05-deep-backend-handoff-final.md). 전체 대화 가이드와 기준표 생명주기, 동의 v3, 주거/월 잔액/목표/조건 최소 근거 해설을 로컬 구현했다. 이전 [하단 완료 API](handoffs/2026-09-05-deep-service-completion.md)와 [승인된 방향](superpowers/specs/2026-09-05-deep-service-flow-design.md)을 잇는다. 프론트 E2E·실모델 품질 평가·운영 변수/배포·develop 병합은 아직 아니다.

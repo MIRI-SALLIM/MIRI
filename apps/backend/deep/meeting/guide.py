@@ -5,6 +5,12 @@ from pydantic import Field
 
 from deep.config import AREAS, load_questions
 from deep.errors import DeepError
+from deep.meeting.planning_context import (
+    MeetingReference,
+    SharedPersonalNeeds,
+    planning_context,
+    reference,
+)
 from deep.schemas import StrictModel
 from deep.service import DeepService
 from deep.v3_models import AgreementResponseV3, ReportV3
@@ -25,6 +31,8 @@ class GuideTopic(StrictModel):
 
 class ReadyGuide(StrictModel):
     status: Literal['ready'] = 'ready'
+    reference: MeetingReference
+    personalNeeds: SharedPersonalNeeds | None
     report: ReportV3
     topics: list[GuideTopic]
     priorityIds: list[str]
@@ -42,6 +50,10 @@ MeetingGuide = Annotated[ReadyGuide | WaitingGuide, Field(discriminator='status'
 
 def _direction(issue: dict[str, Any]) -> tuple[str, list[str], str]:
     code = issue['code']
+    if code == 'DISCUSSION_PERCEPTION_DIFFERENCE':
+        return 'monthlyContribution', ['agreements.terms', 'agreements.reviewOn'], '합의했다고 생각하는 정도와 실제 양측 확인은 다릅니다. 이미 적은 금액을 다시 묻기보다 합의의 범위를 확인하세요.'
+    if code == 'PERSONAL_NEEDS_REVIEW':
+        return 'monthlyContribution', ['agreements.terms', 'agreements.terms.exceptions'], '개인비·저축 희망액은 지급 능력이나 확정 지출이 아닙니다. 기존 지출과 중복될 수 있어 월 잔액에서 다시 차감하지 않습니다.'
     if code == 'VALUE_DIFFERENCE':
         return issue['area'], ['agreements.terms', 'agreements.reviewOn'], '생각이 다르다는 사실만으로 갈등은 아닙니다. 실제 생활에서 지킬 기준과 예외를 정해야 합니다.'
     if code == 'CASHFLOW_UNCERTAIN':
@@ -72,6 +84,8 @@ async def meeting_guide(service: DeepService, session_id: str, user_id: str) -> 
         raise DeepError('REVISION_CONFLICT')
     report = result['report']
     issues = list(report['issues'])
+    needs, planning_issues = planning_context(after)
+    issues.extend(planning_issues)
     members = after['members']
     if all(members[role]['consent']['shareValues'] for role in ('A', 'B')):
         questions = load_questions('deep-v3')['questions']
@@ -96,6 +110,7 @@ async def meeting_guide(service: DeepService, session_id: str, user_id: str) -> 
                        'question': issue.get('question', '먼저 확인할 내용과 담당자를 정할까요?'),
                        'whyItMatters': why, 'answerTargets': targets, 'decisionTopic': decision_topic,
                        'evidence': issue, 'relatedAgreementIds': [row['id'] for row in result['agreements'] if row['terms']['topic'] == decision_topic]})
-    return {'status': 'ready', 'report': report, 'topics': topics, 'priorityIds': [row['id'] for row in topics[:3]],
+    return {'status': 'ready', 'reference': reference(after), 'personalNeeds': needs,
+            'report': report, 'topics': topics, 'priorityIds': [row['id'] for row in topics[:3]],
             'decisions': result['agreements'], 'operatingStatus': result['operatingStatus'],
             'inputChangeNotice': '입력 수치나 공동 계획을 바꾸려면 새 라운드에서 다시 제출하세요. 기준표 제안만으로 원래 계산이나 합의가 바뀌지 않습니다.'}

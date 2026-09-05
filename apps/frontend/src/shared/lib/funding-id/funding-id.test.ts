@@ -20,7 +20,7 @@ describe("createFundingId", () => {
     const second = createFundingId(prefix);
 
     expect(first).not.toBe(second);
-    expect(first.length).toBeLessThanOrEqual(64);
-    expect(second.length).toBeLessThanOrEqual(64);
+    expect(first.length).toBeLessThanOrEqual(62);
+    expect(second.length).toBeLessThanOrEqual(62);
   });
 });

@@ -22,6 +22,6 @@ const createSuffix = () => {
 
 export const createFundingId = (prefix = "funding"): FundingId => {
   const suffix = createSuffix();
-  const safePrefix = sanitizePrefix(prefix).slice(0, Math.max(1, 63 - suffix.length));
+  const safePrefix = sanitizePrefix(prefix).slice(0, Math.max(1, 61 - suffix.length));
   return `${safePrefix}-${suffix}`;
 };

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { components } from "@/shared/api";
+import { isCalendarDate } from "@/shared/lib";
 
 const SAFE_MONEY = Number.MAX_SAFE_INTEGER;
 const STORAGE_AS_OF = "9999-12-31";
@@ -10,16 +11,32 @@ const moneySchema = z.number().int().min(0).max(SAFE_MONEY);
 const fundingIdSchema = z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/);
 const monthSchema = z.string().regex(/^[1-9][0-9]{3}-(0[1-9]|1[0-2])$/);
 
-const isCalendarDate = (value: string) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+const calendarDateSchema = z.string().refine(isCalendarDate, "유효하지 않은 날짜입니다.");
+
+const isServerDecimal = (value: string | number) => {
+  const match = value
+    .toString()
+    .match(/^([+-]?)(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$/);
+
+  if (!match) {
     return false;
   }
 
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+  const [, sign, integerDigits = "", fractionDigitsFromInteger, fractionDigitsWithoutInteger, exponentText = "0"] = match;
+  const fractionDigits = fractionDigitsFromInteger ?? fractionDigitsWithoutInteger ?? "";
+  const significantDigits = `${integerDigits}${fractionDigits}`.replace(/^0+/, "") || "0";
+  const exponent = Number.parseInt(exponentText, 10);
+  const decimalPlaces = Math.max(fractionDigits.length - exponent, 0);
+
+  return sign !== "-" || significantDigits === "0"
+    ? significantDigits.length <= 14 && decimalPlaces <= 10
+    : false;
 };
 
-const calendarDateSchema = z.string().refine(isCalendarDate, "유효하지 않은 날짜입니다.");
+const annualRateSchema = z
+  .union([z.number().min(0).finite(), z.string(), z.null()])
+  .optional()
+  .refine((value) => value == null || isServerDecimal(value), "유효하지 않은 연이율입니다.");
 
 const amountSchema = z
   .object({
@@ -51,11 +68,7 @@ const debtSchema = z
     type: z.string().min(1).max(50),
     balance: amountSchema.optional(),
     monthlyPayment: amountSchema.optional(),
-    annualRate: z.union([
-      z.number().min(0).finite(),
-      z.string().regex(/^(?!^[-+.]*$)[+-]?0*(?:\\d{0,4}|(?=[\\d.]{1,15}0*$)\\d{0,4}\\.\\d{0,10}0*$)/),
-      z.null(),
-    ]).optional(),
+    annualRate: annualRateSchema,
     remainingMonths: z.number().int().min(1).max(1200).nullable().optional(),
     repaymentType: z.enum(["equalPayment", "equalPrincipal", "bulletMaturity", "unknown"]).default("unknown"),
     disposition: z.enum(["keep", "settle"]).default("keep"),

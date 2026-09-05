@@ -29,6 +29,30 @@ describe("SharedPlanV3 request schema", () => {
     expectCode({ ...validPlan(), monthlyHousingCost: amount(null, "known") }, "AMOUNT_STATUS_MISMATCH");
   });
 
+  it.each(["1.5", "0.035", 0.035, null] as const)("accepts a server-compatible annual rate %s", (annualRate) => {
+    const result = sharedPlanV3Schema.safeParse({
+      ...validPlan(),
+      newHousingLoan: { id: "new-loan", type: "housing", annualRate },
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each(["-1", "abc"] as const)("rejects an invalid annual rate %s", (annualRate) => {
+    const result = sharedPlanV3Schema.safeParse({
+      ...validPlan(),
+      newHousingLoan: { id: "new-loan", type: "housing", annualRate },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it.each(["2026-99-99", "2026-02-31"] as const)("rejects a nonexistent calendar date %s", (fundingAsOf) => {
+    const result = sharedPlanV3Schema.safeParse({ ...validPlan(), fundingAsOf });
+
+    expect(result.success).toBe(false);
+  });
+
   it("emits BUDGET_ITEMS_REQUIRE_KNOWN_SCOPE for undisclosed common expenses", () => {
     expectCode({ ...validPlan(), commonExpensesStatus: "unknown", commonExpenses: { food: amount(100) } }, "BUDGET_ITEMS_REQUIRE_KNOWN_SCOPE");
   });

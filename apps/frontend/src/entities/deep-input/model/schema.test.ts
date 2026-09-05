@@ -43,6 +43,8 @@ describe("DeepInputV3 request schema", () => {
   it.each([
     ["AMOUNT_STATUS_MISMATCH", { housingCost: amount(null, "known") }],
     ["ITEMS_REQUIRE_KNOWN_COLLECTION", { assetsStatus: "unknown", assets: [{ id: "asset-a", kind: "cashSavings" }] }],
+    ["FUNDING_ITEMS_REQUIRE_KNOWN_COLLECTION", { funding: { sourcesStatus: "unknown", sources: [source()] } }],
+    ["FUNDING_ITEMS_REQUIRE_KNOWN_COLLECTION", { funding: { sourcesStatus: "known", settlementsStatus: "unknown", sources: [source()], settlements: [{ id: "settlement-a", debtId: "debt-a", parts: [] }] } }],
     ["DUPLICATE_FUNDING_ID", { funding: { sourcesStatus: "known", sources: [source(), source()] } }],
     ["UNKNOWN_FUNDING_REFERENCE", { funding: { sourcesStatus: "known", settlementsStatus: "known", sources: [source()], settlements: [{ id: "settlement-a", debtId: "missing", parts: [] }] } }],
     ["SETTLEMENT_PARTS_MISMATCH", { debts: [debt()], funding: { sourcesStatus: "known", settlementsStatus: "known", sources: [source()], settlements: [{ id: "settlement-a", debtId: "debt-a", amount: amount(100), parts: [{ sourceId: "source-a", amountWon: 99 }] }] } }],
@@ -53,6 +55,18 @@ describe("DeepInputV3 request schema", () => {
     ["EXTERNAL_SOURCE_DUPLICATES_ASSET", { assets: [{ id: "support-a", kind: "cashSavings" }], funding: { sourcesStatus: "known", sources: [source({ id: "support-a", kind: "support" })] } }],
   ] as const)("emits %s for the matching contract violation", (code, input) => {
     expectCode({ ...validInput(), ...input }, code);
+  });
+
+  it.each(["1.5", "0.035", 0.035, null] as const)("accepts a server-compatible annual rate %s", (annualRate) => {
+    const result = deepInputV3Schema.safeParse({ ...validInput(), debts: [debt({ annualRate })] });
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each(["-1", "abc"] as const)("rejects an invalid annual rate %s", (annualRate) => {
+    const result = deepInputV3Schema.safeParse({ ...validInput(), debts: [debt({ annualRate })] });
+
+    expect(result.success).toBe(false);
   });
 
   it("does not mirror server-only v3 allocation and settlement restrictions", () => {

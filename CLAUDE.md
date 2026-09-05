@@ -53,6 +53,7 @@ gh pr create --base develop --title "<제목>" --body "Closes #<이슈번호>
 
 - base는 항상 `develop`이다. `main`으로 직접 올리지 않는다.
 - 본문에 `Closes #<이슈번호>`를 넣어 병합 시 이슈가 자동으로 닫히게 한다.
+- 이번 작업에서 사소하지 않은 설계·코드 오류를 발견해 고쳤다면, 병합 전에 `docs/errors/`에 기록했는지 확인한다(형식은 `docs/errors/TEMPLATE.md`, 규칙은 `AGENTS.md` 참고). 오타 수준의 사소한 실수는 대상이 아니다.
 - 병합 전에 아래 검증이 전부 통과해야 한다.
 
 ~~~bash

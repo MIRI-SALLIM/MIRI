@@ -192,7 +192,7 @@ F9 (기반 · 사용자 노출 0)
 
 ### 워크플로
 
-각 단계는 워크트리에서 일반 구현은 Codex `gpt-5.6-luna` `xhigh`, F12b·F17 구현은 Codex `gpt-5.6-sol` `high` 세션이 맡고, **매번 별도의 새 Codex `gpt-5.6-sol` `high` 세션이 검증**한다. 검증은 `--deps`로 선언한 DAG 의존성이며 건너뛰지 않는다. 코디네이터가 커밋·PR을 담당한다(샌드박스가 워크트리의 `.git`을 막는다).
+각 단계는 워크트리에서 일반 구현은 Codex `gpt-5.6-luna` `xhigh`, F12b·F17 구현은 Codex `gpt-5.6-sol` `high` 세션이 맡고, **검증은 매번 별도의 Claude Sonnet `high` 세션이** 수행한다(2026-09-06 사용자 결정 — 토큰 절약). 검증 브리프는 열린 리뷰가 아니라 **확인할 주장을 지정한 체크리스트**로 쓴다. 검증은 `--deps`로 선언한 DAG 의존성이며 건너뛰지 않는다. 코디네이터가 커밋·PR을 담당한다(샌드박스가 워크트리의 `.git`을 막는다).
 
 ---
 
@@ -407,7 +407,7 @@ repoId   2aebd786-298f-4802-9bce-7692a72cb670
 워크트리 C:/Users/jhcho/orca/workspaces/MIRI_FE/<name>
 일반 구현자       codex  gpt-5.6-luna  xhigh
 F12b/F17 구현자   codex  gpt-5.6-sol   high
-검증자(매번 신규) codex  gpt-5.6-sol   high
+검증자(매번 신규) claude sonnet  high
 
 구현 세션은 자기 작업을 검증하지 않는다. F12b·F17을 제외한 구현은 Luna xhigh,
 F12b·F17 구현은 Sol high로 기동하고, 모든 검증은 구현 세션과 별개의 새 Sol high

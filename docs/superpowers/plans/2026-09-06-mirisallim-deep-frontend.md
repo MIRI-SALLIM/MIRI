@@ -298,7 +298,7 @@ apps/frontend/src/
 
 `funding.sourcesStatus`+`sources[]`(≤100) · `settlementsStatus`+`settlements[]`(≤60, `parts[]`≤100) · `afterSettlementMonthlyPayments` · `POST /deep/funding/preview`.
 
-id로 세 컬렉션이 상호참조되고 날짜축과 금액 불변식이 8개 검증자로 얽힌다. **이 계획에서 가장 폭발하기 쉬운 단계다.**
+id로 세 컬렉션이 상호참조되고 날짜축과 금액 불변식이 `validate_funding_links` 하나 안에서 검사 조건 10개로 얽힌다. **이 계획에서 가장 폭발하기 쉬운 단계다.**
 
 - 위험 완화는 F9가 이미 담당한다(`Amount` 컨트롤·zod 미러·코드 테이블·id 생성기·화이트리스트·풀 픽스처).
 - 추가 완화: **`funding/preview` 왕복을 F12a 끝에서 스켈레톤 데이터로 먼저 붙여 본다.** F12b에서 처음 연결하지 않는다.

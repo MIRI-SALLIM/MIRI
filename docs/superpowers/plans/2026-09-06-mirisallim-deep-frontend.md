@@ -93,7 +93,7 @@
 
 ### ⚠ 저장이 검증으로 실패한다 — 라이트와 다른 전제
 
-`v3_models.py:85`에서 `DeepInputV3`의 모델 검증자가 **끝에 `self.funding_request(date.max)`를 호출한다.** 즉 `FundingPreviewRequest`의 교차 검증자 8개가 **모든 `PATCH me/input`마다 실행된다.**
+`v3_models.py:85`에서 `DeepInputV3`의 모델 검증자가 **끝에 `self.funding_request(date.max)`를 호출한다.** 즉 `FundingPreviewRequest`에는 `validate_funding_links` 모델 검증자 하나가 있고, 그 안에 검사 조건 10개와 고유 오류 코드 9개가 있다. 이 검증 전체가 **모든 `PATCH me/input`마다 실행된다.**
 
 라이트의 "저장은 항상 성공하고 409만 처리하면 된다"는 전제가 여기서 깨진다. 정산을 재원보다 먼저 추가하면 `UNKNOWN_FUNDING_REFERENCE`, `sourcesStatus`를 `known`으로 올리기 전에 항목을 넣으면 `FUNDING_ITEMS_REQUIRE_KNOWN_COLLECTION`으로 **입력 중간 상태 자체가 저장 불가**다.
 
@@ -192,7 +192,7 @@ F9 (기반 · 사용자 노출 0)
 
 ### 워크플로
 
-각 단계는 워크트리에서 `codex-luna-xhigh`가 구현하고 **`codex-sol-high`가 검증**한다. 검증은 `--deps`로 선언한 DAG 의존성이며 건너뛰지 않는다. 코디네이터가 커밋·PR을 담당한다(샌드박스가 워크트리의 `.git`을 막는다).
+각 단계는 워크트리에서 일반 구현은 Codex `gpt-5.6-luna` `xhigh`, F12b·F17 구현은 Codex `gpt-5.6-sol` `high` 세션이 맡고, **검증은 매번 별도의 Claude Sonnet `high` 세션이** 수행한다(2026-09-06 사용자 결정 — 토큰 절약). 검증 브리프는 열린 리뷰가 아니라 **확인할 주장을 지정한 체크리스트**로 쓴다. 검증은 `--deps`로 선언한 DAG 의존성이며 건너뛰지 않는다. 코디네이터가 커밋·PR을 담당한다(샌드박스가 워크트리의 `.git`을 막는다).
 
 ---
 
@@ -298,7 +298,7 @@ apps/frontend/src/
 
 `funding.sourcesStatus`+`sources[]`(≤100) · `settlementsStatus`+`settlements[]`(≤60, `parts[]`≤100) · `afterSettlementMonthlyPayments` · `POST /deep/funding/preview`.
 
-id로 세 컬렉션이 상호참조되고 날짜축과 금액 불변식이 8개 검증자로 얽힌다. **이 계획에서 가장 폭발하기 쉬운 단계다.**
+id로 세 컬렉션이 상호참조되고 날짜축과 금액 불변식이 `validate_funding_links` 하나 안에서 검사 조건 10개로 얽힌다. **이 계획에서 가장 폭발하기 쉬운 단계다.**
 
 - 위험 완화는 F9가 이미 담당한다(`Amount` 컨트롤·zod 미러·코드 테이블·id 생성기·화이트리스트·풀 픽스처).
 - 추가 완화: **`funding/preview` 왕복을 F12a 끝에서 스켈레톤 데이터로 먼저 붙여 본다.** F12b에서 처음 연결하지 않는다.
@@ -405,8 +405,13 @@ npm --workspace @mirisallim/frontend run test:e2e
 repoId   2aebd786-298f-4802-9bce-7692a72cb670
 본체     C:/Users/jhcho/Documents/MIRI_FE          (브랜치 develop, 코디네이터 전용)
 워크트리 C:/Users/jhcho/orca/workspaces/MIRI_FE/<name>
-구현자   codex  gpt-5.6-luna  xhigh
-검증자   codex  gpt-5.6-sol   high
+일반 구현자       codex  gpt-5.6-luna  xhigh
+F12b/F17 구현자   codex  gpt-5.6-sol   high
+검증자(매번 신규) claude sonnet  high
+
+구현 세션은 자기 작업을 검증하지 않는다. F12b·F17을 제외한 구현은 Luna xhigh로,
+F12b·F17 구현은 Sol high로 워크트리에 기동한다. 검증은 워크트리에 기동하지 않고
+코디네이터가 매번 새 Claude Sonnet high 세션으로 수행한다.
 ~~~
 
 `orca repo list`로 확인한 것: `setupAgentStartupPolicy`가 `start-immediately`라 2단계 custom-argv 경로가 허용된다. `worktreeBaseRef`는 `origin/develop`. `scripts.setup`이 **비어 있어 `--setup run`을 줘도 아무것도 설치되지 않는다** — `npm ci`는 수동이다.
@@ -476,16 +481,19 @@ orca orchestration task-create --run "$RUN" --task-title "F9 검증" --deps "[\"
 **7. 에이전트 기동.** 만들기 전에 `orca terminal list --worktree <selector>`로 기존 터미널을 확인한다. 생성 명령은 멱등하지 않다.
 
 ~~~bash
-orca terminal create --worktree id:<repoId>::<워크트리> --title deep-f9-foundation --json \
+# F12b/F17 이외의 구현 단계: gpt-5.6-luna xhigh
+orca terminal create --worktree id:<repoId>::<워크트리> --title <단계>-implementation --json \
   --command 'codex -a never -s workspace-write --model gpt-5.6-luna -c model_reasoning_effort="xhigh"'
 orca orchestration dispatch --task "$IMPL" --to <handle> --inject --json
 ~~~
 
-검증은 같은 워크트리에 별도 터미널로 띄운다.
+F12b 또는 F17 구현은 위 명령의 모델과 effort만 `gpt-5.6-sol`·`high`로 바꾼다.
+**검증은 워크트리에 터미널을 띄우지 않는다.** 코디네이터가 매번 새 Claude Sonnet `high`
+세션으로 수행한다. 구현 세션을 검증에 재사용하지 않는다는 원칙은 그대로다.
 
-~~~bash
---command 'codex -a never -s workspace-write --model gpt-5.6-sol -c model_reasoning_effort="high"'
-~~~
+검증 브리프는 **확인할 주장을 지정한 체크리스트**로 쓴다. "전체를 검토하라"가 아니라
+"이 주장이 코드와 맞는지 확인하라"로 적어야 검증자의 깊이에 의존하지 않는다.
+게이트 5종은 모델과 무관한 기계적 사실이므로 검증자가 직접 실행한다.
 
 `worktree create`가 남기는 빈 `Terminal 1` fallback 셸은 `preview`가 빈 프롬프트인 것을 확인한 뒤 `orca terminal close`로 닫는다.
 

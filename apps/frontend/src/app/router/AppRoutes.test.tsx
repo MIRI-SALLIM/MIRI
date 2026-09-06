@@ -21,6 +21,8 @@ function renderRoute(path: string) {
 
 const routeCases = [
   ["/", "서로의 돈을 이해하면 미래가 더 선명해져요"],
+  ["/about", "서비스 소개"],
+  ["/sample", "샘플 리포트"],
   ["/light/1", "가볍게 맞춰보기"],
   ["/invite/INV-A", "초대 참여"],
   ["/waiting/session-a", "상대방을 기다리는 중"],

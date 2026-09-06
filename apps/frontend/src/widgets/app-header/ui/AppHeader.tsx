@@ -1,12 +1,11 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { useWindowWidth } from "@/shared/lib";
 
 const navigationItems = [
-  { href: "#about", label: "서비스 소개" },
-  { href: "#how", label: "이용 가이드" },
-  { href: "#sample", label: "샘플 리포트" },
-  { href: "#faq", label: "FAQ" },
+  { to: "/about", label: "서비스 소개" },
+  { to: "/sample", label: "샘플 리포트" },
 ] as const;
 
 function LogoMark() {
@@ -36,26 +35,26 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-canvas/[0.92] backdrop-blur-lg [line-height:normal]">
       <div className="mx-auto flex h-[68px] max-h-[70px] max-w-[1200px] items-center gap-6 px-6">
-        <a
+        <Link
           aria-label="미리살림 홈"
           className="flex items-center gap-2.5 rounded-lg text-ink focus-visible:shadow-focus"
-          href="#top"
+          to="/"
         >
           <LogoMark />
           <span className="text-[21px] font-bold tracking-[-0.01em]">미리살림</span>
-        </a>
+        </Link>
 
         {isDesktop ? (
           <>
             <nav aria-label="주요 메뉴" className="ml-auto flex items-center gap-9">
-              {navigationItems.map(({ href, label }) => (
-                <a
+              {navigationItems.map(({ to, label }) => (
+                <Link
                   className="rounded-md text-[15.5px] font-medium text-ink-muted transition-colors duration-[160ms] ease-smooth hover:text-ink focus-visible:shadow-focus"
-                  href={href}
+                  to={to}
                   key={label}
                 >
                   {label}
-                </a>
+                </Link>
               ))}
             </nav>
             <a
@@ -87,15 +86,15 @@ export function AppHeader() {
           className="border-t border-border bg-card px-6 pb-[18px] pt-2"
           id="mobile-navigation"
         >
-          {navigationItems.map(({ href, label }) => (
-            <a
+          {navigationItems.map(({ to, label }) => (
+            <Link
               className="flex min-h-12 items-center rounded-md text-base font-medium leading-[normal] text-ink focus-visible:shadow-focus"
-              href={href}
+              to={to}
               key={label}
               onClick={() => setIsMenuOpen(false)}
             >
               {label}
-            </a>
+            </Link>
           ))}
           <a
             className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-[14px] border border-border bg-card text-base font-semibold leading-[normal] text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus"

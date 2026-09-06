@@ -100,7 +100,7 @@ test("core light controls remain keyboard reachable with visible focus", async (
   test.setTimeout(90_000);
   await page.goto("/");
 
-  const startButton = page.getByRole("button", { name: "가볍게 맞춰보기 시작하기" });
+  const startButton = page.getByRole("button", { name: "가볍게 맞춰보기" });
   await tabUntilFocused(page, startButton);
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "가볍게 맞춰보기" })).toBeVisible();

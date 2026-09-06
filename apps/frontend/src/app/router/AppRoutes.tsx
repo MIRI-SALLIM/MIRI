@@ -7,6 +7,12 @@ import { AppLayout } from "./AppLayout";
 import { RouteLoadingFallback } from "./RouteLoadingFallback";
 
 const LandingPage = lazy(async () => ({ default: (await import("@/pages/landing")).LandingPage }));
+const ServiceIntroductionPage = lazy(async () => ({
+  default: (await import("@/pages/service-introduction")).ServiceIntroductionPage,
+}));
+const SampleReportPage = lazy(async () => ({
+  default: (await import("@/pages/sample-report")).SampleReportPage,
+}));
 const LightFormPage = lazy(async () => ({ default: (await import("@/pages/light-form")).LightFormPage }));
 const InvitePage = lazy(async () => ({ default: (await import("@/pages/invite")).InvitePage }));
 const WaitingPage = lazy(async () => ({ default: (await import("@/pages/waiting")).WaitingPage }));
@@ -56,6 +62,8 @@ export function AppRoutes() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<LandingPage />} />
+          <Route path="about" element={<ServiceIntroductionPage />} />
+          <Route path="sample" element={<SampleReportPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="deep" element={<DeepRouteLayout />}>
             <Route index element={<DeepEntryPage />} />

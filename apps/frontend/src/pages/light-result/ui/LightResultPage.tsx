@@ -5,8 +5,35 @@ import { ApiError } from "@/shared/api";
 import { ResultComparison } from "@/widgets/result-comparison";
 import { ResultSummary } from "@/widgets/result-summary";
 import { ResultTopics } from "@/widgets/result-topics";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const pageClassName = "mx-auto flex w-full max-w-4xl flex-col gap-12 px-5 py-14 sm:px-8 sm:py-20";
+
+function LightResultLoadingSkeleton() {
+  return (
+    <div className="space-y-6" aria-hidden="true">
+      <div className="space-y-3">
+        <Skeleton className="h-6 w-28" />
+        <Skeleton className="h-10 w-44" />
+        <Skeleton className="h-5 w-3/4" />
+      </div>
+      <div className="rounded-card border border-border bg-card p-6 sm:p-8">
+        <div className="space-y-4">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-3 w-full" />
+        </div>
+      </div>
+      <div className="space-y-4">
+        <Skeleton className="h-7 w-40" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-36 w-full" />
+          <Skeleton className="h-36 w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ResultError({ error }: { error: unknown }) {
   const message = error instanceof ApiError && error.kind === "expired"
@@ -34,7 +61,8 @@ export function LightResultPage() {
     return (
       <section aria-live="polite" className={pageClassName}>
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">라이트 결과</h1>
-        <p className="text-sm text-ink-muted">결과를 불러오는 중이에요.</p>
+        <p className="sr-only" role="status">결과를 불러오는 중이에요.</p>
+        <LightResultLoadingSkeleton />
       </section>
     );
   }

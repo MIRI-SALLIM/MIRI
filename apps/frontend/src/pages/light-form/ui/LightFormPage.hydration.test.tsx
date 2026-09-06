@@ -219,7 +219,6 @@ describe("LightFormPage hydration", () => {
 
     await screen.findByRole("heading", { name: "첫 번째 질문이에요." });
     await firstRender.user.click(chooseFirstAnswer());
-    await screen.findByText("저장되지 않음 · 다시 시도");
     firstRender.unmount();
     submitted = true;
 

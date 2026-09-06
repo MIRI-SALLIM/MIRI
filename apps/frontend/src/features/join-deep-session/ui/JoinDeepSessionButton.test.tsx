@@ -55,6 +55,7 @@ it("reuses the same logical join key when the response is lost", async () => {
     (fetchMock.mock.calls[0][0] as Request).headers.get("Idempotency-Key"),
   );
   expect(sessionStorage.getItem("deepActiveSessionId")).toBe(session.id);
+  expect(sessionStorage.getItem("deepActiveSessionRole")).toBe("B");
 });
 
 it.each([

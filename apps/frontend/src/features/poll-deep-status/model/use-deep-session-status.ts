@@ -20,8 +20,16 @@ const getTerminalError = (error: unknown): DeepStatusTerminalError => {
     return null;
   }
 
-  if (error.kind === "expired" || error.kind === "unauthorized" || error.kind === "not-found") {
-    return error.kind;
+  if (error.status === 401) {
+    return "unauthorized";
+  }
+
+  if (error.status === 404) {
+    return "not-found";
+  }
+
+  if (error.status === 410) {
+    return "expired";
   }
 
   return null;

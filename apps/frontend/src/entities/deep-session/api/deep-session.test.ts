@@ -4,9 +4,11 @@ import {
   clearActiveDeepSessionId,
   createDeepSession,
   DEEP_ACTIVE_SESSION_STORAGE_KEY,
+  DEEP_ACTIVE_SESSION_ROLE_STORAGE_KEY,
   fetchDeepSessionStatus,
   joinDeepSession,
   readActiveDeepSessionId,
+  readActiveDeepSessionRole,
   saveActiveDeepSessionId,
   submitDeepSession,
   withdrawDeepSession,
@@ -102,15 +104,20 @@ describe("deep session API", () => {
 
 describe("active deep session storage", () => {
   it("stores only the public session id and clears it without touching another session", () => {
-    saveActiveDeepSessionId("session-a");
+    saveActiveDeepSessionId("session-a", "A");
     expect(readActiveDeepSessionId()).toBe("session-a");
+    expect(readActiveDeepSessionRole()).toBe("A");
     expect(sessionStorage.getItem(DEEP_ACTIVE_SESSION_STORAGE_KEY)).toBe("session-a");
+    expect(sessionStorage.getItem(DEEP_ACTIVE_SESSION_ROLE_STORAGE_KEY)).toBe("A");
+    expect(sessionStorage).toHaveLength(2);
 
     clearActiveDeepSessionId("session-b");
     expect(readActiveDeepSessionId()).toBe("session-a");
+    expect(readActiveDeepSessionRole()).toBe("A");
 
     clearActiveDeepSessionId("session-a");
     expect(readActiveDeepSessionId()).toBeNull();
+    expect(readActiveDeepSessionRole()).toBeNull();
   });
 
   it("does not fail the successful session flow when storage is blocked", () => {
@@ -118,7 +125,7 @@ describe("active deep session storage", () => {
       throw new Error("storage blocked");
     });
 
-    expect(() => saveActiveDeepSessionId("session-a")).not.toThrow();
+    expect(() => saveActiveDeepSessionId("session-a", "A")).not.toThrow();
     expect(readActiveDeepSessionId()).toBeNull();
 
     setItem.mockRestore();

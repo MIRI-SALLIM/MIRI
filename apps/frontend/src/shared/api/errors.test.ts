@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ApiError,
+  createApiError,
   isApiErrorCode,
   isDeepApiErrorCode,
   isTerminalApiError,
@@ -11,8 +12,15 @@ import {
 const apiError = (status: number | null) => new ApiError({ status, code: null, kind: "unknown" });
 
 describe("API retry policy", () => {
-  it.each([401, 404, 409, 410, 422, 429])("does not retry a %i response", (status) => {
+  it.each([401, 403, 404, 409, 410, 422, 429])("does not retry a %i response", (status) => {
     expect(shouldRetryQuery(0, apiError(status))).toBe(false);
+  });
+
+  it("maps a bare 403 response to forbidden", () => {
+    const error = createApiError(new Response(null, { status: 403 }), undefined);
+
+    expect(error.kind).toBe("forbidden");
+    expect(shouldRetryQuery(0, error)).toBe(false);
   });
 
   it("retries network and 5xx failures at most twice", () => {

@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, expect, it, vi } from "vitest";
 
+import { deepSessionInvitationQueryKey } from "@/entities/deep-session";
+
 import { WithdrawDeepSessionButton } from "./WithdrawDeepSessionButton";
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
@@ -23,8 +25,10 @@ it("requires confirmation before closing a session and clears its public id", as
     new Response(JSON.stringify({ status: "closed" }), { headers: { "content-type": "application/json" } }),
   );
   const user = userEvent.setup();
+  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  queryClient.setQueryData(deepSessionInvitationQueryKey("deep-session-a"), { invitationCode: "INV-DEEP-A" });
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
+    <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={["/deep/waiting/deep-session-a"]}>
         <Routes>
           <Route element={<WithdrawDeepSessionButton sessionId="deep-session-a" />} path="/deep/waiting/:sessionId" />
@@ -42,4 +46,5 @@ it("requires confirmation before closing a session and clears its public id", as
 
   expect(await screen.findByRole("heading", { name: "딥모드 시작" })).toBeInTheDocument();
   expect(sessionStorage.getItem("deepActiveSessionId")).toBeNull();
+  expect(queryClient.getQueryData(deepSessionInvitationQueryKey("deep-session-a"))).toBeUndefined();
 });

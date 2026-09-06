@@ -28,10 +28,8 @@ export function StartDeepSessionButton() {
     },
     onSuccess: async (session) => {
       attemptKey.current = null;
-      saveActiveDeepSessionId(session.id);
-      navigate(
-        `/deep/waiting/${encodeURIComponent(session.id)}?inviteCode=${encodeURIComponent(session.invitationCode)}&role=${session.role}`,
-      );
+      saveActiveDeepSessionId(session.id, session.role);
+      navigate(`/deep/waiting/${encodeURIComponent(session.id)}`);
     },
   });
 

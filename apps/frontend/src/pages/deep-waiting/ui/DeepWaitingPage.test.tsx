@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DEEP_ACTIVE_SESSION_ROLE_STORAGE_KEY } from "@/entities/deep-session";
+
 import { DeepWaitingPage } from "./DeepWaitingPage";
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
@@ -20,18 +22,26 @@ const status = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-function mockStatus(body: Record<string, unknown>) {
+function mockStatus(body: Record<string, unknown>, invitationCode = "INVITE-1") {
   fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = input instanceof Request ? input.clone() : new Request(input, init);
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/api/v1/deep/v3/sessions/session-a/status") {
       return new Response(JSON.stringify(body), { headers: { "content-type": "application/json" }, status: 200 });
     }
+    if (request.method === "GET" && url.pathname === "/api/v1/deep/v3/sessions/session-a/invitation") {
+      return new Response(JSON.stringify({ invitationCode }), { headers: { "content-type": "application/json" }, status: 200 });
+    }
     throw new Error(`Unexpected request: ${request.method} ${url.pathname}`);
   });
 }
 
-function renderWaiting(search = "?inviteCode=INVITE-1&role=A") {
+function renderWaiting(search = "", role: "A" | "B" | null = "A") {
+  if (role !== null) {
+    sessionStorage.setItem(DEEP_ACTIVE_SESSION_ROLE_STORAGE_KEY, role);
+  } else {
+    sessionStorage.removeItem(DEEP_ACTIVE_SESSION_ROLE_STORAGE_KEY);
+  }
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return {
     user: userEvent.setup(),
@@ -109,19 +119,32 @@ describe("DeepWaitingPage", () => {
 
   it("does not show an invitation card to the joined participant", async () => {
     mockStatus(status());
-    renderWaiting("?inviteCode=INVITE-1&role=B");
+    renderWaiting("", "B");
 
     expect(await screen.findByRole("heading", { name: "지금 시작할 수 있어요" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "상대를 초대해요" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("deep-invite-url")).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.map(([input]) => new URL((input as Request).url).pathname)).toEqual([
+      "/api/v1/deep/v3/sessions/session-a/status",
+    ]);
   });
 
-  it("explains when the creator has no invitation URL to share", async () => {
+  it("loads the invitation URL for an unknown role only after the user asks", async () => {
     mockStatus(status());
-    renderWaiting("?role=A");
+    const { user } = renderWaiting("", null);
 
-    expect(await screen.findByRole("heading", { name: "초대 링크를 다시 만들 수 없어요" })).toBeInTheDocument();
-    expect(screen.getByText(/현재 세션을 닫으면/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "초대 링크 불러오기" })).toBeInTheDocument();
+    expect(fetchMock.mock.calls.map(([input]) => new URL((input as Request).url).pathname)).toEqual([
+      "/api/v1/deep/v3/sessions/session-a/status",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "초대 링크 불러오기" }));
+
+    expect(await screen.findByTestId("deep-invite-url")).toHaveTextContent("/deep/invite/INVITE-1");
+    expect(fetchMock.mock.calls.map(([input]) => new URL((input as Request).url).pathname)).toEqual([
+      "/api/v1/deep/v3/sessions/session-a/status",
+      "/api/v1/deep/v3/sessions/session-a/invitation",
+    ]);
   });
 
   it("offers a login path when the status request is unauthorized", async () => {
@@ -152,11 +175,10 @@ describe("DeepWaitingPage", () => {
 
   it("keeps a role-unknown resumed session neutral", async () => {
     mockStatus(status());
-    renderWaiting("?inviteCode=INVITE-1");
+    renderWaiting("", null);
 
     expect(await screen.findByRole("heading", { name: "지금 시작할 수 있어요" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "상대를 초대해요" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "초대 링크를 다시 만들 수 없어요" })).not.toBeInTheDocument();
     expect(screen.queryByText(/상대를 초대하고/)).not.toBeInTheDocument();
   });
 });

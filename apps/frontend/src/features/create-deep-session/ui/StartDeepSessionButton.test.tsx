@@ -44,7 +44,7 @@ function WaitingRoute() {
   return <h1 data-testid="waiting-location">{location.pathname}{location.search}</h1>;
 }
 
-it("creates a session, preserves the invitation in the URL, and stores only its id", async () => {
+it("creates a session, removes the invitation from the URL, and stores its id and role", async () => {
   fetchMock.mockResolvedValue(
     new Response(JSON.stringify(session), { headers: { "content-type": "application/json" }, status: 201 }),
   );
@@ -54,10 +54,11 @@ it("creates a session, preserves the invitation in the URL, and stores only its 
   await user.click(screen.getByRole("button", { name: "딥 세션 시작하기" }));
 
   expect(await screen.findByTestId("waiting-location")).toHaveTextContent(
-    "/deep/waiting/deep-session-a?inviteCode=INV-DEEP-A&role=A",
+    "/deep/waiting/deep-session-a",
   );
-  expect(sessionStorage).toHaveLength(1);
+  expect(sessionStorage).toHaveLength(2);
   expect(sessionStorage.getItem("deepActiveSessionId")).toBe(session.id);
+  expect(sessionStorage.getItem("deepActiveSessionRole")).toBe("A");
   const request = fetchMock.mock.calls[0][0] as Request;
   expect(request.headers.get("Idempotency-Key")).toBeTruthy();
 });

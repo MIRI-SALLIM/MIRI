@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+import { AccountAvatar, useAccount, type AccountStatus } from "@/entities/account";
 import { useWindowWidth } from "@/shared/lib";
 
 const navigationItems = [
@@ -28,9 +29,66 @@ function LogoMark() {
   );
 }
 
+function AccountLink({ account, mobile, onNavigate }: { account: AccountStatus; mobile?: boolean; onNavigate?: () => void }) {
+  const label = account.displayName?.trim() || "내 정보";
+
+  return (
+    <Link
+      aria-label={label}
+      className={mobile
+        ? "flex min-h-[52px] w-full items-center gap-3 rounded-[14px] border border-border bg-card px-4 text-base font-semibold leading-[normal] text-ink focus-visible:shadow-focus"
+        : "inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-card px-3.5 text-[15px] font-semibold text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus"}
+      onClick={onNavigate}
+      to="/me"
+    >
+      <AccountAvatar
+        displayName={account.displayName}
+        key={account.profileImageUrl ?? "no-profile-image"}
+        profileImageUrl={account.profileImageUrl}
+      />
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+function AccountPlaceholder({ mobile }: { mobile?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={mobile ? "mt-3 block h-[52px] w-full rounded-[14px] bg-border/50" : "block h-[42px] w-[92px] rounded-full bg-border/50"}
+      data-testid="account-placeholder"
+    />
+  );
+}
+
+function AccountAffordance({ account, mobile, onNavigate }: { account: AccountStatus; mobile?: boolean; onNavigate?: () => void }) {
+  const className = mobile
+    ? "mt-3 flex min-h-[52px] w-full items-center justify-center rounded-[14px] border border-border bg-card text-base font-semibold leading-[normal] text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus"
+    : "inline-flex min-h-[42px] items-center rounded-full border border-border bg-card px-5 text-[15px] font-semibold text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus";
+
+  if (account.state === "disabled") {
+    return null;
+  }
+
+  if (account.state === "loading") {
+    return <AccountPlaceholder mobile={mobile} />;
+  }
+
+  if (account.state === "authenticated") {
+    return <AccountLink account={account} mobile={mobile} onNavigate={onNavigate} />;
+  }
+
+  return (
+    <Link className={className} onClick={onNavigate} to="/login">
+      로그인
+    </Link>
+  );
+}
+
 export function AppHeader() {
   const isDesktop = useWindowWidth() >= 900;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const account = useAccount();
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-canvas/[0.92] backdrop-blur-lg [line-height:normal]">
@@ -57,12 +115,7 @@ export function AppHeader() {
                 </Link>
               ))}
             </nav>
-            <a
-              className="inline-flex min-h-[42px] items-center rounded-full border border-border bg-card px-5 text-[15px] font-semibold text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus"
-              href="/login"
-            >
-              로그인
-            </a>
+            <AccountAffordance account={account} />
           </>
         ) : (
           <button
@@ -96,13 +149,7 @@ export function AppHeader() {
               {label}
             </Link>
           ))}
-          <a
-            className="mt-3 flex min-h-[52px] w-full items-center justify-center rounded-[14px] border border-border bg-card text-base font-semibold leading-[normal] text-ink transition-colors duration-[160ms] ease-smooth hover:border-green hover:text-green-strong focus-visible:shadow-focus"
-            href="/login"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            로그인
-          </a>
+          <AccountAffordance account={account} mobile onNavigate={() => setIsMenuOpen(false)} />
         </nav>
       ) : null}
     </header>

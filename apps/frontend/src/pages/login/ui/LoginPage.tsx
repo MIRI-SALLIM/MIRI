@@ -1,6 +1,6 @@
 import { Navigate, useSearchParams } from "react-router-dom";
 
-import { useAccount } from "@/entities/account";
+import { useAccount, useAuthProviders } from "@/entities/account";
 import { KakaoLoginButton } from "@/features/kakao-login";
 
 // 기본 도착지는 랜딩이다. 헤더의 "로그인"은 모든 화면에 있으므로 여기서 /deep으로 보내면
@@ -18,6 +18,7 @@ const safeReturnTo = (value: string | null): string => {
 
 export function LoginPage() {
   const { state } = useAccount();
+  const { kakao } = useAuthProviders();
   const [searchParams] = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
 
@@ -48,6 +49,8 @@ export function LoginPage() {
         <p className="rounded-control border border-border-control bg-card p-4 text-ink-muted" role="alert">
           로그인 상태를 확인할 수 없어요. 잠시 후 다시 시도해 주세요.
         </p>
+      ) : kakao === false ? (
+        <KakaoLoginButton disabled disabledReason="현재 카카오 로그인을 사용할 수 없어요." />
       ) : (
         <KakaoLoginButton returnTo={returnTo} />
       )}

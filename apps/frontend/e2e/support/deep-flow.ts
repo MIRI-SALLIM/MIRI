@@ -45,5 +45,10 @@ export async function joinDeepSession(page: Page, inviteUrl: string): Promise<vo
   await page.goto(inviteUrl);
   await expect(page.getByRole("heading", { name: "딥 모드 초대 참여" })).toBeVisible();
   await page.getByRole("button", { name: "딥 세션 참여하기" }).click();
-  await expect(page.getByRole("heading", { name: "딥 세션이 열렸어요" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "딥 세션에 참여했어요" })).toBeVisible();
+
+  const waitingUrl = new URL(page.url());
+  expect(waitingUrl.searchParams.get("role")).toBe("B");
+  await expect(page.getByRole("heading", { name: "상대를 초대해요" })).toHaveCount(0);
+  await expect(page.getByTestId("deep-invite-url")).toHaveCount(0);
 }

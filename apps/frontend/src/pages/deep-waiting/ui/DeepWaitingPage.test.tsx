@@ -110,7 +110,10 @@ describe("DeepWaitingPage", () => {
     renderWaiting();
 
     expect(await screen.findByRole("heading", { name: "로그인이 만료됐어요" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "로그인하기" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "로그인하기" })).toHaveAttribute(
+      "href",
+      "/login?returnTo=%2Fdeep%2Fwaiting%2Fsession-a",
+    );
     expect(screen.queryByText(/자동으로 다시 확인/)).not.toBeInTheDocument();
   });
 
@@ -121,5 +124,15 @@ describe("DeepWaitingPage", () => {
     expect(await screen.findByRole("heading", { name: "세션 상태를 불러오지 못했어요" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "다시 확인하기" })).toBeInTheDocument();
     expect(screen.queryByText(/자동으로 다시 확인/)).not.toBeInTheDocument();
+  });
+
+  it("keeps a role-unknown resumed session neutral", async () => {
+    mockStatus(status());
+    renderWaiting("?inviteCode=INVITE-1");
+
+    expect(await screen.findByRole("heading", { name: "지금 시작할 수 있어요" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "상대를 초대해요" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "초대 링크를 다시 만들 수 없어요" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/상대를 초대하고/)).not.toBeInTheDocument();
   });
 });

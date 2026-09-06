@@ -117,6 +117,12 @@ export function DeepWaitingPage() {
                 ? "내 제출은 끝났어요. 상대의 제출을 기다리고 있어요."
                 : "계획과 내 현황은 상대를 기다리지 않고 채울 수 있어요."}
           </p>
+          <Link
+            className="inline-flex min-h-12 w-fit items-center justify-center rounded-control border border-purple-strong bg-purple-strong px-5 py-3 font-bold text-white transition-colors hover:bg-[#563C96] focus-visible:shadow-focus"
+            to={`/deep/plan/${encodeURIComponent(sessionId)}`}
+          >
+            공동 계획 시작하기
+          </Link>
         </div>
       )}
 

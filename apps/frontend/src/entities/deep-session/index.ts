@@ -11,3 +11,5 @@ export {
   withdrawDeepSession,
 } from "./api/deep-session";
 export type { ClosedDeepSession, DeepSessionStatus, DeepSubmitRequest, SessionV3 } from "./api/deep-session";
+export { deepRoundStateQueryKey, fetchDeepRoundState } from "./api/deep-round";
+export type { DeepRoundState } from "./api/deep-round";

@@ -98,6 +98,7 @@ describe("DeepResultPage", () => {
     expect(screen.getByText("현재 합의가 아닌 제출한 의향을 기준으로 계산해요.")).toBeInTheDocument();
     expect(screen.getByText(serverLimitations.notice)).toBeInTheDocument();
     expect(screen.queryByText(/templates_only|unavailable|submitted_intentions_not_current_agreement|machine_token_should_be_skipped|sharing_not_authorized|UNKNOWN_SERVER_CODE/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "우리 돈의 기준표" })).toHaveAttribute("href", "/deep/agreements/session-a");
     expect(screen.getByRole("link", { name: "질문 다시 보기" })).toHaveAttribute("href", "/deep/questions/session-a");
   });
 });

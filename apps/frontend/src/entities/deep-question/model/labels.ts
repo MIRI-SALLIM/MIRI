@@ -41,3 +41,35 @@ export const deepConstraintAllowBorrowingLabels = {
   false: "허용하지 않음",
   null: "미입력",
 } as const;
+
+export const deepAgreementTopicLabels = {
+  monthlyContribution: "월 분담",
+  housingFunding: "주거자금",
+  savings: "저축",
+  spending: "소비",
+  investment: "투자",
+  debt: "부채",
+  jointManagement: "공동관리",
+  other: "기타",
+} as const;
+
+export const deepAgreementOwnerLabels = {
+  A: "A",
+  B: "B",
+  both: "둘 다",
+} as const;
+
+export const deepCommonCategoryLabels = {
+  housing: "주거",
+  food: "식비",
+  transport: "교통",
+  subscriptions: "구독",
+  gifts: "경조사·선물",
+  other: "기타",
+} as const;
+
+export const deepAgreementStatusLabels = {
+  proposed: "제안됨",
+  agreed: "둘 다 확인",
+  deferred: "보류",
+} as const;

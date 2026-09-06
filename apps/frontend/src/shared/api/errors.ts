@@ -18,6 +18,7 @@ export const deepApiErrorCodes = [
   "PLAN_LOCKED",
   "ROUND_VERSION_CONFLICT",
   "AGREEMENT_VERSION_CONFLICT",
+  "PUBLICATION_NOT_READY",
   "IDEMPOTENCY_CONFLICT",
   "SELF_INVITATION",
   "SESSION_FULL",
@@ -25,6 +26,18 @@ export const deepApiErrorCodes = [
   "INVALID_DEEP_INPUT",
   "INPUT_INCOMPLETE",
   "DEEP_UNAVAILABLE",
+  "MEETING_REPORT_NOT_READY",
+  "MEETING_FINANCE_NOT_SHARED",
+  "MEETING_AI_CONSENT_REQUIRED",
+  "MEETING_ANSWERS_REQUIRED",
+  "MEETING_KNOWN_CONTRIBUTION_REQUIRED",
+  "MEETING_ADJUSTMENT_BELOW_PROPOSAL",
+  "MEETING_PLANNING_UNAVAILABLE",
+  "MEETING_EVIDENCE_INVALID",
+  "MEETING_BUDGET_NOT_READY",
+  "MEETING_GROUNDING_INVALID",
+  "AI_REQUIRES_PARTNER_SHARING",
+  "ADJUSTMENT_REQUIRES_INITIAL_PROPOSAL",
 ] as const;
 
 export type DeepApiErrorCode = (typeof deepApiErrorCodes)[number];
@@ -76,6 +89,7 @@ const codeKinds: Record<string, ApiErrorKind> = {
   PLAN_LOCKED: "conflict",
   ROUND_VERSION_CONFLICT: "conflict",
   AGREEMENT_VERSION_CONFLICT: "conflict",
+  PUBLICATION_NOT_READY: "conflict",
   IDEMPOTENCY_CONFLICT: "conflict",
   SELF_INVITATION: "conflict",
   SESSION_FULL: "conflict",
@@ -83,6 +97,18 @@ const codeKinds: Record<string, ApiErrorKind> = {
   INVALID_DEEP_INPUT: "validation",
   INPUT_INCOMPLETE: "validation",
   DEEP_UNAVAILABLE: "unavailable",
+  MEETING_REPORT_NOT_READY: "conflict",
+  MEETING_FINANCE_NOT_SHARED: "conflict",
+  MEETING_AI_CONSENT_REQUIRED: "conflict",
+  MEETING_ANSWERS_REQUIRED: "conflict",
+  MEETING_KNOWN_CONTRIBUTION_REQUIRED: "validation",
+  MEETING_ADJUSTMENT_BELOW_PROPOSAL: "validation",
+  MEETING_PLANNING_UNAVAILABLE: "unavailable",
+  MEETING_EVIDENCE_INVALID: "unavailable",
+  MEETING_BUDGET_NOT_READY: "conflict",
+  MEETING_GROUNDING_INVALID: "unavailable",
+  AI_REQUIRES_PARTNER_SHARING: "validation",
+  ADJUSTMENT_REQUIRES_INITIAL_PROPOSAL: "validation",
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

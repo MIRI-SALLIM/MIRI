@@ -18,9 +18,33 @@ const LoginPage = lazy(async () => ({ default: (await import("@/pages/login")).L
 const DeepEntryPage = lazy(async () => ({
   default: (await import("@/pages/deep-entry")).DeepEntryPage,
 }));
-const DeepPlaceholderPage = lazy(async () => ({
-  default: (await import("@/pages/deep-placeholder")).DeepPlaceholderPage,
+const DeepInvitePage = lazy(async () => ({
+  default: (await import("@/pages/deep-invite")).DeepInvitePage,
 }));
+const DeepWaitingPage = lazy(async () => ({
+  default: (await import("@/pages/deep-waiting")).DeepWaitingPage,
+}));
+const DeepPlanPage = lazy(async () => ({
+  default: (await import("@/pages/deep-plan")).DeepPlanPage,
+}));
+const DeepInputPage = lazy(async () => ({
+  default: (await import("@/pages/deep-input")).DeepInputPage,
+}));
+const DeepQuestionsPage = lazy(async () => ({
+  default: (await import("@/pages/deep-questions")).DeepQuestionsPage,
+}));
+const DeepSubmitPage = lazy(() =>
+  import("@/pages/deep-submit").then(({ DeepSubmitPage: page }) => ({ default: page })),
+);
+const DeepResultPage = lazy(() =>
+  import("@/pages/deep-result").then(({ DeepResultPage: page }) => ({ default: page })),
+);
+const DeepAgreementsPage = lazy(() =>
+  import("@/pages/deep-agreements").then(({ DeepAgreementsPage: page }) => ({ default: page })),
+);
+const DeepMeetingPage = lazy(() =>
+  import("@/pages/deep-meeting").then(({ DeepMeetingPage: page }) => ({ default: page })),
+);
 
 function DeepRouteLayout() {
   return <Outlet />;
@@ -35,14 +59,15 @@ export function AppRoutes() {
           <Route path="login" element={<LoginPage />} />
           <Route path="deep" element={<DeepRouteLayout />}>
             <Route index element={<DeepEntryPage />} />
-            <Route path="invite/:code" element={<DeepPlaceholderPage />} />
-            <Route path="plan/:sessionId" element={<DeepPlaceholderPage />} />
-            <Route path="input/:sessionId" element={<DeepPlaceholderPage />} />
-            <Route path="questions/:sessionId" element={<DeepPlaceholderPage />} />
-            <Route path="waiting/:sessionId" element={<DeepPlaceholderPage />} />
-            <Route path="result/:sessionId" element={<DeepPlaceholderPage />} />
-            <Route path="agreements/:sessionId" element={<DeepPlaceholderPage />} />
-            <Route path="meeting/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="invite/:code" element={<DeepInvitePage />} />
+            <Route path="plan/:sessionId" element={<DeepPlanPage />} />
+            <Route path="input/:sessionId" element={<DeepInputPage />} />
+            <Route path="questions/:sessionId" element={<DeepQuestionsPage />} />
+            <Route path="submit/:sessionId" element={<DeepSubmitPage />} />
+            <Route path="waiting/:sessionId" element={<DeepWaitingPage />} />
+            <Route path="result/:sessionId" element={<DeepResultPage />} />
+            <Route path="agreements/:sessionId" element={<DeepAgreementsPage />} />
+            <Route path="meeting/:sessionId" element={<DeepMeetingPage />} />
           </Route>
           <Route path="light/:step" element={<LightFormPage />} />
           <Route path="invite/:code" element={<InvitePage />} />

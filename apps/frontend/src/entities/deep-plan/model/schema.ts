@@ -9,6 +9,7 @@ const knowledgeSchema = z.enum(["known", "unknown", "withheld"]);
 const fundingIdSchema = z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/);
 const monthSchema = z.string().regex(/^[1-9][0-9]{3}-(0[1-9]|1[0-2])$/);
 const calendarDateSchema = z.string().refine(isCalendarDate, "유효하지 않은 날짜입니다.");
+const commonExpenseCategorySchema = z.enum(["housing", "food", "transport", "subscriptions", "gifts", "other"]);
 
 // apps/backend/deep/schemas.py 의 DebtInput.annualRate 제약이다.
 const ANNUAL_RATE_LIMITS = { maxDigits: 14, decimalPlaces: 10 } as const;
@@ -76,7 +77,7 @@ const sharedPlanObjectSchema = z
     target: goalSchema.nullable().optional(),
     fundingDeadlines: deadlineSchema.array().max(120).optional(),
     commonExpensesStatus: knowledgeSchema.default("unknown"),
-    commonExpenses: z.record(z.string(), amountSchema).optional(),
+    commonExpenses: z.partialRecord(commonExpenseCategorySchema, amountSchema).optional(),
     newLoanAvailableOn: calendarDateSchema.nullable().optional(),
     newLoanCertainty: z.enum(["confirmed", "expected", "unknown"]).default("unknown"),
   })
@@ -99,13 +100,18 @@ const validateSharedPlan = (plan: z.output<typeof sharedPlanObjectSchema>, conte
     addCode(context, "DUPLICATE_FUNDING_DEADLINE");
   }
 
+  const commonExpensesTotal = Object.values(commonExpenses).reduce<bigint>((sum, amount) => sum + BigInt(amount.value ?? 0), 0n);
+  if (commonExpensesTotal > BigInt(SAFE_MONEY)) {
+    addCode(context, "UNSAFE_COMMON_BUDGET");
+  }
+
   const housing = plan.housingType === "keep" ? 0 : plan.housingPriceWon?.value;
   const oneOffCosts = plan.oneOffCostsWon?.value;
   if (deadlines.length > 0 && housing !== undefined && housing !== null && oneOffCosts !== undefined && oneOffCosts !== null) {
     const deadlineValues = deadlines.map((deadline) => deadline.amount?.value);
     if (deadlineValues.every((value) => value !== undefined && value !== null)) {
-      const total = deadlineValues.reduce((sum, value) => sum + (value ?? 0), 0);
-      if (total !== housing + oneOffCosts) {
+      const total = deadlineValues.reduce<bigint>((sum, value) => sum + BigInt(value ?? 0), 0n);
+      if (total !== BigInt(housing) + BigInt(oneOffCosts)) {
         addCode(context, "DEADLINE_TOTAL_MISMATCH");
       }
     }

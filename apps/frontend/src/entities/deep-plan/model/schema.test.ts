@@ -57,6 +57,29 @@ describe("SharedPlanV3 request schema", () => {
     expectCode({ ...validPlan(), commonExpensesStatus: "unknown", commonExpenses: { food: amount(100) } }, "BUDGET_ITEMS_REQUIRE_KNOWN_SCOPE");
   });
 
+  it("rejects common expense categories outside the server enum", () => {
+    const result = sharedPlanV3Schema.safeParse({
+      ...validPlan(),
+      commonExpenses: { unknown: amount(100) },
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      // 어느 키가 막혔는지 고정한다. 실패 여부만 보면 엉뚱한 이유로 통과할 수 있다.
+      expect(result.error.issues.map((issue) => issue.path.join("."))).toContain("commonExpenses.unknown");
+    }
+  });
+
+  it("emits UNSAFE_COMMON_BUDGET when common expenses exceed safe integer totals", () => {
+    expectCode({
+      ...validPlan(),
+      commonExpenses: {
+        housing: amount(Number.MAX_SAFE_INTEGER),
+        food: amount(1),
+      },
+    }, "UNSAFE_COMMON_BUDGET");
+  });
+
   it("emits DUPLICATE_FUNDING_DEADLINE for repeated deadline IDs", () => {
     const deadline = { id: "move-in", amount: amount(100) };
     expectCode({ ...validPlan(), fundingDeadlines: [deadline, deadline] }, "DUPLICATE_FUNDING_DEADLINE");
@@ -68,6 +91,20 @@ describe("SharedPlanV3 request schema", () => {
       housingPriceWon: amount(1_000),
       oneOffCostsWon: amount(100),
       fundingDeadlines: [{ id: "move-in", amount: amount(999) }],
+    }, "DEADLINE_TOTAL_MISMATCH");
+  });
+
+  it("keeps DEADLINE_TOTAL_MISMATCH at the JavaScript safe-integer boundary", () => {
+    // number 산술은 MAX_SAFE_INTEGER + 2를 반올림해 양변을 같게 만들 수 있다.
+    expectCode({
+      ...validPlan(),
+      housingType: "buy",
+      housingPriceWon: amount(Number.MAX_SAFE_INTEGER),
+      oneOffCostsWon: amount(2),
+      fundingDeadlines: [
+        { id: "housing", amount: amount(Number.MAX_SAFE_INTEGER) },
+        { id: "fees", amount: amount(1) },
+      ],
     }, "DEADLINE_TOTAL_MISMATCH");
   });
 

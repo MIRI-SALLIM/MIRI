@@ -13,7 +13,7 @@
 | #84 | 🔄 PR 열림 | #84 | #89 | B | 미러 누락 14건. F9 후속이며 F12a보다 먼저 |
 | #85 | 대기 | #85 | — | B | `AmountField` 결함. **F12a보다 먼저** |
 | F12a | 대기 | — | — | B | 기본 재무 입력·자동저장 스파인 |
-| F12b | 대기 | — | — | B | 재원·정산·자금 미리보기 |
+| ~~F12b~~ | **범위 제외** | #97 | — | — | 재원·정산. 아래 "재원을 제외한 이유" 참고 |
 | F13 | 대기 | — | — | B | 가치관·분담 질문 |
 | F14+F15 | 대기 | — | — | 수렴 | 동의·제출·대기 + 공동 리포트. **함께 병합** |
 | F16 | 대기 | — | — | 수렴 | 기준표(합의) |
@@ -181,18 +181,18 @@
 ~~~text
 F9 (기반 · 사용자 노출 0)
  ├─ 트랙 A: F10(세션·초대·참여·상태·철회) → F11(공동 계획·확인)
- └─ 트랙 B: F12a(기본 재무·자동저장 스파인) → F12b(재원·정산·미리보기) → F13(가치관·분담 질문)
+ └─ 트랙 B: F12a(기본 재무·자동저장 스파인) → F13(가치관·분담 질문)
 수렴: F14(동의·제출·대기) → F15(공동 리포트) → F16(기준표) → F17(기준회의) → F18(라운드·E2E·배포)
 ~~~
 
 **숨은 의존 간선 세 개** — 초안에서 놓치기 쉬운 부분이다.
 - `can_publish`가 `confirmedPlanVersion == plan.version`을 요구하므로 **F11이 `plan/confirm`을 빼면 F14는 영원히 제출 불가**다. `plan/confirm`은 F11에서 분리할 수 없다.
-- `v3_questions.py`가 C1·C2의 `requiresSharedBudget`, C3 바인딩, followup(P8·U4)을 **`plan.commonExpensesStatus`와 `funding.sources`에서** 계산한다. 따라서 **F13은 F11과 F12b 양쪽에 의존**한다.
+- `v3_questions.py`가 C1·C2의 `requiresSharedBudget`, C3 바인딩, followup(P8·U4)을 **`plan.commonExpensesStatus`와 `funding.sources`에서** 계산한다. 따라서 **F13은 F11과 F12a 양쪽에 의존**한다. (원래 F12b 의존이었으나 재원이 범위에서 빠졌다. 재원을 참조하는 조건부 질문 U4는 재원이 비면 나타나지 않을 뿐 나머지는 정상 동작한다.)
 - **F14·F15는 함께 병합한다.** F14만 있으면 양쪽 제출 후 `status: ready`인데 결과 화면이 없어 흐름이 죽는다.
 
 ### 워크플로
 
-각 단계는 워크트리에서 일반 구현은 Codex `gpt-5.6-luna` `xhigh`, F12b·F17 구현은 Codex `gpt-5.6-sol` `high` 세션이 맡고, **검증은 매번 별도의 Claude Sonnet `high` 세션이** 수행한다(2026-09-06 사용자 결정 — 토큰 절약). 검증 브리프는 열린 리뷰가 아니라 **확인할 주장을 지정한 체크리스트**로 쓴다. 검증은 `--deps`로 선언한 DAG 의존성이며 건너뛰지 않는다. 코디네이터가 커밋·PR을 담당한다(샌드박스가 워크트리의 `.git`을 막는다).
+각 단계는 워크트리에서 일반 구현은 Codex `gpt-5.6-luna` `max`, F17 구현은 Codex `gpt-5.6-sol` `high` 세션이 맡고, **검증은 매번 별도의 Claude Sonnet `high` 세션이** 수행한다(2026-09-06 사용자 결정 — 토큰 절약). 검증 브리프는 열린 리뷰가 아니라 **확인할 주장을 지정한 체크리스트**로 쓴다. 검증은 `--deps`로 선언한 DAG 의존성이며 건너뛰지 않는다. 코디네이터가 커밋·PR을 담당한다(샌드박스가 워크트리의 `.git`을 막는다).
 
 ---
 
@@ -294,20 +294,52 @@ apps/frontend/src/
 
 **완료 조건:** 여러 화면에 걸친 재무 입력이 새로고침을 건너 살아남고, 저장할 수 없는 중간 상태가 사용자에게 이유와 함께 보인다.
 
-## F12b — 재원·정산·배분 + 미리보기 (트랙 B, 최고 위험)
+## ~~F12b~~ — 재원·정산: 범위에서 제외 (2026-09-06, 이슈 #97)
 
-`funding.sourcesStatus`+`sources[]`(≤100) · `settlementsStatus`+`settlements[]`(≤60, `parts[]`≤100) · `afterSettlementMonthlyPayments` · `POST /deep/funding/preview`.
+**재원 입력 화면을 만들지 않는다.** 삭제 대신 이 절을 남기는 이유는, 근거를 모르면 다음 사람이
+"빠졌으니 채워야겠다"고 되돌리기 때문이다.
 
-id로 세 컬렉션이 상호참조되고 날짜축과 금액 불변식이 `validate_funding_links` 하나 안에서 검사 조건 10개로 얽힌다. **이 계획에서 가장 폭발하기 쉬운 단계다.**
+### 왜 뺐나
 
-- 위험 완화는 F9가 이미 담당한다(`Amount` 컨트롤·zod 미러·코드 테이블·id 생성기·화이트리스트·풀 픽스처).
-- 추가 완화: **`funding/preview` 왕복을 F12a 끝에서 스켈레톤 데이터로 먼저 붙여 본다.** F12b에서 처음 연결하지 않는다.
-- 미리보기는 명시적 버튼이다. 레이트리밋(20회) 대상이므로 입력마다 부르지 않는다.
-- `asOf`를 인자로 받는 미러를 쓴다. 저장(`date.max`)과 미리보기(실제 날짜)의 판정이 다르다.
+재원 설계는 `docs/superpowers/specs/`의 딥 명세에 있지만 **그 명세 다섯 개는 전부 백엔드
+트랙(`testosbug`)이 작성했고**, 질문 파이프라인 명세는 재원 구현 커밋 `86c55fd`에 함께 들어왔다.
+명세가 "2026-09-03 사용자 구현 승인"이라 적고 있으나 그 문장도 같은 작성자의 서술이다.
+프론트가 반드시 소비해야 한다는 근거로는 부족하다.
 
-**완료 조건:** 재원과 상환을 연결한 입력이 서버에 저장되고, 서버가 거절할 조합을 사용자가 저장 전에 이유와 함께 알 수 있다.
+백엔드 계획서들도 일관되게 "이번에는 프론트 화면을 재구축하지 않고 서버 기능과 계약을 전달한다"고
+적는다. **재원은 서버에 준비된 능력이지 프론트의 요구사항이 아니다.**
 
-## F13 — 가치관·분담 질문 (트랙 B, F11·F12b 의존)
+제출에도 필요 없다. `apps/backend/deep/validation.py`의 `validate_submission`은 D1~D10만 검사하고,
+재원이 비어도 서버가 입력과 제출을 받는다.
+
+### ⚠ 그래도 타입과 미러에서 지우면 안 된다
+
+`PATCH me/input`은 **전체 치환**이고 서버 스키마는 `extra="forbid"`다. 그리고 서버는 재원을
+한 번도 건드리지 않은 초안에도 이렇게 채워 GET으로 돌려준다.
+
+```json
+"funding": {"sourcesStatus": "unknown", "sources": [], "settlementsStatus": "unknown", "settlements": []}
+```
+
+**미러에서 `funding`을 지우면 GET한 초안을 되돌려 보내는 순간 저장이 막힌다.**
+재원 관련 zod 미러·타입 단언·픽스처는 사용자가 재원을 입력해서가 아니라 **왕복을 위해** 남아 있다.
+
+| 층 | 조치 |
+| --- | --- |
+| 단계·화면 | 만들지 않는다 |
+| 타입·zod 미러·픽스처 | **유지.** 왕복에 필요하다 |
+| 백엔드 | 건드리지 않는다 |
+
+### 남는 미사용 표면
+
+- `POST /api/v1/deep/funding/preview` — 화이트리스트에 있으나 호출하지 않는다.
+  F9가 "두 트랙이 같은 파일을 반복 수정하지 않도록 한 번에 연다"는 이유로 등재했고,
+  지금 빼려면 그 파일과 고정 테스트를 다시 건드려야 해 그대로 둔다
+- `shared/lib/funding-id` — 재원 항목 id 생성기. 소비자가 없어진다
+
+되살릴 경우 이 절과 이슈 #97을 먼저 읽고, 위 "지우면 안 되는 것"이 여전히 유효한지 확인한다.
+
+## F13 — 가치관·분담 질문 (트랙 B, F11·F12a 의존)
 
 `GET /me/questions` → D1~D10(5점 척도, 역방향은 **D2·D7·D8만**) · C1~C6 · followups(P8·U4) · consent 블록.
 
@@ -405,12 +437,12 @@ npm --workspace @mirisallim/frontend run test:e2e
 repoId   2aebd786-298f-4802-9bce-7692a72cb670
 본체     C:/Users/jhcho/Documents/MIRI_FE          (브랜치 develop, 코디네이터 전용)
 워크트리 C:/Users/jhcho/orca/workspaces/MIRI_FE/<name>
-일반 구현자       codex  gpt-5.6-luna  xhigh
-F12b/F17 구현자   codex  gpt-5.6-sol   high
+일반 구현자       codex  gpt-5.6-luna  max
+F17 구현자        codex  gpt-5.6-sol   high
 검증자(매번 신규) claude sonnet  high
 
-구현 세션은 자기 작업을 검증하지 않는다. F12b·F17을 제외한 구현은 Luna xhigh로,
-F12b·F17 구현은 Sol high로 워크트리에 기동한다. 검증은 워크트리에 기동하지 않고
+구현 세션은 자기 작업을 검증하지 않는다. F17을 제외한 구현은 Luna max로,
+F17 구현은 Sol high로 워크트리에 기동한다. 검증은 워크트리에 기동하지 않고
 코디네이터가 매번 새 Claude Sonnet high 세션으로 수행한다.
 ~~~
 
@@ -426,7 +458,6 @@ F12b·F17 구현은 Sol high로 워크트리에 기동한다. 검증은 워크�
 | F10 | `deep-f10-session` | `feature/<N>-deep-session` | A |
 | F11 | `deep-f11-plan` | `feature/<N>-deep-plan` | A |
 | F12a | `deep-f12a-input` | `feature/<N>-deep-input-core` | B |
-| F12b | `deep-f12b-funding` | `feature/<N>-deep-funding` | B |
 | F13 | `deep-f13-questions` | `feature/<N>-deep-questions` | B |
 | F14+15 | `deep-f14-result` | `feature/<N>-deep-result` | 수렴 |
 | F16 | `deep-f16-agreements` | `feature/<N>-deep-agreements` | 수렴 |
@@ -481,13 +512,13 @@ orca orchestration task-create --run "$RUN" --task-title "F9 검증" --deps "[\"
 **7. 에이전트 기동.** 만들기 전에 `orca terminal list --worktree <selector>`로 기존 터미널을 확인한다. 생성 명령은 멱등하지 않다.
 
 ~~~bash
-# F12b/F17 이외의 구현 단계: gpt-5.6-luna xhigh
+# F17 이외의 구현 단계: gpt-5.6-luna max
 orca terminal create --worktree id:<repoId>::<워크트리> --title <단계>-implementation --json \
-  --command 'codex -a never -s workspace-write --model gpt-5.6-luna -c model_reasoning_effort="xhigh"'
+  --command 'codex -a never -s workspace-write --model gpt-5.6-luna -c model_reasoning_effort="max"'
 orca orchestration dispatch --task "$IMPL" --to <handle> --inject --json
 ~~~
 
-F12b 또는 F17 구현은 위 명령의 모델과 effort만 `gpt-5.6-sol`·`high`로 바꾼다.
+F17 구현은 위 명령의 모델과 effort만 `gpt-5.6-sol`·`high`로 바꾼다.
 **검증은 워크트리에 터미널을 띄우지 않는다.** 코디네이터가 매번 새 Claude Sonnet `high`
 세션으로 수행한다. 구현 세션을 검증에 재사용하지 않는다는 원칙은 그대로다.
 

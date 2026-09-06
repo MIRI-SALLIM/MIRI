@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -12,7 +12,7 @@ import {
   type DeepAgreement,
 } from "@/entities/deep-agreement";
 import { deepRoundStateQueryKey, fetchDeepRoundState } from "@/entities/deep-session";
-import { isApiErrorCode } from "@/shared/api";
+import { createIdempotencyKey, isApiErrorCode } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import { AgreementCard, AgreementForm, type AgreementDraft } from "@/widgets/agreement-card";
 
@@ -20,6 +20,7 @@ const cardClassName = "rounded-card border border-border bg-card p-6 sm:p-8";
 
 type FormState = { agreement?: DeepAgreement; mode: "create" | "edit" };
 type AgreementAction = { agreement: DeepAgreement; action: "confirm" | "defer" };
+type ProposalAttempt = { fingerprint: string; key: string };
 
 const actionErrorMessage = (error: unknown): string => {
   if (isApiErrorCode(error, "AGREEMENT_VERSION_CONFLICT")) return "다른 사람이 이 기준을 바꿨어요. 최신 내용을 다시 확인해 주세요.";
@@ -62,6 +63,7 @@ export function DeepAgreementsPage() {
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState<FormState | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const proposalAttempt = useRef<ProposalAttempt | null>(null);
 
   const agreementsQuery = useQuery({
     enabled: sessionId !== "",
@@ -82,7 +84,12 @@ export function DeepAgreementsPage() {
       if (expectedRound === undefined) {
         throw new Error("round-not-loaded");
       }
-      return proposeDeepAgreement(sessionId, { ...draft, expectedRound });
+      const proposal = { ...draft, expectedRound };
+      const fingerprint = JSON.stringify(proposal);
+      if (proposalAttempt.current?.fingerprint !== fingerprint) {
+        proposalAttempt.current = { fingerprint, key: createIdempotencyKey() };
+      }
+      return proposeDeepAgreement(sessionId, proposal, proposalAttempt.current.key);
     },
     onError: (error) => {
       setActionError(actionErrorMessage(error));
@@ -92,6 +99,7 @@ export function DeepAgreementsPage() {
     },
     onSuccess: (response) => {
       queryClient.setQueryData<DeepAgreement[]>(deepAgreementsQueryKey(sessionId), (agreements) => updateAgreement(agreements, response));
+      proposalAttempt.current = null;
       setActionError(null);
       setFormState(null);
     },

@@ -30,12 +30,13 @@ export const fetchDeepAgreements = async (sessionId: string): Promise<DeepAgreem
 export const proposeDeepAgreement = async (
   sessionId: string,
   body: AgreementRequestV3,
+  idempotencyKey: string,
 ): Promise<DeepAgreement> =>
   parseDeepAgreement(
     await requestApi(
       apiClient.POST("/api/v1/deep/v3/sessions/{session_id}/agreements", {
         body: parseAgreementRequest(body),
-        params: { path: { session_id: sessionId } },
+        params: { header: { "Idempotency-Key": idempotencyKey }, path: { session_id: sessionId } },
       }),
     ),
   );

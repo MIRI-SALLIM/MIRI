@@ -58,15 +58,16 @@ describe("deep agreement API", () => {
     expect(new URL(request.url).pathname).toBe("/api/v1/deep/v3/sessions/session-a/agreements");
   });
 
-  it("sends expectedRound only when proposing", async () => {
+  it("sends expectedRound and the proposal idempotency key", async () => {
     fetchMock.mockResolvedValue(jsonResponse(agreement, 201));
     const body = { expectedRound: 2, text: agreement.text, reviewOn: null, terms };
 
-    await expect(proposeDeepAgreement("session-a", body)).resolves.toEqual(agreement);
+    await expect(proposeDeepAgreement("session-a", body, "proposal-key")).resolves.toEqual(agreement);
 
     const [request] = fetchMock.mock.calls[0] as [Request];
     expect(request.method).toBe("POST");
     expect(new URL(request.url).pathname).toBe("/api/v1/deep/v3/sessions/session-a/agreements");
+    expect(request.headers.get("Idempotency-Key")).toBe("proposal-key");
     expect(await request.json()).toEqual(body);
   });
 
@@ -99,7 +100,7 @@ describe("deep agreement API", () => {
   it("blocks an invalid proposal before the network request", async () => {
     const invalid = { expectedRound: 2, text: agreement.text, reviewOn: null, terms: { ...terms, monthlyContributions: { A: 1 } } };
 
-    await expect(proposeDeepAgreement("session-a", invalid)).rejects.toThrow();
+    await expect(proposeDeepAgreement("session-a", invalid, "invalid-proposal-key")).rejects.toThrow();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -405,8 +405,13 @@ npm --workspace @mirisallim/frontend run test:e2e
 repoId   2aebd786-298f-4802-9bce-7692a72cb670
 본체     C:/Users/jhcho/Documents/MIRI_FE          (브랜치 develop, 코디네이터 전용)
 워크트리 C:/Users/jhcho/orca/workspaces/MIRI_FE/<name>
-구현자   codex  gpt-5.6-luna  xhigh
-검증자   codex  gpt-5.6-sol   high
+일반 구현자       codex  gpt-5.6-luna  xhigh
+F12b/F17 구현자   codex  gpt-5.6-sol   high
+검증자(매번 신규) codex  gpt-5.6-sol   high
+
+구현 세션은 자기 작업을 검증하지 않는다. F12b·F17을 제외한 구현은 Luna xhigh,
+F12b·F17 구현은 Sol high로 기동하고, 모든 검증은 구현 세션과 별개의 새 Sol high
+세션으로 기동한다.
 ~~~
 
 `orca repo list`로 확인한 것: `setupAgentStartupPolicy`가 `start-immediately`라 2단계 custom-argv 경로가 허용된다. `worktreeBaseRef`는 `origin/develop`. `scripts.setup`이 **비어 있어 `--setup run`을 줘도 아무것도 설치되지 않는다** — `npm ci`는 수동이다.
@@ -476,15 +481,18 @@ orca orchestration task-create --run "$RUN" --task-title "F9 검증" --deps "[\"
 **7. 에이전트 기동.** 만들기 전에 `orca terminal list --worktree <selector>`로 기존 터미널을 확인한다. 생성 명령은 멱등하지 않다.
 
 ~~~bash
-orca terminal create --worktree id:<repoId>::<워크트리> --title deep-f9-foundation --json \
+# F12b/F17 이외의 구현 단계: gpt-5.6-luna xhigh
+orca terminal create --worktree id:<repoId>::<워크트리> --title <단계>-implementation --json \
   --command 'codex -a never -s workspace-write --model gpt-5.6-luna -c model_reasoning_effort="xhigh"'
 orca orchestration dispatch --task "$IMPL" --to <handle> --inject --json
 ~~~
 
-검증은 같은 워크트리에 별도 터미널로 띄운다.
+F12b 또는 F17 구현은 위 명령의 모델과 effort만 `gpt-5.6-sol`·`high`로 바꾼다.
+검증은 구현 세션을 재사용하지 않고, 같은 워크트리에 매번 새 터미널을 띄운다.
 
 ~~~bash
---command 'codex -a never -s workspace-write --model gpt-5.6-sol -c model_reasoning_effort="high"'
+orca terminal create --worktree id:<repoId>::<워크트리> --title <단계>-review --json \
+  --command 'codex -a never -s workspace-write --model gpt-5.6-sol -c model_reasoning_effort="high"'
 ~~~
 
 `worktree create`가 남기는 빈 `Terminal 1` fallback 셸은 `preview`가 빈 프롬프트인 것을 확인한 뒤 `orca terminal close`로 닫는다.

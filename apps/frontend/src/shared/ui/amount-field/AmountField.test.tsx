@@ -83,6 +83,54 @@ describe("AmountField", () => {
     expect(onChange).toHaveBeenCalledWith({ status: "withheld", value: null, precision: "exact" });
   });
 
+  it("renders only the statuses declared by a question", () => {
+    render(
+      <AmountField
+        allowedStatuses={["known", "unknown"]}
+        label="공동비"
+        onChange={() => undefined}
+        value={{ status: "unknown", value: null, precision: "exact" }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "알고 있어요" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "모르겠어요" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "밝히고 싶지 않아요" })).not.toBeInTheDocument();
+  });
+
+  it("does not emit a known status when known is not allowed", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(
+      <AmountField
+        allowedStatuses={["unknown"]}
+        label="공동비"
+        onChange={onChange}
+        value={{ status: "unknown", value: null, precision: "exact" }}
+      />,
+    );
+
+    const input = screen.getByRole("spinbutton", { name: "공동비" });
+    expect(input).toBeDisabled();
+    await user.type(input, "100000");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("explains when a question supplies no usable amount statuses", () => {
+    render(
+      <AmountField
+        allowedStatuses={[]}
+        label="공동비"
+        onChange={() => undefined}
+        value={{ status: "unknown", value: null, precision: "exact" }}
+      />,
+    );
+
+    expect(screen.getByText("금액 상태 선택지를 불러오지 못했어요.")).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton", { name: "공동비" })).toBeDisabled();
+  });
+
   it("gives each unlabeled field a unique input id and a single input name", () => {
     render(
       <>

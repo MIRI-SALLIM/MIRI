@@ -7,6 +7,7 @@ export type AmountValue = components["schemas"]["Amount"];
 
 export interface AmountFieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type"> {
+  allowedStatuses?: ReadonlyArray<AmountValue["status"]>;
   label?: ReactNode;
   onChange: (amount: AmountValue) => void;
   value: AmountValue;
@@ -46,6 +47,7 @@ interface AmountInteractionState {
 }
 
 export function AmountField({
+  allowedStatuses,
   className = "",
   disabled = false,
   id,
@@ -57,6 +59,11 @@ export function AmountField({
   const generatedId = useId();
   const inputId = id ?? `amount-field-${generatedId}`;
   const textLabel = typeof label === "string" ? label : "금액";
+  const visibleStatusOptions = allowedStatuses === undefined
+    ? statusOptions
+    : statusOptions.filter((option) => allowedStatuses.includes(option.value));
+  const canEnterKnownAmount = allowedStatuses === undefined || allowedStatuses.includes("known");
+  const hasStatusOptions = visibleStatusOptions.length > 0;
   const [interactionState, setInteractionState] = useState<AmountInteractionState>(() => ({
     basePrecision: value.precision,
     baseStatus: value.status,
@@ -83,6 +90,10 @@ export function AmountField({
   };
 
   const handleStatusChange = (status: AmountValue["status"]) => {
+    if (allowedStatuses !== undefined && !allowedStatuses.includes(status)) {
+      return;
+    }
+
     if (status === "known") {
       const amount = parseAmountValue(rawValue);
       updateInteractionState({ rawValue, selectedPrecision, selectedStatus: status });
@@ -125,7 +136,7 @@ export function AmountField({
     <fieldset className="space-y-3" disabled={disabled}>
       <legend className="text-sm font-semibold text-ink">{label}</legend>
       <div className="flex flex-wrap gap-2" role="group" aria-label={`${textLabel} 상태`}>
-        {statusOptions.map((option) => (
+        {visibleStatusOptions.map((option) => (
           <PillToggle
             key={option.value}
             onPressedChange={() => handleStatusChange(option.value)}
@@ -136,7 +147,8 @@ export function AmountField({
           </PillToggle>
         ))}
       </div>
-      {selectedStatus === "known" ? (
+      {!hasStatusOptions ? <p className="text-sm text-red-700" role="alert">금액 상태 선택지를 불러오지 못했어요.</p> : null}
+      {selectedStatus === "known" && canEnterKnownAmount ? (
         <div className="flex flex-wrap gap-2" role="group" aria-label={`${textLabel} 정확도`}>
           {precisionOptions.map((option) => (
             <PillToggle
@@ -157,11 +169,15 @@ export function AmountField({
         <input
           {...inputProps}
           className={`min-h-12 w-full rounded-control border border-border-control bg-card px-4 py-3 pr-12 text-right text-base tabular-nums outline-none transition-[border-color,box-shadow] placeholder:text-ink-subtle focus:border-green-strong focus:shadow-focus disabled:cursor-not-allowed disabled:bg-border-soft ${className}`}
-          disabled={disabled}
+          disabled={disabled || !canEnterKnownAmount || !hasStatusOptions}
           id={inputId}
           inputMode="numeric"
           min={0}
           onChange={(event) => {
+            if (!canEnterKnownAmount || !hasStatusOptions) {
+              return;
+            }
+
             const nextRawValue = event.currentTarget.value.replace(/[^0-9]/g, "");
             const amount = parseAmountValue(nextRawValue);
             updateInteractionState({

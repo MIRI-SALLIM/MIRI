@@ -30,6 +30,9 @@ const DeepPlanPage = lazy(async () => ({
 const DeepInputPage = lazy(async () => ({
   default: (await import("@/pages/deep-input")).DeepInputPage,
 }));
+const DeepQuestionsPage = lazy(async () => ({
+  default: (await import("@/pages/deep-questions")).DeepQuestionsPage,
+}));
 const DeepPlaceholderPage = lazy(async () => ({
   default: (await import("@/pages/deep-placeholder")).DeepPlaceholderPage,
 }));
@@ -50,7 +53,7 @@ export function AppRoutes() {
             <Route path="invite/:code" element={<DeepInvitePage />} />
             <Route path="plan/:sessionId" element={<DeepPlanPage />} />
             <Route path="input/:sessionId" element={<DeepInputPage />} />
-            <Route path="questions/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="questions/:sessionId" element={<DeepQuestionsPage />} />
             <Route path="waiting/:sessionId" element={<DeepWaitingPage />} />
             <Route path="result/:sessionId" element={<DeepPlaceholderPage />} />
             <Route path="agreements/:sessionId" element={<DeepPlaceholderPage />} />

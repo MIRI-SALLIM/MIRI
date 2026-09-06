@@ -6,3 +6,12 @@ export type {
   DeepQuestions,
   DeepValueQuestion,
 } from "./model/questions";
+export {
+  deepAreaLabels,
+  deepConstraintAllowBorrowingLabels,
+  deepConstraintKindLabels,
+  deepConstraintScopeLabels,
+  deepConstraintStrengthLabels,
+  deepContributionFieldLabels,
+  deepDiscussionStateLabels,
+} from "./model/labels";

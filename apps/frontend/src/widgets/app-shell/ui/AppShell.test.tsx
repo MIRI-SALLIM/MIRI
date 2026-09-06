@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
@@ -7,11 +8,13 @@ import { AppShell } from "./AppShell";
 describe("AppShell", () => {
   it("wraps page content with header, main, and footer landmarks", () => {
     render(
-      <MemoryRouter>
-        <AppShell>
-          <h1>페이지 제목</h1>
-        </AppShell>
-      </MemoryRouter>,
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter>
+          <AppShell>
+            <h1>페이지 제목</h1>
+          </AppShell>
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
     expect(screen.getByRole("banner")).toBeInTheDocument();

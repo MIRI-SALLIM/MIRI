@@ -5,11 +5,16 @@ import type { AllowedPaths } from "./allowed-operations";
 const client = createClient<AllowedPaths>();
 
 void client.GET("/api/v1/me/session");
+void client.GET("/api/v1/auth/providers");
+void client.POST("/api/v1/auth/logout");
 void client.POST("/api/v1/deep/v3/sessions", {
   body: {},
   params: { header: { "Idempotency-Key": "test-key" } },
 });
 void client.DELETE("/api/v1/deep/v3/sessions/{session_id}/meeting/me/consent", {
+  params: { path: { session_id: "session-a" } },
+});
+void client.GET("/api/v1/deep/v3/sessions/{session_id}/invitation", {
   params: { path: { session_id: "session-a" } },
 });
 

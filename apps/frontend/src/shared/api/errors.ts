@@ -1,5 +1,6 @@
 export type ApiErrorKind =
   | "unauthorized"
+  | "forbidden"
   | "not-found"
   | "conflict"
   | "expired"
@@ -134,6 +135,10 @@ const kindFromStatus = (status: number | null): ApiErrorKind => {
 
   if (status === 401) {
     return "unauthorized";
+  }
+
+  if (status === 403) {
+    return "forbidden";
   }
 
   if (status === 404) {

@@ -49,10 +49,8 @@ export function JoinDeepSessionButton({ code }: JoinDeepSessionButtonProps) {
     },
     onSuccess: (session) => {
       attempt.current = null;
-      saveActiveDeepSessionId(session.id);
-      navigate(
-        `/deep/waiting/${encodeURIComponent(session.id)}?inviteCode=${encodeURIComponent(session.invitationCode)}&role=${session.role}`,
-      );
+      saveActiveDeepSessionId(session.id, session.role);
+      navigate(`/deep/waiting/${encodeURIComponent(session.id)}`);
     },
   });
 

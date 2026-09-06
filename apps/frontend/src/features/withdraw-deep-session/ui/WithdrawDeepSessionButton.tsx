@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import {
   clearActiveDeepSessionId,
+  deepSessionInvitationQueryKey,
   deepSessionStatusQueryKey,
   withdrawDeepSession,
 } from "@/entities/deep-session";
@@ -21,6 +22,7 @@ export function WithdrawDeepSessionButton({ sessionId }: WithdrawDeepSessionButt
     mutationFn: () => withdrawDeepSession(sessionId),
     onSuccess: async () => {
       clearActiveDeepSessionId(sessionId);
+      queryClient.removeQueries({ queryKey: deepSessionInvitationQueryKey(sessionId) });
       await queryClient.invalidateQueries({ queryKey: deepSessionStatusQueryKey(sessionId) });
       navigate("/deep");
     },

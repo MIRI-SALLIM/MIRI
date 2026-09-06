@@ -5,6 +5,10 @@ const copy: Record<ApiErrorKind, { description: string; title: string }> = {
     title: "세션을 확인할 수 없어요",
     description: "처음 화면에서 새 대화를 시작하거나 초대 링크로 다시 참여해 주세요.",
   },
+  forbidden: {
+    title: "이 요청을 처리할 권한이 없어요",
+    description: "현재 참여 상태를 확인한 뒤 가능한 작업을 다시 시도해 주세요.",
+  },
   "not-found": {
     title: "페이지를 찾을 수 없어요",
     description: "주소가 올바른지 확인한 뒤 다시 시도해 주세요.",

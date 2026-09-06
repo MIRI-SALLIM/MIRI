@@ -10,7 +10,7 @@ const contentSecurityPolicy = [
   "style-src 'self' https://cdn.jsdelivr.net",
   "font-src 'self' https://cdn.jsdelivr.net",
   "connect-src 'self'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://k.kakaocdn.net https://img1.kakaocdn.net",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",

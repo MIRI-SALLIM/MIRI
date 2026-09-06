@@ -3,12 +3,15 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 const useAccount = vi.hoisted(() => vi.fn());
+const useAuthProviders = vi.hoisted(() => vi.fn());
 
-vi.mock("@/entities/account", () => ({ useAccount }));
+vi.mock("@/entities/account", () => ({ useAccount, useAuthProviders }));
 
 import { LoginPage } from "./LoginPage";
 
-function renderPage() {
+function renderPage(providers: { kakao: boolean | null } = { kakao: true }) {
+  useAuthProviders.mockReturnValue(providers);
+
   return render(
     <MemoryRouter initialEntries={["/login"]}>
       <Routes>

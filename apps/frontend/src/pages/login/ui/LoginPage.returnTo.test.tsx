@@ -4,11 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 
 import { LoginPage } from "./LoginPage";
 
-const { useAccountMock } = vi.hoisted(() => ({ useAccountMock: vi.fn() }));
+const { useAccountMock, useAuthProvidersMock } = vi.hoisted(() => ({
+  useAccountMock: vi.fn(),
+  useAuthProvidersMock: vi.fn(),
+}));
 
-vi.mock("@/entities/account", () => ({ useAccount: useAccountMock }));
+vi.mock("@/entities/account", () => ({ useAccount: useAccountMock, useAuthProviders: useAuthProvidersMock }));
 
 function renderLogin(path: string) {
+  useAuthProvidersMock.mockReturnValue({ kakao: true });
+
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>

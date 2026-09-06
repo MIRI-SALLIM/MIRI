@@ -1,9 +1,17 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const useAccount = vi.hoisted(() => vi.fn());
+
+vi.mock("@/entities/account", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/entities/account")>();
+  return { ...actual, useAccount };
+});
 
 import { AppHeader } from "./AppHeader";
+import type { AccountStatus } from "@/entities/account";
 
 function setViewportWidth(width: number) {
   Object.defineProperty(window, "innerWidth", {
@@ -13,16 +21,22 @@ function setViewportWidth(width: number) {
   });
 }
 
+function renderHeader(account: AccountStatus = { state: "unauthenticated", userId: null, displayName: null, profileImageUrl: null }) {
+  useAccount.mockReturnValue(account);
+
+  return render(
+    <MemoryRouter>
+      <AppHeader />
+    </MemoryRouter>,
+  );
+}
+
 describe("AppHeader", () => {
   afterEach(() => setViewportWidth(1024));
 
   it("uses a mobile menu below 900px", async () => {
     setViewportWidth(899);
-    render(
-      <MemoryRouter>
-        <AppHeader />
-      </MemoryRouter>,
-    );
+    renderHeader();
 
     const user = userEvent.setup();
     const menuButton = screen.getByRole("button", { name: "메뉴 열기" });
@@ -41,11 +55,7 @@ describe("AppHeader", () => {
 
   it("shows the full desktop navigation and login affordance at exactly 900px", () => {
     setViewportWidth(900);
-    render(
-      <MemoryRouter>
-        <AppHeader />
-      </MemoryRouter>,
-    );
+    renderHeader();
 
     expect(screen.getByRole("link", { name: "미리살림 홈" })).toHaveAttribute("href", "/");
     const navigation = screen.getByRole("navigation", { name: "주요 메뉴" });

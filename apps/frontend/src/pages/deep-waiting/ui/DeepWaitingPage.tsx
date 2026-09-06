@@ -1,37 +1,90 @@
 import { useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { useDeepSessionStatus } from "@/features/poll-deep-status";
+import { useDeepInvitation } from "@/features/share-deep-invitation";
 import { WithdrawDeepSessionButton } from "@/features/withdraw-deep-session";
+import { readActiveDeepSessionRole } from "@/entities/deep-session";
 import { Button } from "@/shared/ui/button";
 
 const cardClassName = "flex flex-col gap-4 rounded-card border border-border bg-card p-6 sm:p-8";
 
-function InviteCodeCard({ code, role }: { code: string; role: "A" | "B" | null }) {
+function InviteCodeCard({
+  role,
+  sessionId,
+  status,
+}: {
+  role: "A" | "B" | null;
+  sessionId: string;
+  status: { isReady: boolean; status: ReturnType<typeof useDeepSessionStatus>["status"] };
+}) {
   const [isCopied, setIsCopied] = useState(false);
+  const invitation = useDeepInvitation(sessionId, role, status);
 
   if (role !== "A") {
+    if (role === "B") {
+      return null;
+    }
+
+    if (!invitation.hasRequested) {
+      return (
+        <div className={cardClassName}>
+          <h2 className="text-xl font-extrabold tracking-[-0.02em]">초대 링크를 확인할까요?</h2>
+          <p className="text-sm leading-relaxed text-ink-muted">초대 링크가 필요하면 서버에서 안전하게 불러올 수 있어요.</p>
+          <Button onClick={invitation.request} variant="secondary">
+            초대 링크 불러오기
+          </Button>
+        </div>
+      );
+    }
+  }
+
+  if (invitation.errorKind === "hidden") {
     return null;
   }
 
+  if (invitation.errorKind === "forbidden") {
+    return (
+      <div className={cardClassName}>
+        <h2 className="text-xl font-extrabold tracking-[-0.02em]">초대 링크를 확인할 수 없어요</h2>
+        <p className="text-sm leading-relaxed text-ink-muted">참여자로 들어와 있어요.</p>
+      </div>
+    );
+  }
+
+  if (invitation.isFetching || invitation.data === undefined) {
+    if (invitation.errorKind === "rate-limited" || invitation.errorKind === "unavailable") {
+      return (
+        <div className={cardClassName}>
+          <h2 className="text-xl font-extrabold tracking-[-0.02em]">초대 링크를 불러오지 못했어요</h2>
+          <p className="text-sm leading-relaxed text-ink-muted">
+            {invitation.errorKind === "rate-limited"
+              ? "요청이 많아요. 잠시 후 다시 시도해 주세요."
+              : "잠시 후 다시 시도해 주세요."}
+          </p>
+          <Button onClick={() => void invitation.refetch()} variant="secondary">
+            다시 시도하기
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className={cardClassName}>
+        <p aria-live="polite" className="text-sm text-ink-muted" role="status">
+          초대 링크를 불러오고 있어요.
+        </p>
+      </div>
+    );
+  }
+
   // 현재 URL은 대기 화면이라 상대가 열어도 참여할 수 없다. 참여 라우트를 만들어 복사한다.
-  const inviteUrl = `${window.location.origin}/deep/invite/${encodeURIComponent(code)}`;
+  const inviteUrl = `${window.location.origin}/deep/invite/${encodeURIComponent(invitation.data.invitationCode)}`;
 
   const copyLink = async () => {
     await navigator.clipboard?.writeText(inviteUrl);
     setIsCopied(true);
   };
-
-  if (code === "") {
-    return (
-      <div className={cardClassName}>
-        <h2 className="text-xl font-extrabold tracking-[-0.02em]">초대 링크를 다시 만들 수 없어요</h2>
-        <p className="text-sm leading-relaxed text-ink-muted">
-          초대 코드는 새로 조회할 수 없어요. 현재 세션을 닫으면 딥모드 첫 화면에서 새 세션을 시작할 수 있어요.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className={cardClassName}>
@@ -39,7 +92,9 @@ function InviteCodeCard({ code, role }: { code: string; role: "A" | "B" | null }
         <h2 className="text-xl font-extrabold tracking-[-0.02em]">상대를 초대해요</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-muted">아래 링크를 상대에게 보내면 같은 세션에 참여할 수 있어요.</p>
       </div>
-      <p className="break-all rounded-control bg-purple-tint p-4 font-mono text-sm text-ink" data-testid="deep-invite-url">{inviteUrl}</p>
+      <p className="break-all rounded-control bg-purple-tint p-4 font-mono text-sm text-ink" data-testid="deep-invite-url">
+        {inviteUrl}
+      </p>
       <Button onClick={copyLink} variant="secondary">
         {isCopied ? "초대 링크를 복사했어요" : "초대 링크 복사"}
       </Button>
@@ -49,27 +104,34 @@ function InviteCodeCard({ code, role }: { code: string; role: "A" | "B" | null }
 
 export function DeepWaitingPage() {
   const { sessionId = "" } = useParams();
-  const [searchParams] = useSearchParams();
-  const inviteCode = searchParams.get("inviteCode") ?? "";
-  const roleParam = searchParams.get("role");
-  const role = roleParam === "A" || roleParam === "B"
-    ? roleParam
-    : null;
+  const [role] = useState(readActiveDeepSessionRole);
   const waitingPath = `/deep/waiting/${encodeURIComponent(sessionId)}`;
   const status = useDeepSessionStatus(sessionId);
   const partnerCompleted = status.status?.partnerCompleted === true;
+  const canShowInviteCard =
+    role !== "B" &&
+    status.status !== null &&
+    !status.isPending &&
+    !status.isFailed &&
+    !status.isExpired &&
+    !status.isTimedOut &&
+    status.terminalError === null &&
+    !status.isReady &&
+    !partnerCompleted;
 
   return (
     <section className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-16 sm:px-8">
       <div className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-purple-strong">15분 모드</p>
         <h1 className="text-2xl font-extrabold tracking-[-0.02em]">
-          {role === "B" ? "딥 세션에 참여했어요" : "딥 세션이 열렸어요"}
+          {role === "B" ? "딥 세션에 참여했어요" : role === "A" ? "딥 세션이 열렸어요" : "딥 세션을 확인하고 있어요"}
         </h1>
         <p className="text-base leading-relaxed text-ink-muted">
           {role === "A"
             ? "상대를 초대하고, 기다리지 않고 바로 시작할 수 있어요. 서로의 개인 답변은 공유하기 전까지 보이지 않아요."
-            : "계획과 내 현황을 상대를 기다리지 않고 채울 수 있어요. 서로의 개인 답변은 공유하기 전까지 보이지 않아요."}
+            : role === "B"
+              ? "계획과 내 현황을 상대를 기다리지 않고 채울 수 있어요. 서로의 개인 답변은 공유하기 전까지 보이지 않아요."
+              : "세션 상태를 확인하면 지금 할 수 있는 일을 안내해 드릴게요. 서로의 개인 답변은 공유하기 전까지 보이지 않아요."}
         </p>
       </div>
 
@@ -148,7 +210,9 @@ export function DeepWaitingPage() {
         </div>
       )}
 
-      <InviteCodeCard code={inviteCode} role={role} />
+      {canShowInviteCard ? (
+        <InviteCodeCard role={role} sessionId={sessionId} status={{ isReady: status.isReady, status: status.status }} />
+      ) : null}
 
       {sessionId === "" ? null : (
         <div className="flex justify-end">

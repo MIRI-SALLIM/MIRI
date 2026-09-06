@@ -21,6 +21,7 @@ const LightResultPage = lazy(async () => ({
 }));
 const SharePage = lazy(async () => ({ default: (await import("@/pages/share")).SharePage }));
 const LoginPage = lazy(async () => ({ default: (await import("@/pages/login")).LoginPage }));
+const MyPage = lazy(async () => ({ default: (await import("@/pages/my-page")).MyPage }));
 const DeepEntryPage = lazy(async () => ({
   default: (await import("@/pages/deep-entry")).DeepEntryPage,
 }));
@@ -65,6 +66,7 @@ export function AppRoutes() {
           <Route path="about" element={<ServiceIntroductionPage />} />
           <Route path="sample" element={<SampleReportPage />} />
           <Route path="login" element={<LoginPage />} />
+          <Route path="me" element={<MyPage />} />
           <Route path="deep" element={<DeepRouteLayout />}>
             <Route index element={<DeepEntryPage />} />
             <Route path="invite/:code" element={<DeepInvitePage />} />

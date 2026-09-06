@@ -6,6 +6,8 @@ describe("F2 API operation allowlist", () => {
   it("contains only the operations used by the frontend", () => {
     expect(allowedOperations).toEqual([
       { method: "get", path: "/api/v1/auth/me" },
+      { method: "get", path: "/api/v1/auth/providers" },
+      { method: "post", path: "/api/v1/auth/logout" },
       { method: "post", path: "/api/v1/sessions" },
       { method: "get", path: "/api/v1/me/session" },
       { method: "get", path: "/api/v1/light/questions" },
@@ -19,6 +21,7 @@ describe("F2 API operation allowlist", () => {
       { method: "get", path: "/api/v1/sessions/{session_id}/status" },
       { method: "post", path: "/api/v1/deep/funding/preview" },
       { method: "post", path: "/api/v1/deep/v3/sessions" },
+      { method: "get", path: "/api/v1/deep/v3/sessions/{session_id}/invitation" },
       { method: "post", path: "/api/v1/deep/v3/invitations/{code}/join" },
       { method: "get", path: "/api/v1/deep/v3/sessions/{session_id}/status" },
       { method: "get", path: "/api/v1/deep/v3/sessions/{session_id}/me/input" },

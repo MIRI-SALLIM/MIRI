@@ -488,12 +488,12 @@ orca orchestration dispatch --task "$IMPL" --to <handle> --inject --json
 ~~~
 
 F12b 또는 F17 구현은 위 명령의 모델과 effort만 `gpt-5.6-sol`·`high`로 바꾼다.
-검증은 구현 세션을 재사용하지 않고, 같은 워크트리에 매번 새 터미널을 띄운다.
+**검증은 워크트리에 터미널을 띄우지 않는다.** 코디네이터가 매번 새 Claude Sonnet `high`
+세션으로 수행한다. 구현 세션을 검증에 재사용하지 않는다는 원칙은 그대로다.
 
-~~~bash
-orca terminal create --worktree id:<repoId>::<워크트리> --title <단계>-review --json \
-  --command 'codex -a never -s workspace-write --model gpt-5.6-sol -c model_reasoning_effort="high"'
-~~~
+검증 브리프는 **확인할 주장을 지정한 체크리스트**로 쓴다. "전체를 검토하라"가 아니라
+"이 주장이 코드와 맞는지 확인하라"로 적어야 검증자의 깊이에 의존하지 않는다.
+게이트 5종은 모델과 무관한 기계적 사실이므로 검증자가 직접 실행한다.
 
 `worktree create`가 남기는 빈 `Terminal 1` fallback 셸은 `preview`가 빈 프롬프트인 것을 확인한 뒤 `orca terminal close`로 닫는다.
 

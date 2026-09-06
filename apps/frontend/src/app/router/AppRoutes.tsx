@@ -18,6 +18,12 @@ const LoginPage = lazy(async () => ({ default: (await import("@/pages/login")).L
 const DeepEntryPage = lazy(async () => ({
   default: (await import("@/pages/deep-entry")).DeepEntryPage,
 }));
+const DeepInvitePage = lazy(async () => ({
+  default: (await import("@/pages/deep-invite")).DeepInvitePage,
+}));
+const DeepWaitingPage = lazy(async () => ({
+  default: (await import("@/pages/deep-waiting")).DeepWaitingPage,
+}));
 const DeepPlaceholderPage = lazy(async () => ({
   default: (await import("@/pages/deep-placeholder")).DeepPlaceholderPage,
 }));
@@ -35,11 +41,11 @@ export function AppRoutes() {
           <Route path="login" element={<LoginPage />} />
           <Route path="deep" element={<DeepRouteLayout />}>
             <Route index element={<DeepEntryPage />} />
-            <Route path="invite/:code" element={<DeepPlaceholderPage />} />
+            <Route path="invite/:code" element={<DeepInvitePage />} />
             <Route path="plan/:sessionId" element={<DeepPlaceholderPage />} />
             <Route path="input/:sessionId" element={<DeepPlaceholderPage />} />
             <Route path="questions/:sessionId" element={<DeepPlaceholderPage />} />
-            <Route path="waiting/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="waiting/:sessionId" element={<DeepWaitingPage />} />
             <Route path="result/:sessionId" element={<DeepPlaceholderPage />} />
             <Route path="agreements/:sessionId" element={<DeepPlaceholderPage />} />
             <Route path="meeting/:sessionId" element={<DeepPlaceholderPage />} />

@@ -87,6 +87,32 @@ def test_upsert_returns_internal_id_and_recovers_concurrent_provider_creation():
     assert kwargs == {"upsert": True, "return_document": ReturnDocument.AFTER}
 
 
+def test_upsert_stores_and_refreshes_kakao_profile():
+    db, collections = mock_database()
+    users = collections["users"]
+    users.find_one_and_update.return_value = {
+        "id": "internal-id",
+        "displayName": "춘식이",
+        "profileImageUrl": "https://k.kakaocdn.net/profile.jpg",
+    }
+    repo = importlib.import_module("auth.repository").AuthRepository(db)
+
+    principal = asyncio.run(repo.upsert_user(
+        "12345",
+        NOW,
+        display_name="춘식이",
+        profile_image_url="https://k.kakaocdn.net/profile.jpg",
+    ))
+
+    update = users.find_one_and_update.call_args.args[1]
+    assert update["$set"] == {
+        "displayName": "춘식이",
+        "profileImageUrl": "https://k.kakaocdn.net/profile.jpg",
+    }
+    assert principal.display_name == "춘식이"
+    assert principal.profile_image_url == "https://k.kakaocdn.net/profile.jpg"
+
+
 def test_issue_lookup_revoke_and_delete_account_sessions():
     db, collections = mock_database()
     sessions = collections["auth_sessions"]

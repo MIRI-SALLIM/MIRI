@@ -111,11 +111,27 @@ async def finish_login(
 
 class AccountResponse(BaseModel):
     userId: str
+    displayName: str | None = None
+    profileImageUrl: str | None = None
 
 
-@router.get("/me", response_model=AccountResponse)
+class AuthProvidersResponse(BaseModel):
+    kakao: bool
+    reviewer: bool
+
+
+@router.get("/providers", response_model=AuthProvidersResponse)
+async def auth_providers(settings: SettingsDependency) -> AuthProvidersResponse:
+    return AuthProvidersResponse(kakao=settings.kakao_enabled, reviewer=settings.reviewer_enabled)
+
+
+@router.get("/me", response_model=AccountResponse, response_model_exclude_none=True)
 async def account_me(principal: PrincipalDependency) -> AccountResponse:
-    return AccountResponse(userId=principal.user_id)
+    return AccountResponse(
+        userId=principal.user_id,
+        displayName=principal.display_name,
+        profileImageUrl=principal.profile_image_url,
+    )
 
 
 @router.post("/logout", status_code=204, dependencies=[Depends(require_trusted_origin)])

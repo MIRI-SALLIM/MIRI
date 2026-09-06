@@ -216,11 +216,14 @@ async def get_result(session_id: str, principal: PrincipalDependency, service: S
 
 @router.post("/sessions/{session_id}/agreements", response_model=AgreementResponse, status_code=201, dependencies=SESSION_MUTATION)
 async def propose_agreement(
-    session_id: str, request: Request, body: AgreementRequest, principal: PrincipalDependency,
+    session_id: str, request: Request, body: AgreementRequest, key: IdempotencyKey, principal: PrincipalDependency,
     service: ServiceDependency, settings: SettingsDependency,
 ) -> dict[str, Any]:
     await limit_mutation(request, principal, service, settings, "agreement")
-    agreement = await service.repo.propose_agreement(session_id, principal.user_id, body.model_dump(mode="json"), datetime.now(timezone.utc))
+    payload = body.model_dump(mode="json")
+    agreement = await service.repo.propose_agreement(
+        session_id, principal.user_id, key, hashlib.sha256(body.model_dump_json().encode()).hexdigest(), payload, datetime.now(timezone.utc),
+    )
     return service.agreement_response(agreement, principal.user_id)
 
 

@@ -3,6 +3,28 @@
     "schemas": {
       "AccountResponse": {
         "properties": {
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Displayname"
+          },
+          "profileImageUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileimageurl"
+          },
           "userId": {
             "title": "Userid",
             "type": "string"
@@ -320,6 +342,24 @@
           "kind"
         ],
         "title": "AssetInput",
+        "type": "object"
+      },
+      "AuthProvidersResponse": {
+        "properties": {
+          "kakao": {
+            "title": "Kakao",
+            "type": "boolean"
+          },
+          "reviewer": {
+            "title": "Reviewer",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kakao",
+          "reviewer"
+        ],
+        "title": "AuthProvidersResponse",
         "type": "object"
       },
       "AvailableExplanation": {
@@ -2908,6 +2948,20 @@
           "expiresAt"
         ],
         "title": "InvitationResponse",
+        "type": "object"
+      },
+      "InvitationV3": {
+        "additionalProperties": false,
+        "properties": {
+          "invitationCode": {
+            "title": "Invitationcode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invitationCode"
+        ],
+        "title": "InvitationV3",
         "type": "object"
       },
       "JoinInvitationRequest": {
@@ -6307,6 +6361,27 @@
         ]
       }
     },
+    "/api/v1/auth/providers": {
+      "get": {
+        "operationId": "auth_providers_api_v1_auth_providers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthProvidersResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Auth Providers",
+        "tags": [
+          "account"
+        ]
+      }
+    },
     "/api/v1/auth/reviewer/context": {
       "get": {
         "operationId": "reviewer_context_api_v1_auth_reviewer_context_get",
@@ -7369,6 +7444,18 @@
             "required": true,
             "schema": {
               "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Idempotency-Key",
               "type": "string"
             }
           }
@@ -9650,6 +9737,18 @@
               "title": "Session Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -10168,6 +10267,123 @@
           }
         ],
         "summary": "Defer Agreement",
+        "tags": [
+          "deep-v3"
+        ]
+      }
+    },
+    "/api/v1/deep/v3/sessions/{session_id}/invitation": {
+      "get": {
+        "operationId": "get_invitation_api_v1_deep_v3_sessions__session_id__invitation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationV3"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "입력값 검증 실패 (Validation Error)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "accountAuth": []
+          }
+        ],
+        "summary": "Get Invitation",
         "tags": [
           "deep-v3"
         ]
@@ -13657,7 +13873,7 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "최초 제출 또는 재제출 성공. 재제출 시 저장된 completedAt 반환"
           },
           "401": {
             "content": {
@@ -13678,16 +13894,6 @@
               }
             },
             "description": "세션을 찾을 수 없음"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "이미 제출 완료된 상태"
           },
           "410": {
             "content": {

@@ -26,18 +26,21 @@ class FakeAuthRepository(AuthRepository):
             return None
         return self.challenges.pop(state_hash)
 
-    async def upsert_user(self, kakao_id, now):
-        user_id = self.users.setdefault(kakao_id, str(uuid4()))
-        return Principal(user_id, now)
+    async def upsert_user(self, kakao_id, now, *, display_name=None, profile_image_url=None):
+        user = self.users.setdefault(kakao_id, {"id": str(uuid4())})
+        user.update({"displayName": display_name, "profileImageUrl": profile_image_url})
+        return Principal(user["id"], now, display_name=display_name, profile_image_url=profile_image_url)
 
     async def issue_session(self, user_id, token_hash, now):
         self.sessions[token_hash] = {"userId": user_id, "issuedAt": now, "expiresAt": now + SESSION_LIFETIME}
 
     async def lookup_session(self, token_hash, now):
         session = self.sessions.get(token_hash)
-        if not session or session["expiresAt"] <= now or session["userId"] not in self.users.values():
+        user = next((item for item in self.users.values() if item["id"] == session["userId"]), None) if session else None
+        if not session or session["expiresAt"] <= now or user is None:
             return None
-        return Principal(session["userId"], session["issuedAt"])
+        return Principal(session["userId"], session["issuedAt"],
+                         display_name=user.get("displayName"), profile_image_url=user.get("profileImageUrl"))
 
     async def revoke_session(self, token_hash):
         self.sessions.pop(token_hash, None)

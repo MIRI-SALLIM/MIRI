@@ -29,19 +29,35 @@ class AuthRepository:
         await self.database["auth_rate_limits"].create_index("expiresAt", expireAfterSeconds=0)
         await ReviewerRepository(self.database).ensure_indexes()
 
-    async def upsert_user(self, kakao_id: str, now: datetime) -> Principal:
+    async def upsert_user(
+        self,
+        kakao_id: str,
+        now: datetime,
+        *,
+        display_name: str | None = None,
+        profile_image_url: str | None = None,
+    ) -> Principal:
         identity = {"provider": "kakao", "providerUserId": kakao_id}
         users = self.database["users"]
         try:
             user = await users.find_one_and_update(
-                identity, {"$setOnInsert": {**identity, "id": str(uuid4()), "createdAt": now}},
+                identity,
+                {
+                    "$setOnInsert": {**identity, "id": str(uuid4()), "createdAt": now},
+                    "$set": {"displayName": display_name, "profileImageUrl": profile_image_url},
+                },
                 upsert=True, return_document=ReturnDocument.AFTER,
             )
         except DuplicateKeyError:
             user = await users.find_one(identity)
             if user is None:
                 raise
-        return Principal(user_id=user["id"], authenticated_at=now)
+        return Principal(
+            user_id=user["id"],
+            authenticated_at=now,
+            display_name=user.get("displayName"),
+            profile_image_url=user.get("profileImageUrl"),
+        )
 
     async def issue_session(
         self, user_id: str, token_hash: str, now: datetime, expires_at: datetime | None = None,
@@ -87,7 +103,8 @@ class AuthRepository:
             issued_at = issued_at.replace(tzinfo=timezone.utc)
         return Principal(user_id=user["id"], authenticated_at=issued_at, provider=user.get("provider", "kakao"),
                          reviewer_run_id=user.get("reviewerRunId"), reviewer_role=user.get("reviewerRole"),
-                         reviewer_version=user.get("reviewerVersion"))
+                         reviewer_version=user.get("reviewerVersion"), display_name=user.get("displayName"),
+                         profile_image_url=user.get("profileImageUrl"))
 
     async def revoke_session(self, token_hash: str) -> None:
         await self.database["auth_sessions"].delete_one({"tokenHash": token_hash})

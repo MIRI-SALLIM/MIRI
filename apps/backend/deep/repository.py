@@ -82,6 +82,9 @@ class DeepRepository:
         await self.database["deep_reports"].create_index("expiresAt", expireAfterSeconds=0)
         await self.database["deep_agreements"].create_index("id", unique=True)
         await self.database["deep_agreements"].create_index([("sessionId", 1), ("round", 1)])
+        await self.database["deep_agreements"].create_index(
+            [("sessionId", 1), ("round", 1), ("proposerUserId", 1), ("idempotencyKey", 1)], unique=True,
+        )
         await self.database["deep_agreements"].create_index("expiresAt", expireAfterSeconds=0)
         await self.database["deep_meeting_attempts"].create_index("expiresAt", expireAfterSeconds=0)
         await self.database["deep_meeting_attempts"].create_index("sessionId")
@@ -395,17 +398,37 @@ class DeepRepository:
             raise DeepError("PUBLICATION_NOT_READY")
         return document
 
-    async def propose_agreement(self, session_id: str, user_id: str, payload: dict[str, Any], now: datetime) -> dict[str, Any]:
+    async def propose_agreement(
+        self, session_id: str, user_id: str, idempotency_key: str, payload_hash: str,
+        payload: dict[str, Any], now: datetime,
+    ) -> dict[str, Any]:
         document = await self._agreement_session(session_id, user_id, now)
         if payload["expectedRound"] != document["round"]:
             raise DeepError("ROUND_VERSION_CONFLICT")
+        collection = self.database["deep_agreements"]
+        key = hashlib.sha256(idempotency_key.encode()).hexdigest()
+        identity = {"sessionId": session_id, "round": document["round"], "proposerUserId": user_id, "idempotencyKey": key}
+        existing = await collection.find_one(identity)
+        if existing is not None:
+            if existing["payloadHash"] != payload_hash:
+                raise DeepError("IDEMPOTENCY_CONFLICT")
+            return existing
         agreement = {"id": str(uuid4()), "sessionId": session_id, "round": document["round"], "version": 1,
                      "text": payload["text"], "reviewOn": payload.get("reviewOn"), "status": "proposed", "confirmations": [],
                      "participants": [member["userId"] for member in document["members"].values()],
+                     "proposerUserId": user_id, "idempotencyKey": key, "payloadHash": payload_hash,
                      "createdAt": now, "expiresAt": document["expiresAt"]}
         if document["questionVersion"] == "deep-v3":
             agreement.update(terms=validated_terms(payload), planVersion=document["plan"]["version"], sourceReportId=document["reportId"])
-        await self.database["deep_agreements"].insert_one(agreement)
+        try:
+            await collection.insert_one(agreement)
+        except DuplicateKeyError:
+            existing = await collection.find_one(identity)
+            if existing is None:
+                raise DeepError("DEEP_UNAVAILABLE", 503) from None
+            if existing["payloadHash"] != payload_hash:
+                raise DeepError("IDEMPOTENCY_CONFLICT")
+            return existing
         try:
             current = await self._agreement_session(session_id, user_id, datetime.now(timezone.utc))
             if current["round"] != agreement["round"]:

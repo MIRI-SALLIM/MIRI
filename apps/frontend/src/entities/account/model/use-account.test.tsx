@@ -16,7 +16,11 @@ import { useAccount } from "./use-account";
 function AccountProbe() {
   const account = useAccount();
 
-  return <output data-testid="account-state">{`${account.state}:${account.userId ?? ""}`}</output>;
+  return (
+    <output data-testid="account-state">
+      {`${account.state}:${account.userId ?? ""}:${account.displayName ?? ""}:${account.profileImageUrl ?? ""}`}
+    </output>
+  );
 }
 
 function renderAccount() {
@@ -40,10 +44,18 @@ describe("useAccount", () => {
   });
 
   it("reports an authenticated account after a 200 response", async () => {
-    getAccount.mockResolvedValue({ userId: "account-user" });
+    getAccount.mockResolvedValue({
+      userId: "account-user",
+      displayName: "춘식이",
+      profileImageUrl: "https://k.kakaocdn.net/profile.jpg",
+    });
     renderAccount();
 
-    await waitFor(() => expect(screen.getByTestId("account-state")).toHaveTextContent("authenticated:account-user"));
+    await waitFor(() =>
+      expect(screen.getByTestId("account-state")).toHaveTextContent(
+        "authenticated:account-user:춘식이:https://k.kakaocdn.net/profile.jpg",
+      ),
+    );
   });
 
   it("reports unauthenticated for the existing 401 error kind", async () => {

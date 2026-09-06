@@ -14,6 +14,8 @@ export type AccountState =
 export interface AccountStatus {
   state: AccountState;
   userId: string | null;
+  displayName: string | null;
+  profileImageUrl: string | null;
 }
 
 export function useAccount(): AccountStatus {
@@ -25,20 +27,25 @@ export function useAccount(): AccountStatus {
   });
 
   if (query.isPending) {
-    return { state: "loading", userId: null };
+    return { state: "loading", userId: null, displayName: null, profileImageUrl: null };
   }
 
   if (query.data !== undefined) {
-    return { state: "authenticated", userId: query.data.userId };
+    return {
+      state: "authenticated",
+      userId: query.data.userId,
+      displayName: query.data.displayName ?? null,
+      profileImageUrl: query.data.profileImageUrl ?? null,
+    };
   }
 
   if (query.error instanceof ApiError && query.error.kind === "unauthorized") {
-    return { state: "unauthenticated", userId: null };
+    return { state: "unauthenticated", userId: null, displayName: null, profileImageUrl: null };
   }
 
   if (query.error instanceof ApiError && query.error.kind === "not-found") {
-    return { state: "disabled", userId: null };
+    return { state: "disabled", userId: null, displayName: null, profileImageUrl: null };
   }
 
-  return { state: "error", userId: null };
+  return { state: "error", userId: null, displayName: null, profileImageUrl: null };
 }

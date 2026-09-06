@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Auth Providers */
+        get: operations["auth_providers_api_v1_auth_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/reviewer/context": {
         parameters: {
             query?: never;
@@ -550,6 +567,23 @@ export interface paths {
         put?: never;
         /** Defer Agreement */
         post: operations["defer_agreement_api_v1_deep_v3_sessions__session_id__agreements__agreement_id__defer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deep/v3/sessions/{session_id}/invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Invitation */
+        get: operations["get_invitation_api_v1_deep_v3_sessions__session_id__invitation_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1062,6 +1096,10 @@ export interface components {
     schemas: {
         /** AccountResponse */
         AccountResponse: {
+            /** Displayname */
+            displayName?: string | null;
+            /** Profileimageurl */
+            profileImageUrl?: string | null;
             /** Userid */
             userId: string;
         };
@@ -1172,6 +1210,13 @@ export interface components {
              * @enum {string}
              */
             kind: "cashSavings" | "rentalDeposit" | "investments" | "subscription" | "realEstate" | "other";
+        };
+        /** AuthProvidersResponse */
+        AuthProvidersResponse: {
+            /** Kakao */
+            kakao: boolean;
+            /** Reviewer */
+            reviewer: boolean;
         };
         /** AvailableExplanation */
         AvailableExplanation: {
@@ -2060,6 +2105,11 @@ export interface components {
              * @example light
              */
             mode: string;
+        };
+        /** InvitationV3 */
+        InvitationV3: {
+            /** Invitationcode */
+            invitationCode: string;
         };
         /** JoinInvitationRequest */
         JoinInvitationRequest: {
@@ -3591,6 +3641,26 @@ export interface operations {
             };
         };
     };
+    auth_providers_api_v1_auth_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthProvidersResponse"];
+                };
+            };
+        };
+    };
     reviewer_context_api_v1_auth_reviewer_context_get: {
         parameters: {
             query?: never;
@@ -4434,7 +4504,9 @@ export interface operations {
     propose_agreement_api_v1_deep_sessions__session_id__agreements_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
             path: {
                 session_id: string;
             };
@@ -6179,7 +6251,9 @@ export interface operations {
     propose_agreement_api_v1_deep_v3_sessions__session_id__agreements_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
             path: {
                 session_id: string;
             };
@@ -6495,6 +6569,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgreementResponseV3"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 입력값 검증 실패 (Validation Error) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_invitation_api_v1_deep_v3_sessions__session_id__invitation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationV3"];
                 };
             };
             /** @description Unauthorized */
@@ -9135,7 +9303,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description 최초 제출 또는 재제출 성공. 재제출 시 저장된 completedAt 반환 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -9155,15 +9323,6 @@ export interface operations {
             };
             /** @description 세션을 찾을 수 없음 */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 이미 제출 완료된 상태 */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };

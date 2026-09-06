@@ -950,9 +950,9 @@ async def save_my_input(
     summary="세션 내 본인 답변 최종 제출",
     response_model=SubmitResponse,
     responses={
+        200: {"model": SubmitResponse, "description": "최초 제출 또는 재제출 성공. 재제출 시 저장된 completedAt 반환"},
         401: {"model": ErrorResponse, "description": "참여자 인증 실패"},
         404: {"model": ErrorResponse, "description": "세션을 찾을 수 없음"},
-        409: {"model": ErrorResponse, "description": "이미 제출 완료된 상태"},
         410: {"model": ErrorResponse, "description": "만료된 세션"},
         422: {"model": ErrorResponse, "description": "미완성 답변/예측 등 검증 실패"}
     },

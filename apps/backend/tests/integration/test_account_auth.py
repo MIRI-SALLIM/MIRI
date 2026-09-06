@@ -26,7 +26,13 @@ def auth_context(monkeypatch):
     def handler(request):
         if request.url.path == "/oauth/token":
             return httpx.Response(200, json={"access_token": "provider-token"})
-        return httpx.Response(200, json={"id": 12345})
+        return httpx.Response(200, json={
+            "id": 12345,
+            "kakao_account": {"profile": {
+                "nickname": "춘식이",
+                "thumbnail_image_url": "https://k.kakaocdn.net/profile.jpg",
+            }},
+        })
 
     async def override_service():
         settings = load_auth_settings(env)
@@ -80,7 +86,11 @@ def test_login_cookie_options_private_response_and_logout_preserve_light_cookie(
     assert "no-referrer" == response.headers["referrer-policy"]
     response = client.get("/api/v1/auth/me")
     assert response.status_code == 200
-    assert set(response.json()) == {"userId"}
+    assert response.json() == {
+        "userId": response.json()["userId"],
+        "displayName": "춘식이",
+        "profileImageUrl": "https://k.kakaocdn.net/profile.jpg",
+    }
     assert response.json()["userId"] != "12345"
     assert "provider-token" not in str(repo.sessions)
     logout = client.post("/api/v1/auth/logout", headers={"Origin": "http://testserver"})
@@ -191,3 +201,25 @@ def test_openapi_account_cookie_does_not_replace_light_security(auth_context):
     assert schema["paths"]["/api/v1/auth/me"]["get"]["security"] == [{"accountAuth": []}]
     assert schema["components"]["securitySchemes"]["accountAuth"]["name"] == "mrs_account"
     assert schema["components"]["securitySchemes"]["cookieAuth"]["name"] == "mrs_participant"
+
+
+def test_auth_providers_expose_only_enabled_login_methods(auth_context, monkeypatch):
+    client, _ = auth_context
+    assert client.get("/api/v1/auth/providers").json() == {"kakao": True, "reviewer": False}
+
+    from tests.unit.test_reviewer_auth import reviewer_env
+
+    for key, value in reviewer_env().items():
+        monkeypatch.setenv(key, value)
+    with TestClient(app) as reviewer_client:
+        assert reviewer_client.get("/api/v1/auth/providers").json() == {"kakao": False, "reviewer": True}
+    monkeypatch.setenv("DEEP_MODE_ENABLED", "false")
+    with TestClient(app) as disabled_client:
+        assert disabled_client.get("/api/v1/auth/providers").status_code == 404
+
+
+def test_light_submit_openapi_documents_200_replay_without_conflict(auth_context):
+    client, _ = auth_context
+    responses = client.get("/openapi.json").json()["paths"]["/api/v1/sessions/{session_id}/me/submit"]["post"]["responses"]
+    assert "409" not in responses
+    assert "재제출" in responses["200"]["description"]

@@ -80,6 +80,20 @@ def test_version_guards_and_draft_question_privacy(deep_context):
         "consentVersion": "deep-sharing-v1", "shareFinance": True, "shareValues": True}, headers=headers()).status_code == 422
 
 
+def test_only_creator_can_retrieve_v3_invitation_code(deep_context):
+    client, _, _ = deep_context
+    created = client.post(BASE + "/sessions", json={}, headers=headers()).json()
+    path = f'{BASE}/sessions/{created["id"]}/invitation'
+
+    creator = client.get(path, headers=headers())
+    assert creator.status_code == 200, creator.text
+    assert creator.json() == {"invitationCode": created["invitationCode"]}
+
+    assert client.post(f'{BASE}/invitations/{created["invitationCode"]}/join', json={}, headers=headers("user-b")).status_code == 200
+    assert client.get(path, headers=headers("user-b")).status_code == 404
+    assert client.get(path, headers=headers("user-c")).status_code == 404
+
+
 def terms(a=1000000, b=1000000):
     return {"topic": "monthlyContribution", "scope": "주거비와 식비", "owner": "both", "startMonth": "2026-10",
             "dueDay": 1, "monthlyContributions": {"A": a, "B": b}, "commonScope": ["housing", "food"], "exceptions": "소득이 바뀌면 재논의"}
@@ -114,6 +128,25 @@ def test_structured_agreement_lifecycle_and_round_reset(deep_context):
     assert client.get(path + "/result").status_code == 410
 
 
+def test_agreement_retry_returns_original_and_rejects_conflicting_payload(deep_context):
+    client, _, db = deep_context
+    path, _ = ready(client)
+    payload = {"expectedRound": 1, "text": "공동 생활비를 함께 낸다", "terms": terms()}
+    request_headers = headers(key="agreement-retry-a")
+
+    created = client.post(path + "/agreements", json=payload, headers=request_headers)
+    retried = client.post(path + "/agreements", json=payload, headers=request_headers)
+
+    assert created.status_code == 201, created.text
+    assert retried.status_code == 201, retried.text
+    assert retried.json() == created.json()
+    assert len(db["deep_agreements"].documents) == 1
+
+    conflicting = client.post(path + "/agreements", json=payload | {"text": "다른 합의안"}, headers=request_headers)
+    assert conflicting.status_code == 409
+    assert conflicting.json()["error"]["code"] == "IDEMPOTENCY_CONFLICT"
+
+
 def test_legacy_withdrawal_remains_retryable(deep_context):
     client, _, _ = deep_context
     created = create(client)
@@ -141,7 +174,8 @@ def test_multiple_agreed_contribution_proposals_are_not_silently_combined(deep_c
     client, _, _ = deep_context
     path, _ = ready(client)
     for number in range(2):
-        response = client.post(path + "/agreements", json={"expectedRound": 1, "text": f"분담안{number}", "terms": terms()}, headers=headers())
+        response = client.post(path + "/agreements", json={"expectedRound": 1, "text": f"분담안{number}", "terms": terms()},
+                               headers=headers(key=f"agreement-{number}"))
         agreement_path = path + "/agreements/" + response.json()["id"]
         for user in ("user-a", "user-b"):
             assert client.post(agreement_path + "/confirm", json={"expectedVersion": 1}, headers=headers(user)).status_code == 200

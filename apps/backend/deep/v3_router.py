@@ -11,6 +11,7 @@ from deep.dependencies import (
     ServiceDependency,
     require_session_version,
 )
+from deep.errors import DeepError
 from deep.meeting.router import router as meeting_router
 from deep.repository import member_role
 from deep.router import MUTATION, DeepRoute, IdempotencyKey, limit_mutation
@@ -26,6 +27,7 @@ from deep.v3_models import (
     AgreementResponseV3,
     DeepInputV3,
     EditAgreementV3,
+    InvitationV3,
     OwnInputV3,
     PlanResponseV3,
     ResultV3,
@@ -60,6 +62,14 @@ async def join_session(code: str, request: Request, body: CreateDeepSessionReque
     await limit_mutation(request, principal, service, settings, "join")
     document = await service.repo.join(code, principal.user_id, key, datetime.now(timezone.utc), question_version="deep-v3")
     return service.session_response(document, principal.user_id)
+
+
+@router.get("/sessions/{session_id}/invitation", response_model=InvitationV3)
+async def get_invitation(session_id: str, principal: PrincipalDependency, service: ServiceDependency) -> dict[str, Any]:
+    document = await service.repo.get_for_member(session_id, principal.user_id, datetime.now(timezone.utc))
+    if document["creatorUserId"] != principal.user_id:
+        raise DeepError("NOT_FOUND", 404)
+    return {"invitationCode": document["invitationCode"]}
 
 
 @router.get("/sessions/{session_id}/me/questions")
@@ -97,9 +107,12 @@ async def get_result(session_id: str, principal: PrincipalDependency, service: S
 
 @router.post("/sessions/{session_id}/agreements", response_model=AgreementResponseV3, status_code=201, dependencies=MUTATION)
 async def propose_agreement(session_id: str, request: Request, body: AgreementRequestV3, principal: PrincipalDependency,
-                            service: ServiceDependency, settings: SettingsDependency) -> dict[str, Any]:
+                            key: IdempotencyKey, service: ServiceDependency, settings: SettingsDependency) -> dict[str, Any]:
     await limit_mutation(request, principal, service, settings, "agreement")
-    agreement = await service.repo.propose_agreement(session_id, principal.user_id, body.model_dump(mode="json"), datetime.now(timezone.utc))
+    payload = body.model_dump(mode="json")
+    agreement = await service.repo.propose_agreement(
+        session_id, principal.user_id, key, hashlib.sha256(body.model_dump_json().encode()).hexdigest(), payload, datetime.now(timezone.utc),
+    )
     return service.agreement_response(agreement, principal.user_id)
 
 

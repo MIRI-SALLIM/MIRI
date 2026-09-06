@@ -1,9 +1,17 @@
+from dataclasses import dataclass
 from urllib.parse import urlencode
 
 import httpx
 
 from auth.errors import AuthError
 from auth.settings import AuthSettings
+
+
+@dataclass(frozen=True)
+class KakaoIdentity:
+    provider_user_id: str
+    display_name: str | None = None
+    profile_image_url: str | None = None
 
 
 class KakaoClient:
@@ -15,9 +23,10 @@ class KakaoClient:
         return "https://kauth.kakao.com/oauth/authorize?" + urlencode({
             "response_type": "code", "client_id": self.settings.rest_api_key,
             "redirect_uri": self.settings.callback_uri, "state": state,
+            "scope": "profile_nickname profile_image",
         })
 
-    async def exchange_identity(self, code: str) -> str:
+    async def exchange_identity(self, code: str) -> KakaoIdentity:
         try:
             response = await self.http.post(
                 "https://kauth.kakao.com/oauth/token", timeout=5.0,
@@ -34,10 +43,19 @@ class KakaoClient:
                 headers={"Authorization": f"Bearer {access_token}"},
             )
             profile.raise_for_status()
-            kakao_id = profile.json()["id"]
+            profile_body = profile.json()
+            kakao_id = profile_body["id"]
             if type(kakao_id) is not int or kakao_id <= 0:
                 raise ValueError("invalid identity")
-            return str(kakao_id)
+            account = profile_body.get("kakao_account")
+            account_profile = account.get("profile") if isinstance(account, dict) else None
+            nickname = account_profile.get("nickname") if isinstance(account_profile, dict) else None
+            image_url = account_profile.get("thumbnail_image_url") if isinstance(account_profile, dict) else None
+            return KakaoIdentity(
+                provider_user_id=str(kakao_id),
+                display_name=nickname.strip() if isinstance(nickname, str) and nickname.strip() else None,
+                profile_image_url=image_url if isinstance(image_url, str) and image_url else None,
+            )
         except httpx.HTTPStatusError as exc:
             unavailable = exc.response.status_code >= 500 or exc.response.status_code == 429
             raise AuthError("AUTH_PROVIDER_UNAVAILABLE" if unavailable else "AUTH_RESTART_REQUIRED",

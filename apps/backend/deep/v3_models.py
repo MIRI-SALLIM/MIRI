@@ -157,6 +157,10 @@ class SessionV3(StrictModel):
     questionVersion: Literal["deep-v3"]
 
 
+class InvitationV3(StrictModel):
+    invitationCode: str
+
+
 class DecisionTerms(StrictModel):
     topic: Literal["monthlyContribution", "housingFunding", "savings", "spending", "investment", "debt", "jointManagement", "other"]
     scope: str = Field(min_length=1, max_length=300)

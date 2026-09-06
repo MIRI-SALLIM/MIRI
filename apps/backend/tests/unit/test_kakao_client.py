@@ -25,7 +25,7 @@ def exchange(handler):
     return asyncio.run(run())
 
 
-def test_kakao_identity_uses_server_exchange_and_returns_only_id():
+def test_kakao_identity_uses_server_exchange_and_returns_profile():
     seen = []
 
     def handler(request):
@@ -42,18 +42,44 @@ def test_kakao_identity_uses_server_exchange_and_returns_only_id():
         assert request.url.host == "kapi.kakao.com"
         assert request.url.path == "/v2/user/me"
         assert request.headers["authorization"] == "Bearer provider-token"
-        return httpx.Response(200, json={"id": 12345, "profile": {"unused": "discard-me"}})
+        return httpx.Response(200, json={
+            "id": 12345,
+            "kakao_account": {"profile": {
+                "nickname": "춘식이",
+                "thumbnail_image_url": "https://k.kakaocdn.net/profile.jpg",
+            }},
+        })
 
-    assert exchange(handler) == "12345"
+    identity = exchange(handler)
+    assert identity.provider_user_id == "12345"
+    assert identity.display_name == "춘식이"
+    assert identity.profile_image_url == "https://k.kakaocdn.net/profile.jpg"
     assert len(seen) == 2
 
 
-def test_authorization_url_has_exact_callback_and_state_without_extra_scopes():
+def test_kakao_identity_allows_missing_optional_profile():
+    def handler(request):
+        if request.url.path == "/oauth/token":
+            return httpx.Response(200, json={"access_token": "provider-token"})
+        return httpx.Response(200, json={"id": 12345})
+
+    identity = exchange(handler)
+    assert identity.provider_user_id == "12345"
+    assert identity.display_name is None
+    assert identity.profile_image_url is None
+
+
+def test_authorization_url_requests_only_profile_scopes():
     kakao_client = importlib.import_module("auth.kakao").KakaoClient
     url = urlsplit(kakao_client(None, settings()).authorization_url("state-test"))
     assert (url.scheme, url.netloc, url.path) == ("https", "kauth.kakao.com", "/oauth/authorize")
-    assert parse_qs(url.query) == {"response_type": ["code"], "client_id": ["test-key"],
-                                 "redirect_uri": [settings().callback_uri], "state": ["state-test"]}
+    assert parse_qs(url.query) == {
+        "response_type": ["code"],
+        "client_id": ["test-key"],
+        "redirect_uri": [settings().callback_uri],
+        "state": ["state-test"],
+        "scope": ["profile_nickname profile_image"],
+    }
 
 
 @pytest.mark.parametrize("identity", [None, "12345", True, False, 0, -123, 12.3, {}, []])

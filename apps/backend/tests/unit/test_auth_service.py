@@ -6,6 +6,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+from auth.kakao import KakaoIdentity
 from auth.security import token_digest
 from tests.auth_fakes import FakeAuthRepository
 from tests.unit.test_kakao_client import settings
@@ -17,7 +18,7 @@ def service():
     repo = FakeAuthRepository()
     kakao = AsyncMock()
     kakao.authorization_url = lambda state: f"https://kauth.kakao.com/oauth/authorize?state={state}"
-    kakao.exchange_identity.return_value = "12345"
+    kakao.exchange_identity.return_value = KakaoIdentity("12345")
     auth = importlib.import_module("auth.service").AuthService(repo, kakao, settings())
     return auth, repo, kakao
 

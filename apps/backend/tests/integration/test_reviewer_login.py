@@ -216,7 +216,8 @@ def test_reviewers_can_complete_deep_with_report_expiry_and_agreement(review_con
     room = db["reviewer_rooms"].documents[0]
     assert db["deep_reports"].documents[0]["expiresAt"] <= room["expiresAt"]
     agreement = client.post(path + "/agreements", json={"expectedRound": 1,
-                                                       "text": "매월 함께 생활비를 점검한다"}, headers=headers(ta))
+                                                       "text": "매월 함께 생활비를 점검한다"},
+                            headers=headers(ta, **{"Idempotency-Key": "agreement"}))
     assert agreement.status_code == 201, agreement.text
     item = agreement.json()
     for token in (ta, tb):

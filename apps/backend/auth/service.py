@@ -37,8 +37,13 @@ class AuthService:
         )
         if challenge is None or not code or len(code) > 2048:
             raise AuthError("AUTH_RESTART_REQUIRED")
-        kakao_id = await self.kakao.exchange_identity(code)
-        principal = await self.repo.upsert_user(kakao_id, now)
+        identity = await self.kakao.exchange_identity(code)
+        principal = await self.repo.upsert_user(
+            identity.provider_user_id,
+            now,
+            display_name=identity.display_name,
+            profile_image_url=identity.profile_image_url,
+        )
         account_token = secrets.token_urlsafe(32)
         await self.repo.issue_session(
             principal.user_id, token_digest(account_token, self.settings.session_pepper), now,

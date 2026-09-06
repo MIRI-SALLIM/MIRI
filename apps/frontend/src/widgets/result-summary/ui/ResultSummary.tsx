@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 
 import type { LightResult, LightResultType } from "@/entities/light-result";
 import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 
 export interface ResultSummaryProps {
@@ -78,9 +77,12 @@ export function ResultSummary({ result, shareHref }: ResultSummaryProps) {
         >
           결과 공유
         </Link>
-        <Button className="flex-1" disabled variant="secondary">
-          15분 모드 준비 중
-        </Button>
+        <Link
+          className="inline-flex min-h-12 flex-1 items-center justify-center rounded-control border border-purple-strong bg-purple-strong px-5 py-3 text-base font-bold text-white transition-[color,background-color,border-color,filter,translate,transform] duration-[160ms] ease-smooth hover:brightness-[.94] focus-visible:shadow-focus"
+          to="/deep"
+        >
+          제대로 계산해보기
+        </Link>
       </div>
     </section>
   );

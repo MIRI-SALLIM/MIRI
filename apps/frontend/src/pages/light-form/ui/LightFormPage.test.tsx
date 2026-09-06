@@ -226,8 +226,6 @@ describe("LightFormPage", () => {
 
     expect(selfChoice).toHaveAttribute("aria-pressed", "true");
     expect(guessChoice).toHaveAttribute("aria-pressed", "true");
-    expect(await screen.findByText("저장됨")).toBeInTheDocument();
-
     // 선택 해제는 고른 칩을 다시 눌러서 한다.
     await user.click(selfChoice);
     expect(selfChoice).toHaveAttribute("aria-pressed", "false");
@@ -538,8 +536,13 @@ describe("LightFormPage", () => {
 
     await user.click(choice);
 
-    expect(await screen.findByText("저장되지 않음 · 다시 시도")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some((call) => requestFromCall(call).method === "PATCH"),
+      ).toBe(true);
+    });
     expect(choice).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByText("저장되지 않음 · 다시 시도")).not.toBeInTheDocument();
     expect(storageKeys(localStorage)).toEqual([]);
   });
 
@@ -582,9 +585,10 @@ describe("LightFormPage", () => {
       }),
     );
 
-    expect(await screen.findByText("저장됨")).toBeInTheDocument();
-    expect(serverChoice).toHaveAttribute("aria-pressed", "true");
-    expect(serverChoice).toBeDisabled();
+    await waitFor(() => {
+      expect(serverChoice).toHaveAttribute("aria-pressed", "true");
+      expect(serverChoice).toBeDisabled();
+    });
   });
 
   it("routes to WaitingPage only after the submit response succeeds", async () => {

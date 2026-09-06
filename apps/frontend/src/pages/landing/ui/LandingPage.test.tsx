@@ -47,6 +47,7 @@ function renderLanding() {
           <Routes>
             <Route element={<LandingPage />} path="/" />
             <Route element={<h1>라이트 질문</h1>} path="/light/:step" />
+            <Route element={<h1>딥 입장</h1>} path="/deep" />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
@@ -55,7 +56,7 @@ function renderLanding() {
 }
 
 async function startSession(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "가볍게 맞춰보기 시작하기" }));
+  await user.click(screen.getByRole("button", { name: "가볍게 맞춰보기" }));
 }
 
 function modeCard(title: string) {
@@ -113,11 +114,11 @@ describe("LandingPage", () => {
       "재무 성향 유형과 저축여력 추정",
     ]);
     expect(
-      within(card).getByRole("button", { name: "가볍게 맞춰보기 시작하기" }),
+      within(card).getByRole("button", { name: "가볍게 맞춰보기" }),
     ).toBeEnabled();
   });
 
-  it("opens the deep entry CTA once the submit and result flow exists", () => {
+  it("opens the deep entry CTA once the submit and result flow exists", async () => {
     renderLanding();
 
     const card = modeCard("제대로 계산해보기");
@@ -129,7 +130,10 @@ describe("LandingPage", () => {
       "합가 후 월 현금흐름 시뮬레이션",
       "활용 가능한 정책금융까지",
     ]);
-    expect(within(card).getByRole("link", { name: "제대로 계산해보기 시작하기" })).toHaveAttribute("href", "/deep");
+    const button = within(card).getByRole("button", { name: "제대로 계산해보기" });
+    expect(button).toBeEnabled();
+    await userEvent.setup().click(button);
+    expect(await screen.findByRole("heading", { name: "딥 입장" })).toBeInTheDocument();
   });
 
   it("uses accessible brand foregrounds and CTA backgrounds", () => {
@@ -143,7 +147,7 @@ describe("LandingPage", () => {
     expect(within(lightCard).getByRole("heading", { name: "가볍게 맞춰보기" })).toHaveClass(
       "text-green-strong",
     );
-    expect(within(lightCard).getByRole("button", { name: "가볍게 맞춰보기 시작하기" })).toHaveClass(
+    expect(within(lightCard).getByRole("button", { name: "가볍게 맞춰보기" })).toHaveClass(
       "!bg-green-strong",
     );
 
@@ -152,7 +156,7 @@ describe("LandingPage", () => {
     expect(within(deepCard).getByRole("heading", { name: "제대로 계산해보기" })).toHaveClass(
       "text-purple-strong",
     );
-    expect(within(deepCard).getByRole("link", { name: "제대로 계산해보기 시작하기" })).toHaveClass(
+    expect(within(deepCard).getByRole("button", { name: "제대로 계산해보기" })).toHaveClass(
       "!bg-purple-strong",
     );
   });

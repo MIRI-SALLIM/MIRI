@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { StartLightButton } from "@/features/create-session";
 
@@ -269,6 +269,8 @@ function CtaArrow() {
 }
 
 export function LandingPage() {
+  const navigate = useNavigate();
+
   return (
     // 레퍼런스는 line-height 를 지정하지 않는다. Tailwind preflight 의 1.5 를 되돌린다.
     <div className="mx-auto w-full max-w-[1200px] px-6 [line-height:normal]" id="top">
@@ -345,7 +347,7 @@ export function LandingPage() {
               className={`${ctaClassName} !bg-green-strong hover:!brightness-[.94] active:!translate-y-px`}
               label={
                 <>
-                  가볍게 맞춰보기 시작하기
+                  가볍게 맞춰보기
                   <CtaArrow />
                 </>
               }
@@ -361,10 +363,14 @@ export function LandingPage() {
         <ModeCard
           art={<DeepModeArt />}
           cta={
-            <Link className={`${ctaClassName} inline-flex w-full items-center justify-center rounded-control !bg-purple-strong text-white transition-[filter,translate] duration-[160ms] ease-smooth hover:brightness-[.94] active:translate-y-px`} to="/deep">
-              제대로 계산해보기 시작하기
+            <button
+              className={`${ctaClassName} inline-flex w-full items-center justify-center rounded-control !bg-purple-strong text-white transition-[filter,translate] duration-[160ms] ease-smooth hover:brightness-[.94] active:translate-y-px`}
+              onClick={() => navigate("/deep")}
+              type="button"
+            >
+              제대로 계산해보기
               <CtaArrow />
-            </Link>
+            </button>
           }
           points={deepPoints}
           subtitle="우리 숫자를 합치면 어떻게 되나"

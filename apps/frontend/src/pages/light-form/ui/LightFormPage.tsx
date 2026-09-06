@@ -22,6 +22,7 @@ import type { LightAnswerValue } from "@/entities/light-answer";
 import { LIGHT_QUESTION_VERSION } from "@/entities/light-question";
 import { Button } from "@/shared/ui/button";
 import { SubmitLightButton } from "@/features/submit-light-form";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const pageErrorMessage = "질문을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
 
@@ -35,6 +36,27 @@ function normalizeInput(input: NonNullable<Awaited<ReturnType<typeof getLightInp
     answers: Array.from({ length: questionCount }, (_, index) => input.answers?.[index] ?? null),
     guesses: Array.from({ length: questionCount }, (_, index) => input.guesses?.[index] ?? null),
   };
+}
+
+function LightQuestionLoadingSkeleton() {
+  return (
+    <div className="mt-6 rounded-card border border-border bg-card p-6 sm:p-8">
+      <p aria-live="polite" className="sr-only" role="status">
+        질문을 불러오는 중...
+      </p>
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-7 w-4/5" />
+        <Skeleton className="h-4 w-3/5" />
+      </div>
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+      </div>
+    </div>
+  );
 }
 
 type LightFormHydrationState = "failed-data" | "pending-input" | "pending-status" | "ready";
@@ -156,7 +178,6 @@ export function LightFormPage() {
   const guesses = useLightFormStore((state) => state.guesses);
   const isHydrated = useLightFormStore((state) => state.isHydrated);
   const isReadOnly = useLightFormStore((state) => state.isReadOnly);
-  const saveStatus = useLightFormStore((state) => state.saveStatus);
   const hydrate = useLightFormStore((state) => state.hydrate);
   const setAnswer = useLightFormStore((state) => state.setAnswer);
   const setCurrentStep = useLightFormStore((state) => state.setCurrentStep);
@@ -309,15 +330,6 @@ export function LightFormPage() {
     navigate(`/light/${nextStep + 1}`);
   };
 
-  const saveStatusMessage =
-    saveStatus === "saving"
-      ? "저장 중..."
-      : saveStatus === "saved"
-        ? "저장됨"
-        : saveStatus === "error"
-          ? "저장되지 않음 · 다시 시도"
-          : null;
-
   const isLastStep = questionCount > 0 && boundedStep === questionCount - 1;
   const isHydrationPending =
     sessionId !== null && (hydrationState === "pending-input" || hydrationState === "pending-status");
@@ -355,9 +367,7 @@ export function LightFormPage() {
           {pageErrorMessage}
         </p>
       ) : isPageLoading ? (
-        <p aria-live="polite" className="rounded-card border border-border bg-card p-6 text-ink-muted" role="status">
-          질문을 불러오는 중...
-        </p>
+        <LightQuestionLoadingSkeleton />
       ) : questions === undefined || questions.length === 0 ? (
         <p className="rounded-card border border-border bg-card p-6 text-red-700" role="alert">
           {pageErrorMessage}
@@ -436,15 +446,6 @@ export function LightFormPage() {
             question={questions[boundedStep]}
           />
 
-          {saveStatusMessage ? (
-            <p
-              aria-live="polite"
-              className={saveStatus === "error" ? "text-sm font-semibold text-red-700" : "text-sm text-ink-muted"}
-              role={saveStatus === "error" ? "alert" : "status"}
-            >
-              {saveStatusMessage}
-            </p>
-          ) : null}
           {submitMutation.isError ? (
             <p className="text-sm font-semibold text-red-700" role="alert">
               제출하지 못했어요. 입력을 확인한 뒤 다시 시도해 주세요.

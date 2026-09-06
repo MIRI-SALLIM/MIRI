@@ -86,7 +86,7 @@ function matchesInputSave(
 }
 
 export async function startLightSession(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "가볍게 맞춰보기 시작하기" }).click();
+  await page.getByRole("button", { name: "가볍게 맞춰보기" }).click();
   await waitForLightForm(page);
 }
 

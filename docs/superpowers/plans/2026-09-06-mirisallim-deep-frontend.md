@@ -208,7 +208,7 @@ apps/frontend/src/
 │  ├─ deep-waiting/   deep-result/     (F14, F15)
 │  └─ deep-agreements/ deep-meeting/   (F16, F17)
 ├─ widgets/
-│  ├─ deep-progress/  deep-plan-form/  funding-preview/
+│  ├─ deep-progress/  deep-plan-form/   (~~funding-preview/~~ 만들지 않는다 — #97)
 │  ├─ deep-report-*/  agreement-card/  meeting-*/
 ├─ features/
 │  ├─ create-deep-session/ join-deep-session/ withdraw-deep-session/

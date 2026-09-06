@@ -76,11 +76,35 @@ describe("DeepWaitingPage", () => {
     expect(screen.queryByRole("link", { name: "결과 보기" })).not.toBeInTheDocument();
   });
 
-  it("says it is waiting for the partner only once I have submitted", async () => {
-    mockStatus(status({ mySubmitted: true }));
+  it("uses partnerCompleted to distinguish partner waiting from report preparation", async () => {
+    mockStatus(status({ mySubmitted: true, partnerCompleted: false }));
     renderWaiting();
 
     expect(await screen.findByText("내 제출은 끝났어요. 상대의 제출을 기다리고 있어요.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "결과 준비 상태 보기" })).toHaveAttribute(
+      "href",
+      "/deep/result/session-a",
+    );
+  });
+
+  it("does not infer partner waiting from a waiting report when partnerCompleted is true", async () => {
+    mockStatus(status({ mySubmitted: true, partnerCompleted: true, status: "waiting" }));
+    renderWaiting();
+
+    expect(await screen.findByText("두 분 모두 제출했어요. 공동 리포트를 준비하고 있어요.")).toBeInTheDocument();
+    expect(screen.queryByText("내 제출은 끝났어요. 상대의 제출을 기다리고 있어요.")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "결과 준비 상태 보기" })).toHaveAttribute(
+      "href",
+      "/deep/result/session-a",
+    );
+  });
+
+  it("links a published status to the result screen", async () => {
+    mockStatus(status({ mySubmitted: true, partnerCompleted: true, status: "ready" }));
+    renderWaiting();
+
+    expect(await screen.findByRole("heading", { name: "공동 리포트가 준비됐어요" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "결과 보기" })).toHaveAttribute("href", "/deep/result/session-a");
   });
 
   it("does not show an invitation card to the joined participant", async () => {

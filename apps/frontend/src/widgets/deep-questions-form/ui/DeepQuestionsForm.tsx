@@ -74,7 +74,7 @@ function ValueQuestionCard({
     <article className={`${cardClassName} space-y-5`} aria-labelledby={`deep-value-heading-${question.id}`}>
       <div className="space-y-2">
         {label ? <p className="text-sm font-semibold text-purple-strong">{label}</p> : null}
-        <h3 className="text-lg font-extrabold" id={`deep-value-heading-${question.id}`}>{question.text}</h3>
+        <h3 className="text-lg font-extrabold" id={`deep-value-heading-${question.id}`} tabIndex={-1}>{question.text}</h3>
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
         <p className="text-sm leading-relaxed text-ink-muted">{question.left}</p>

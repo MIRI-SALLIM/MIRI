@@ -101,6 +101,17 @@ describe("DeepPlanPage", () => {
 
     expect(await screen.findByText("계획이 잠겨 읽기 전용이에요.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "계획 저장하기" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "이 계획 확인하기" })).toBeInTheDocument();
+  });
+
+  it("continues from the plan into the personal input step", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ ...serverPlan(), myConfirmed: true }));
+    renderPage();
+
+    expect(await screen.findByRole("link", { name: "내 재무 현황으로 가기" })).toHaveAttribute(
+      "href",
+      "/deep/input/session-a",
+    );
   });
 
   it("refetches after a plan version conflict and explains the next action", async () => {

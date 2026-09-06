@@ -8,6 +8,7 @@ import {
   joinDeepSession,
   readActiveDeepSessionId,
   saveActiveDeepSessionId,
+  submitDeepSession,
   withdrawDeepSession,
 } from "./deep-session";
 
@@ -70,6 +71,32 @@ describe("deep session API", () => {
     expect(new URL(statusRequest.url).pathname).toBe(`/api/v1/deep/v3/sessions/${session.id}/status`);
     expect(new URL(withdrawRequest.url).pathname).toBe(`/api/v1/deep/v3/sessions/${session.id}/withdraw`);
     expect(await withdrawRequest.text()).toBe("{}");
+  });
+
+  it("submits the latest revision and plan version with both sharing choices", async () => {
+    const response = { mySubmitted: true, partnerCompleted: false, status: "waiting" as const };
+    fetchMock.mockResolvedValue(jsonResponse(response));
+
+    await expect(
+      submitDeepSession("deep-session-a", {
+        expectedRevision: 7,
+        planVersion: 3,
+        consentVersion: "deep-sharing-v2",
+        shareFinance: true,
+        shareValues: false,
+      }),
+    ).resolves.toEqual(response);
+
+    const [request] = fetchMock.mock.calls[0] as [Request];
+    expect(request.method).toBe("POST");
+    expect(new URL(request.url).pathname).toBe("/api/v1/deep/v3/sessions/deep-session-a/me/submit");
+    await expect(request.json()).resolves.toEqual({
+      expectedRevision: 7,
+      planVersion: 3,
+      consentVersion: "deep-sharing-v2",
+      shareFinance: true,
+      shareValues: false,
+    });
   });
 });
 

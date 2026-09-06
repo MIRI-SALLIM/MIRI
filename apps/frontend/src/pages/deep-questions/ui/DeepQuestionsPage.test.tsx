@@ -152,4 +152,20 @@ describe("DeepQuestionsPage", () => {
     expect(screen.getByRole("option", { name: "주거비" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "조건 1 메모" })).toBeInTheDocument();
   });
+
+  it("points an incomplete submission back to the named question", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/deep/questions/session-a?incompleteQuestion=D1&incompleteQuestion=D3"]}>
+          <Routes>
+            <Route element={<DeepQuestionsPage />} path="/deep/questions/:sessionId" />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("서버가 준 가치관 질문");
+    expect(screen.getByRole("alert")).toHaveTextContent("세 번째 서버 질문");
+  });
 });

@@ -31,6 +31,8 @@ const routeCases = [
   ["/deep/plan/session-a", "함께 계산할 공동 계획"],
   ["/deep/input/session-a", "각자의 재무 현황"],
   ["/deep/questions/session-a", "가치관과 분담 질문"],
+  ["/deep/submit/session-a", "제출 전 확인"],
+  ["/deep/result/session-a", "공동 리포트"],
 ] as const;
 
 // React.lazy를 통한 첫 모듈 변환은 개발/CI 콜드 캐시에 따라 1초를 넘을 수 있다.

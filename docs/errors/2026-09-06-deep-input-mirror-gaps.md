@@ -1,7 +1,7 @@
 # 딥 입력 서버 검증자와 Zod 미러의 판정 불일치
 
 - 작성일: 2026-09-06
-- 관련: 이슈 #84, PR 미정, 커밋 미정
+- 관련: 이슈 #84, PR #89, 커밋 `d6cfbac`, `83d15c7`
 
 ## 무엇이 잘못됐나
 
@@ -18,9 +18,9 @@
 
 입력 미러에 서버와 같은 고정 키 집합, 중복 검사, skip/answer 충돌 검사, 제약·후정산 참조 검사, 정산 source 중복 검사를 추가했다. `SharedPlanV3`에는 CommonCategory 키 제한과 `UNSAFE_COMMON_BUDGET`을 추가했다.
 
-v3에서 자산 배분은 `funding.sources`, 부채 처분은 `funding.settlements`가 정본이므로 자산 배분 필드와 `disposition: "settle"`를 미러 타입에서 각각 `0`·`"keep"`으로 좁혔다. 생성된 OpenAPI 타입은 이 의미상 좁힘을 표현하지 못하므로 type-test는 미러가 API 요청 타입의 부분집합임을 확인한다.
+v3에서 자산 배분은 `funding.sources`, 부채 처분은 `funding.settlements`가 정본이므로 자산 배분 필드와 `disposition: "settle"`를 미러 타입에서 각각 `0`·`"keep"`으로 좁혔다. 생성된 OpenAPI 타입은 이 의미상 좁힘을 표현하지 못하므로 type-test는 미러가 API 요청 타입의 부분집합임을 확인하는 동시에, 의미상 좁힌 `assets`·`debts`를 제외한 API→미러 역방향 할당과 top-level/선정 중첩 키 집합도 고정한다.
 
-합산 판정은 JavaScript `number`의 안전 정수 경계를 넘을 수 있어 `BigInt`로 수행했다. `V3_ID_TOO_LONG`은 UI의 funding ID 생성기 경계로 도달하지 않는다는 기존 설계에 따라 미러링하지 않았다.
+합산 판정은 JavaScript `number`의 안전 정수 경계를 넘을 수 있어 `BigInt`로 수행했다. `V3_ID_TOO_LONG`은 서버와 같이 재원·정산·부채 ID에 62자 제한으로 미러링했으며, 자산·제약 ID는 공통 `FundingId`의 64자 제한을 유지해 과잉 거부를 피한다.
 
 ## 재발 방지
 

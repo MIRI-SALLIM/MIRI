@@ -94,6 +94,20 @@ describe("SharedPlanV3 request schema", () => {
     }, "DEADLINE_TOTAL_MISMATCH");
   });
 
+  it("keeps DEADLINE_TOTAL_MISMATCH at the JavaScript safe-integer boundary", () => {
+    // number 산술은 MAX_SAFE_INTEGER + 2를 반올림해 양변을 같게 만들 수 있다.
+    expectCode({
+      ...validPlan(),
+      housingType: "buy",
+      housingPriceWon: amount(Number.MAX_SAFE_INTEGER),
+      oneOffCostsWon: amount(2),
+      fundingDeadlines: [
+        { id: "housing", amount: amount(Number.MAX_SAFE_INTEGER) },
+        { id: "fees", amount: amount(1) },
+      ],
+    }, "DEADLINE_TOTAL_MISMATCH");
+  });
+
   it("emits INVALID_NEW_HOUSING_LOAN for a loan on a keep plan", () => {
     expectCode({
       ...validPlan(),

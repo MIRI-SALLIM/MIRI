@@ -8,6 +8,10 @@ export type {
 } from "./model/questions";
 export {
   deepAreaLabels,
+  deepAgreementOwnerLabels,
+  deepAgreementStatusLabels,
+  deepAgreementTopicLabels,
+  deepCommonCategoryLabels,
   deepConstraintAllowBorrowingLabels,
   deepConstraintKindLabels,
   deepConstraintScopeLabels,

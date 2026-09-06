@@ -125,6 +125,7 @@ function ReportContent({ result, sessionId }: { result: DeepReadyResult; session
         ))}
       </section>
       <div className="flex flex-wrap gap-4">
+        <Link className="font-bold text-purple-strong underline" to={`/deep/agreements/${encodeURIComponent(sessionId)}`}>우리 돈의 기준표</Link>
         <Link className="font-bold text-purple-strong underline" to={`/deep/questions/${encodeURIComponent(sessionId)}`}>질문 다시 보기</Link>
         <Link className="font-bold text-purple-strong underline" to="/">처음으로 돌아가기</Link>
       </div>

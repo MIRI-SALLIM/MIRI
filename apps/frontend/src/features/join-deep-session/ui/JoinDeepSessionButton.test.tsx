@@ -32,7 +32,7 @@ function renderButton() {
       <MemoryRouter initialEntries={["/deep/invite/INV-DEEP-A"]}>
         <Routes>
           <Route element={<JoinDeepSessionButton code="INV-DEEP-A" />} path="/deep/invite/:code" />
-          <Route element={<h1>딥 세션을 기다리는 중</h1>} path="/deep/waiting/:sessionId" />
+          <Route element={<h1>딥 세션이 열렸어요</h1>} path="/deep/waiting/:sessionId" />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -50,7 +50,7 @@ it("reuses the same logical join key when the response is lost", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("참여하지 못했어요");
   await user.click(screen.getByRole("button", { name: "딥 세션 참여하기" }));
 
-  expect(await screen.findByRole("heading", { name: "딥 세션을 기다리는 중" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "딥 세션이 열렸어요" })).toBeInTheDocument();
   expect((fetchMock.mock.calls[1][0] as Request).headers.get("Idempotency-Key")).toBe(
     (fetchMock.mock.calls[0][0] as Request).headers.get("Idempotency-Key"),
   );
@@ -74,5 +74,5 @@ it.each([
   await user.click(screen.getByRole("button", { name: "딥 세션 참여하기" }));
 
   expect(await screen.findByRole("alert")).toHaveTextContent(message);
-  expect(screen.queryByRole("heading", { name: "딥 세션을 기다리는 중" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "딥 세션이 열렸어요" })).not.toBeInTheDocument();
 });

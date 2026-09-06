@@ -33,6 +33,8 @@ export function DeepEntryPage() {
     }
   };
 
+  const hasActiveSession = activeSessionId !== null && activeSessionQuery.data !== undefined;
+
   return (
     <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-7 px-5 py-16 sm:px-8">
       <div className="space-y-3">
@@ -83,6 +85,10 @@ export function DeepEntryPage() {
             </div>
           ) : null}
 
+          {/* 진행 중인 세션이 확인됐으면 새로 만들 길을 열어 두지 않는다. 새로 만들면 저장된
+              UUID가 덮어써져 기존 세션의 복구 경로가 사라지고 생성 레이트리밋도 쓴다. */}
+          {hasActiveSession ? null : (
+          <>
           <div className={cardClassName}>
             <div>
               <h2 className="text-xl font-extrabold tracking-[-0.02em]">새 세션을 시작해요</h2>
@@ -116,6 +122,8 @@ export function DeepEntryPage() {
               </Button>
             </form>
           </div>
+          </>
+          )}
         </div>
       )}
     </section>

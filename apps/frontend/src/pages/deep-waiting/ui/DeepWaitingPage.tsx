@@ -10,8 +10,11 @@ const cardClassName = "flex flex-col gap-4 rounded-card border border-border bg-
 function InviteCodeCard({ code }: { code: string }) {
   const [isCopied, setIsCopied] = useState(false);
 
+  // 현재 URL은 대기 화면이라 상대가 열어도 참여할 수 없다. 참여 라우트를 만들어 복사한다.
+  const inviteUrl = `${window.location.origin}/deep/invite/${encodeURIComponent(code)}`;
+
   const copyLink = async () => {
-    await navigator.clipboard?.writeText(window.location.href);
+    await navigator.clipboard?.writeText(inviteUrl);
     setIsCopied(true);
   };
 
@@ -25,7 +28,7 @@ function InviteCodeCard({ code }: { code: string }) {
         <h2 className="text-xl font-extrabold tracking-[-0.02em]">상대를 초대해요</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-muted">아래 링크를 상대에게 보내면 같은 세션에 참여할 수 있어요.</p>
       </div>
-      <p className="break-all rounded-control bg-purple-tint p-4 font-mono text-sm text-ink">{code}</p>
+      <p className="break-all rounded-control bg-purple-tint p-4 font-mono text-sm text-ink" data-testid="deep-invite-url">{inviteUrl}</p>
       <Button onClick={copyLink} variant="secondary">
         {isCopied ? "초대 링크를 복사했어요" : "초대 링크 복사"}
       </Button>
@@ -43,9 +46,9 @@ export function DeepWaitingPage() {
     <section className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-16 sm:px-8">
       <div className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-purple-strong">15분 모드</p>
-        <h1 className="text-2xl font-extrabold tracking-[-0.02em]">딥 세션을 기다리는 중</h1>
+        <h1 className="text-2xl font-extrabold tracking-[-0.02em]">딥 세션이 열렸어요</h1>
         <p className="text-base leading-relaxed text-ink-muted">
-          두 사람이 같은 세션에 들어오면 다음 단계가 열려요. 서로의 개인 답변은 공유하기 전까지 보이지 않아요.
+          상대를 초대하고, 기다리지 않고 바로 시작할 수 있어요. 서로의 개인 답변은 공유하기 전까지 보이지 않아요.
         </p>
       </div>
 
@@ -64,18 +67,21 @@ export function DeepWaitingPage() {
           <h2 className="text-xl font-extrabold tracking-[-0.02em]">세션 상태를 불러오지 못했어요</h2>
           <p className="text-sm leading-relaxed text-ink-muted">잠시 후 자동으로 다시 확인해요.</p>
         </div>
-      ) : status.isReady ? (
+      ) : (
         <div className={cardClassName}>
-          <h2 className="text-xl font-extrabold tracking-[-0.02em]">다음 단계로 이어갈 수 있어요</h2>
-          <p className="text-sm leading-relaxed text-ink-muted">두 사람의 현재 상태를 확인했어요.</p>
+          <h2 className="text-xl font-extrabold tracking-[-0.02em]">
+            {status.isReady ? "두 사람 모두 제출했어요" : "지금 시작할 수 있어요"}
+          </h2>
+          <p className="text-sm leading-relaxed text-ink-muted">
+            {status.isReady
+              ? "함께 볼 결과가 준비됐어요."
+              : status.status?.mySubmitted
+                ? "내 제출은 끝났어요. 상대의 제출을 기다리고 있어요."
+                : "계획과 내 현황은 상대를 기다리지 않고 채울 수 있어요."}
+          </p>
           <Link className="inline-flex min-h-12 items-center justify-center rounded-control border border-purple-strong bg-purple-strong px-5 py-3 font-bold text-white" to={`/deep/plan/${encodeURIComponent(sessionId)}`}>
             다음 단계 보기
           </Link>
-        </div>
-      ) : (
-        <div className={cardClassName}>
-          <h2 className="text-xl font-extrabold tracking-[-0.02em]">상대가 참여하기를 기다리고 있어요</h2>
-          <p className="text-sm leading-relaxed text-ink-muted">상대가 참여하면 다음 단계로 이어갈 수 있어요.</p>
         </div>
       )}
 

@@ -27,7 +27,7 @@ const routeCases = [
   ["/result/light/session-a", "라이트 결과"],
   ["/result/light/session-a/share", "결과 공유"],
   ["/deep/invite/INV-A", "딥 모드 초대 참여"],
-  ["/deep/waiting/session-a", "딥 세션을 기다리는 중"],
+  ["/deep/waiting/session-a", "딥 세션이 열렸어요"],
 ] as const;
 
 describe("AppRoutes", () => {

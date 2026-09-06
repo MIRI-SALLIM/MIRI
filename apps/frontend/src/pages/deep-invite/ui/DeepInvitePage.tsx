@@ -35,7 +35,7 @@ export function DeepInvitePage() {
             본인이 만든 세션에는 참여할 수 없어요. 이미 두 사람이 참여했다면 안내를 확인하고 새 초대를 받아 주세요.
           </p>
           <JoinDeepSessionButton code={code} />
-          <Link className="text-center text-sm font-bold text-purple-strong underline" to="/login">
+          <Link className="text-center text-sm font-bold text-purple-strong underline" to={`/login?returnTo=${encodeURIComponent(`/deep/invite/${code}`)}`}>
             로그인 화면으로
           </Link>
         </div>

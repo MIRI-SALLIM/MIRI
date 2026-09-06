@@ -3,10 +3,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  DEEP_STATUS_SUBMITTED_POLL_INTERVAL_MS,
-  DEEP_STATUS_WAITING_POLL_INTERVAL_MS,
+  DEEP_STATUS_POLL_INTERVAL_MS,
   useDeepSessionStatus,
 } from "./use-deep-session-status";
+import { POLLING_INTERVAL_MS, POLLING_TIMEOUT_MS } from "@/shared/lib";
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
 vi.mock("@/shared/api", async (importOriginal) => {
@@ -28,13 +28,30 @@ beforeEach(() => {
 });
 
 describe("useDeepSessionStatus", () => {
-  it("uses slower waiting polls and faster submitted polls", async () => {
-    expect(DEEP_STATUS_WAITING_POLL_INTERVAL_MS).toBeGreaterThan(DEEP_STATUS_SUBMITTED_POLL_INTERVAL_MS);
+  it("uses the shared five-second polling cadence", async () => {
+    expect(DEEP_STATUS_POLL_INTERVAL_MS).toBe(POLLING_INTERVAL_MS);
     fetchMock.mockResolvedValue(response({ mySubmitted: false, partnerCompleted: false, status: "waiting" }));
 
     const { result } = renderHook(() => useDeepSessionStatus("deep-session-a"), { wrapper });
     await waitFor(() => expect(result.current.status?.status).toBe("waiting"));
     expect(result.current.isReady).toBe(false);
+  });
+
+  it("stops polling after the shared sixty-second cap", async () => {
+    vi.useFakeTimers();
+    try {
+      fetchMock.mockResolvedValue(response({ mySubmitted: false, partnerCompleted: false, status: "waiting" }));
+      const { result } = renderHook(() => useDeepSessionStatus("deep-session-a"), { wrapper });
+      await vi.waitFor(() => expect(result.current.status?.status).toBe("waiting"));
+
+      await vi.advanceTimersByTimeAsync(POLLING_TIMEOUT_MS);
+      expect(result.current.isTimedOut).toBe(true);
+      const calls = fetchMock.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(POLLING_INTERVAL_MS * 2);
+      expect(fetchMock).toHaveBeenCalledTimes(calls);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("stops at the terminal ready state", async () => {
@@ -45,7 +62,7 @@ describe("useDeepSessionStatus", () => {
       await vi.waitFor(() => expect(result.current.isReady).toBe(true));
       const calls = fetchMock.mock.calls.length;
 
-      await vi.advanceTimersByTimeAsync(DEEP_STATUS_WAITING_POLL_INTERVAL_MS * 2);
+      await vi.advanceTimersByTimeAsync(POLLING_INTERVAL_MS * 2);
       expect(fetchMock).toHaveBeenCalledTimes(calls);
     } finally {
       vi.useRealTimers();

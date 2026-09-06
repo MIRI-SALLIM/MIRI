@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { deepInputQueryKey, fetchDeepInput } from "@/entities/deep-input";
 import { deepQuestionsQueryKey, getDeepQuestions } from "@/entities/deep-question";
@@ -13,6 +13,8 @@ const cardClassName = "rounded-card border border-border bg-card p-6 sm:p-8";
 
 export function DeepQuestionsPage() {
   const { sessionId = "" } = useParams();
+  const [searchParams] = useSearchParams();
+  const incompleteQuestionIds = searchParams.getAll("incompleteQuestion");
   const questionsQuery = useQuery({
     enabled: sessionId !== "",
     queryFn: () => getDeepQuestions(sessionId),
@@ -33,6 +35,18 @@ export function DeepQuestionsPage() {
   const hydrate = useDeepInputStore((state) => state.hydrate);
   const updateDraft = useDeepInputStore((state) => state.updateDraft);
   const flush = useDeepInputStore((state) => state.flush);
+
+  const incompleteQuestions = questionsQuery.data?.valueQuestions.filter(
+    (question) => incompleteQuestionIds.includes(question.id),
+  ) ?? [];
+  const firstIncompleteQuestionId = incompleteQuestionIds[0] ?? null;
+
+  useEffect(() => {
+    if (firstIncompleteQuestionId === null || questionsQuery.data === undefined) return;
+    const target = document.getElementById(`deep-value-heading-${firstIncompleteQuestionId}`);
+    target?.scrollIntoView({ block: "center" });
+    target?.focus();
+  }, [firstIncompleteQuestionId, questionsQuery.data]);
 
   useEffect(() => {
     if (inputQuery.data !== undefined && sessionId !== "") {
@@ -73,6 +87,19 @@ export function DeepQuestionsPage() {
 
       <DeepInputSyncNotice blockingIssues={blockingIssues} syncState={syncState} />
 
+      {incompleteQuestionIds.length > 0 ? (
+        <div className={`${cardClassName} border-amber-300 bg-amber-50`} role="alert">
+          <p className="font-bold">확인이 필요한 질문으로 돌아왔어요.</p>
+          {incompleteQuestions.length > 0 ? (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-ink">
+              {incompleteQuestions.map((question) => <li key={question.id}>{question.text}</li>)}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm leading-relaxed text-ink">응답이 필요한 질문을 확인해 주세요.</p>
+          )}
+        </div>
+      ) : null}
+
       <div className={cardClassName}>
         <DeepQuestionsForm
           disabled={isReadOnly}
@@ -85,7 +112,10 @@ export function DeepQuestionsPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Link className="font-bold text-purple-strong underline" to={`/deep/input/${encodedSessionId}`}>재무 현황으로 돌아가기</Link>
-        <Link className="font-bold text-purple-strong underline" to={`/deep/waiting/${encodedSessionId}`}>세션 상태 보기</Link>
+        <div className="flex flex-wrap gap-4">
+          <Link className="font-bold text-purple-strong underline" to={`/deep/submit/${encodedSessionId}`}>제출 전 확인하기</Link>
+          <Link className="font-bold text-purple-strong underline" to={`/deep/waiting/${encodedSessionId}`}>세션 상태 보기</Link>
+        </div>
       </div>
     </section>
   );

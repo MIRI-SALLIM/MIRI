@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { StartLightButton } from "@/features/create-session";
-import { Button } from "@/shared/ui/button";
 
 const GREEN = "#43A77B";
 const PURPLE = "#8A6FD1";
@@ -361,10 +361,10 @@ export function LandingPage() {
         <ModeCard
           art={<DeepModeArt />}
           cta={
-            <Button className={`${ctaClassName} !bg-purple-strong`} disabled fullWidth>
+            <Link className={`${ctaClassName} inline-flex w-full items-center justify-center rounded-control !bg-purple-strong text-white transition-[filter,translate] duration-[160ms] ease-smooth hover:brightness-[.94] active:translate-y-px`} to="/deep">
               제대로 계산해보기 시작하기
               <CtaArrow />
-            </Button>
+            </Link>
           }
           points={deepPoints}
           subtitle="우리 숫자를 합치면 어떻게 되나"

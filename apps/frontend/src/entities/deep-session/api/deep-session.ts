@@ -3,6 +3,7 @@ import { apiClient, requestApi, type components } from "@/shared/api";
 export type SessionV3 = components["schemas"]["SessionV3"];
 export type DeepSessionStatus = components["schemas"]["DeepStatusResponse"];
 export type ClosedDeepSession = components["schemas"]["ClosedDeepResponse"];
+export type DeepSubmitRequest = components["schemas"]["SubmitV3"];
 
 export const DEEP_ACTIVE_SESSION_STORAGE_KEY = "deepActiveSessionId";
 
@@ -30,6 +31,17 @@ export const joinDeepSession = (code: string, idempotencyKey: string): Promise<S
 export const fetchDeepSessionStatus = (sessionId: string): Promise<DeepSessionStatus> =>
   requestApi(
     apiClient.GET("/api/v1/deep/v3/sessions/{session_id}/status", {
+      params: { path: { session_id: sessionId } },
+    }),
+  );
+
+export const submitDeepSession = (
+  sessionId: string,
+  body: DeepSubmitRequest,
+): Promise<DeepSessionStatus> =>
+  requestApi(
+    apiClient.POST("/api/v1/deep/v3/sessions/{session_id}/me/submit", {
+      body,
       params: { path: { session_id: sessionId } },
     }),
   );

@@ -57,6 +57,7 @@ export function DeepWaitingPage() {
     : null;
   const waitingPath = `/deep/waiting/${encodeURIComponent(sessionId)}`;
   const status = useDeepSessionStatus(sessionId);
+  const partnerCompleted = status.status?.partnerCompleted === true;
 
   return (
     <section className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-16 sm:px-8">
@@ -99,6 +100,12 @@ export function DeepWaitingPage() {
           <p className="text-sm leading-relaxed text-ink-muted">딥모드 첫 화면에서 새 세션을 시작할 수 있어요.</p>
           <Link className="font-bold text-purple-strong underline" to="/deep">딥모드 첫 화면으로</Link>
         </div>
+      ) : status.isTimedOut ? (
+        <div className={cardClassName}>
+          <h2 className="text-xl font-extrabold tracking-[-0.02em]">자동 확인을 잠시 멈췄어요</h2>
+          <p className="text-sm leading-relaxed text-ink-muted">새로고침하면 세션 상태를 다시 확인해요.</p>
+          <Button onClick={() => void status.refetch()} variant="secondary">다시 확인하기</Button>
+        </div>
       ) : status.isFailed || status.status === null ? (
         <div className={cardClassName}>
           <h2 className="text-xl font-extrabold tracking-[-0.02em]">세션 상태를 불러오지 못했어요</h2>
@@ -108,21 +115,36 @@ export function DeepWaitingPage() {
       ) : (
         <div className={cardClassName}>
           <h2 className="text-xl font-extrabold tracking-[-0.02em]">
-            {status.isReady ? "두 사람 모두 제출했어요" : "지금 시작할 수 있어요"}
+            {status.isReady
+              ? "공동 리포트가 준비됐어요"
+              : partnerCompleted
+                ? "공동 리포트를 준비하고 있어요"
+                : "지금 시작할 수 있어요"}
           </h2>
           <p className="text-sm leading-relaxed text-ink-muted">
             {status.isReady
               ? "함께 볼 결과가 준비됐어요."
-              : status.status?.mySubmitted
+              : partnerCompleted
+                ? "두 분 모두 제출했어요. 공동 리포트를 준비하고 있어요."
+                : status.status?.mySubmitted
                 ? "내 제출은 끝났어요. 상대의 제출을 기다리고 있어요."
                 : "계획과 내 현황은 상대를 기다리지 않고 채울 수 있어요."}
           </p>
-          <Link
-            className="inline-flex min-h-12 w-fit items-center justify-center rounded-control border border-purple-strong bg-purple-strong px-5 py-3 font-bold text-white transition-colors hover:bg-[#563C96] focus-visible:shadow-focus"
-            to={`/deep/plan/${encodeURIComponent(sessionId)}`}
-          >
-            공동 계획 시작하기
-          </Link>
+          {status.isReady || partnerCompleted || status.status?.mySubmitted ? (
+            <Link
+              className="inline-flex min-h-12 w-fit items-center justify-center rounded-control border border-purple-strong bg-purple-strong px-5 py-3 font-bold text-white transition-colors hover:bg-[#563C96] focus-visible:shadow-focus"
+              to={`/deep/result/${encodeURIComponent(sessionId)}`}
+            >
+              {status.isReady ? "결과 보기" : "결과 준비 상태 보기"}
+            </Link>
+          ) : (
+            <Link
+              className="inline-flex min-h-12 w-fit items-center justify-center rounded-control border border-purple-strong bg-purple-strong px-5 py-3 font-bold text-white transition-colors hover:bg-[#563C96] focus-visible:shadow-focus"
+              to={`/deep/plan/${encodeURIComponent(sessionId)}`}
+            >
+              공동 계획 시작하기
+            </Link>
+          )}
         </div>
       )}
 

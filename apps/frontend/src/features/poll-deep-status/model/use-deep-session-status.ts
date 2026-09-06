@@ -6,9 +6,9 @@ import {
   type DeepSessionStatus,
 } from "@/entities/deep-session";
 import { ApiError, isTerminalApiError } from "@/shared/api";
+import { POLLING_INTERVAL_MS, usePollingWindow } from "@/shared/lib";
 
-export const DEEP_STATUS_WAITING_POLL_INTERVAL_MS = 2_000;
-export const DEEP_STATUS_SUBMITTED_POLL_INTERVAL_MS = 1_000;
+export const DEEP_STATUS_POLL_INTERVAL_MS = POLLING_INTERVAL_MS;
 
 const isReady = (status: DeepSessionStatus | undefined): boolean =>
   status?.status === "ready";
@@ -33,12 +33,15 @@ export interface DeepSessionStatusResult {
   isFailed: boolean;
   isPending: boolean;
   isReady: boolean;
+  isTimedOut: boolean;
   refetch: () => Promise<unknown>;
+  restartPolling: () => void;
   status: DeepSessionStatus | null;
 }
 
-/** 파트너 완료를 감지할 때까지 적응형으로 확인하고, ready·만료·인증 오류에서 멈춘다. */
+/** 파트너 완료를 감지할 때까지 확인하고, ready·만료·인증 오류에서 멈춘다. */
 export function useDeepSessionStatus(sessionId: string): DeepSessionStatusResult {
+  const polling = usePollingWindow(sessionId !== "");
   const query = useQuery({
     enabled: sessionId !== "",
     queryFn: () => fetchDeepSessionStatus(sessionId),
@@ -48,11 +51,15 @@ export function useDeepSessionStatus(sessionId: string): DeepSessionStatusResult
         return false;
       }
 
-      return state.data?.mySubmitted
-        ? DEEP_STATUS_SUBMITTED_POLL_INTERVAL_MS
-        : DEEP_STATUS_WAITING_POLL_INTERVAL_MS;
+      return polling.getInterval();
     },
+    refetchIntervalInBackground: false,
   });
+
+  const refetch = async () => {
+    polling.restart();
+    return query.refetch();
+  };
 
   return {
     terminalError: getTerminalError(query.error),
@@ -60,7 +67,9 @@ export function useDeepSessionStatus(sessionId: string): DeepSessionStatusResult
     isFailed: query.isError,
     isPending: query.isPending,
     isReady: isReady(query.data),
-    refetch: query.refetch,
+    isTimedOut: polling.isTimedOut && !isReady(query.data),
+    refetch,
+    restartPolling: polling.restart,
     status: query.data ?? null,
   };
 }

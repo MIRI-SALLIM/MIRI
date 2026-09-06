@@ -117,7 +117,7 @@ describe("LandingPage", () => {
     ).toBeEnabled();
   });
 
-  it("presents the deep mode card with the CTA disabled until the flow exists", () => {
+  it("opens the deep entry CTA once the submit and result flow exists", () => {
     renderLanding();
 
     const card = modeCard("제대로 계산해보기");
@@ -129,9 +129,7 @@ describe("LandingPage", () => {
       "합가 후 월 현금흐름 시뮬레이션",
       "활용 가능한 정책금융까지",
     ]);
-    expect(
-      within(card).getByRole("button", { name: "제대로 계산해보기 시작하기" }),
-    ).toBeDisabled();
+    expect(within(card).getByRole("link", { name: "제대로 계산해보기 시작하기" })).toHaveAttribute("href", "/deep");
   });
 
   it("uses accessible brand foregrounds and CTA backgrounds", () => {
@@ -154,7 +152,7 @@ describe("LandingPage", () => {
     expect(within(deepCard).getByRole("heading", { name: "제대로 계산해보기" })).toHaveClass(
       "text-purple-strong",
     );
-    expect(within(deepCard).getByRole("button", { name: "제대로 계산해보기 시작하기" })).toHaveClass(
+    expect(within(deepCard).getByRole("link", { name: "제대로 계산해보기 시작하기" })).toHaveClass(
       "!bg-purple-strong",
     );
   });

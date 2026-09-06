@@ -99,11 +99,32 @@ export function DeepPlanPage() {
             </div>
           </div>
         ) : (
-          <div className="border-t border-border-soft pt-5"><p className="text-sm font-semibold text-purple-strong">내 확인: {myConfirmed ? "확인했어요" : "아직 확인하지 않았어요"} · 상대 확인: {partnerConfirmed ? "확인했어요" : "아직 확인하지 않았어요"}</p></div>
+          <div className="border-t border-border-soft pt-5">
+            <p className="text-sm leading-relaxed text-ink-muted">계획이 잠겨 있어 수정할 수 없지만, 아직 확인하지 않았다면 이 버전을 확인할 수 있어요.</p>
+            {myConfirmed ? (
+              <p className="mt-3 text-sm font-semibold text-purple-strong">내 확인: 확인했어요 · 상대 확인: {partnerConfirmed ? "확인했어요" : "아직 확인하지 않았어요"}</p>
+            ) : (
+              <div className="mt-4">
+                <ConfirmDeepPlanButton
+                  onConflict={refreshAfterConflict}
+                  onSuccess={applyResponse}
+                  planVersion={version}
+                  sessionId={sessionId}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      <Link className="w-fit font-bold text-purple-strong underline" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태로 돌아가기</Link>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {myConfirmed ? (
+          <Link className="font-bold text-purple-strong underline" to={`/deep/input/${encodeURIComponent(sessionId)}`}>내 재무 현황으로 가기</Link>
+        ) : (
+          <p className="text-sm text-ink-muted">이 계획을 확인하면 내 재무 현황을 입력할 수 있어요.</p>
+        )}
+        <Link className="font-bold text-purple-strong underline" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태로 돌아가기</Link>
+      </div>
     </section>
   );
 }

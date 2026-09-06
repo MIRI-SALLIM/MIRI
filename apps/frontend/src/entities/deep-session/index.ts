@@ -7,6 +7,7 @@ export {
   joinDeepSession,
   readActiveDeepSessionId,
   saveActiveDeepSessionId,
+  submitDeepSession,
   withdrawDeepSession,
 } from "./api/deep-session";
-export type { ClosedDeepSession, DeepSessionStatus, SessionV3 } from "./api/deep-session";
+export type { ClosedDeepSession, DeepSessionStatus, DeepSubmitRequest, SessionV3 } from "./api/deep-session";

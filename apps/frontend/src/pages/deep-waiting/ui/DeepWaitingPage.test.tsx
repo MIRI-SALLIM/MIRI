@@ -67,13 +67,13 @@ describe("DeepWaitingPage", () => {
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/deep/invite/INVITE-1`);
   });
 
-  it("offers the next step without waiting for the partner", async () => {
+  it("does not expose an unfinished next step while F11 is unavailable", async () => {
     mockStatus(status());
     renderWaiting();
 
-    // 서버는 파트너 참여 여부를 알려주지 않고, 계획·입력은 혼자서도 저장된다.
-    expect(await screen.findByRole("link", { name: "다음 단계 보기" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "지금 시작할 수 있어요" })).toBeInTheDocument();
+    // F10은 상태와 철회만 제공하며, F11 계획 화면은 아직 준비 중이다.
+    expect(await screen.findByRole("heading", { name: "지금 시작할 수 있어요" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "다음 단계 보기" })).not.toBeInTheDocument();
   });
 
   it("says it is waiting for the partner only once I have submitted", async () => {

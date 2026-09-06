@@ -57,6 +57,25 @@ describe("SharedPlanV3 request schema", () => {
     expectCode({ ...validPlan(), commonExpensesStatus: "unknown", commonExpenses: { food: amount(100) } }, "BUDGET_ITEMS_REQUIRE_KNOWN_SCOPE");
   });
 
+  it("rejects common expense categories outside the server enum", () => {
+    const result = sharedPlanV3Schema.safeParse({
+      ...validPlan(),
+      commonExpenses: { unknown: amount(100) },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("emits UNSAFE_COMMON_BUDGET when common expenses exceed safe integer totals", () => {
+    expectCode({
+      ...validPlan(),
+      commonExpenses: {
+        housing: amount(Number.MAX_SAFE_INTEGER),
+        food: amount(1),
+      },
+    }, "UNSAFE_COMMON_BUDGET");
+  });
+
   it("emits DUPLICATE_FUNDING_DEADLINE for repeated deadline IDs", () => {
     const deadline = { id: "move-in", amount: amount(100) };
     expectCode({ ...validPlan(), fundingDeadlines: [deadline, deadline] }, "DUPLICATE_FUNDING_DEADLINE");

@@ -100,5 +100,6 @@ describe("DeepResultPage", () => {
     expect(screen.queryByText(/templates_only|unavailable|submitted_intentions_not_current_agreement|machine_token_should_be_skipped|sharing_not_authorized|UNKNOWN_SERVER_CODE/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "우리 돈의 기준표" })).toHaveAttribute("href", "/deep/agreements/session-a");
     expect(screen.getByRole("link", { name: "질문 다시 보기" })).toHaveAttribute("href", "/deep/questions/session-a");
+    expect(screen.getByRole("link", { name: "우리 돈의 기준회의 시작하기" })).toHaveAttribute("href", "/deep/meeting/session-a");
   });
 });

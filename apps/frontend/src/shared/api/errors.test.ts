@@ -35,6 +35,14 @@ describe("deep API error codes", () => {
     expect(isDeepApiErrorCode(error, "INPUT_LOCKED")).toBe(false);
   });
 
+  it("exposes meeting validation codes for dependent consent and answers", () => {
+    const consentError = new ApiError({ status: 422, code: "AI_REQUIRES_PARTNER_SHARING", kind: "validation" });
+    const answerError = new ApiError({ status: 422, code: "ADJUSTMENT_REQUIRES_INITIAL_PROPOSAL", kind: "validation" });
+
+    expect(isDeepApiErrorCode(consentError, "AI_REQUIRES_PARTNER_SHARING")).toBe(true);
+    expect(isDeepApiErrorCode(answerError, "ADJUSTMENT_REQUIRES_INITIAL_PROPOSAL")).toBe(true);
+  });
+
   it("does not treat an ordinary error as a matching API code", () => {
     expect(isApiErrorCode(new Error("no"), "PLAN_LOCKED")).toBe(false);
   });

@@ -409,9 +409,9 @@ repoId   2aebd786-298f-4802-9bce-7692a72cb670
 F12b/F17 구현자   codex  gpt-5.6-sol   high
 검증자(매번 신규) claude sonnet  high
 
-구현 세션은 자기 작업을 검증하지 않는다. F12b·F17을 제외한 구현은 Luna xhigh,
-F12b·F17 구현은 Sol high로 기동하고, 모든 검증은 구현 세션과 별개의 새 Sol high
-세션으로 기동한다.
+구현 세션은 자기 작업을 검증하지 않는다. F12b·F17을 제외한 구현은 Luna xhigh로,
+F12b·F17 구현은 Sol high로 워크트리에 기동한다. 검증은 워크트리에 기동하지 않고
+코디네이터가 매번 새 Claude Sonnet high 세션으로 수행한다.
 ~~~
 
 `orca repo list`로 확인한 것: `setupAgentStartupPolicy`가 `start-immediately`라 2단계 custom-argv 경로가 허용된다. `worktreeBaseRef`는 `origin/develop`. `scripts.setup`이 **비어 있어 `--setup run`을 줘도 아무것도 설치되지 않는다** — `npm ci`는 수동이다.

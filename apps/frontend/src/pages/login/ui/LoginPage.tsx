@@ -1,13 +1,28 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 
 import { useAccount } from "@/entities/account";
 import { KakaoLoginButton } from "@/features/kakao-login";
 
+// 기본 도착지는 랜딩이다. 헤더의 "로그인"은 모든 화면에 있으므로 여기서 /deep으로 보내면
+// 결과 화면이 없는 F15 전까지 사용자가 두 번의 클릭으로 실세션을 만들 수 있게 된다.
+// 초대 링크처럼 갈 곳이 분명한 경우에만 returnTo로 명시한다.
+const DEFAULT_RETURN_TO = "/";
+
+// 서버의 validate_return_to와 같은 범위만 허용한다. 넓히면 우리 화면이 오픈 리다이렉트가 된다.
+const safeReturnTo = (value: string | null): string => {
+  if (value === null || value.includes("//") || value.includes("..")) {
+    return DEFAULT_RETURN_TO;
+  }
+  return value === "/deep" || value.startsWith("/deep/") ? value : DEFAULT_RETURN_TO;
+};
+
 export function LoginPage() {
   const { state } = useAccount();
+  const [searchParams] = useSearchParams();
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
 
   if (state === "authenticated") {
-    return <Navigate replace to="/deep" />;
+    return <Navigate replace to={returnTo} />;
   }
 
   return (
@@ -34,7 +49,7 @@ export function LoginPage() {
           로그인 상태를 확인할 수 없어요. 잠시 후 다시 시도해 주세요.
         </p>
       ) : (
-        <KakaoLoginButton />
+        <KakaoLoginButton returnTo={returnTo} />
       )}
     </section>
   );

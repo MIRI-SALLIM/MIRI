@@ -1,6 +1,7 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const useAccount = vi.hoisted(() => vi.fn());
 
@@ -9,20 +10,28 @@ vi.mock("@/entities/account", () => ({ useAccount }));
 import { DeepEntryPage } from "./DeepEntryPage";
 
 function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={["/deep"]}>
-      <DeepEntryPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/deep"]}>
+        <DeepEntryPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
+beforeEach(() => {
+  sessionStorage.clear();
+});
+
 describe("DeepEntryPage", () => {
-  it("shows the preparation message for an authenticated account", () => {
+  it("offers a new session and an invitation path for an authenticated account", () => {
     useAccount.mockReturnValue({ state: "authenticated", userId: "account-user" });
     renderPage();
 
     expect(screen.getByRole("heading", { name: "제대로 계산해보기" })).toBeInTheDocument();
-    expect(screen.getByText(/딥모드는 아직 준비 중이에요/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "딥 세션 시작하기" })).toBeInTheDocument();
+    expect(screen.getByLabelText("초대 코드")).toBeInTheDocument();
   });
 
   it("links an unauthenticated visitor to the login page", () => {

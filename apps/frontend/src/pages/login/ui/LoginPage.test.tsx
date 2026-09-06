@@ -14,6 +14,7 @@ function renderPage() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/deep" element={<h1>딥모드 입구</h1>} />
+        <Route path="/" element={<h1>랜딩</h1>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -50,10 +51,13 @@ describe("LoginPage", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("로그인 상태를 확인할 수 없어요.");
   });
 
-  it("redirects an authenticated account to the deep entry", () => {
+  it("sends an authenticated account to the landing page, not into deep mode", () => {
+    // 헤더의 "로그인"은 모든 화면에 있다. 여기서 /deep으로 보내면 결과 화면이 없는 동안에도
+    // 두 번의 클릭으로 실세션을 만들 수 있게 된다. 갈 곳은 returnTo로만 지정한다.
     useAccount.mockReturnValue({ state: "authenticated", userId: "account-user" });
     renderPage();
 
-    expect(screen.getByRole("heading", { name: "딥모드 입구" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "랜딩" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "딥모드 입구" })).not.toBeInTheDocument();
   });
 });

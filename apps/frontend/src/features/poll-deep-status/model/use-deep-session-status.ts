@@ -13,11 +13,27 @@ export const DEEP_STATUS_SUBMITTED_POLL_INTERVAL_MS = 1_000;
 const isReady = (status: DeepSessionStatus | undefined): boolean =>
   status?.status === "ready";
 
+export type DeepStatusTerminalError = "expired" | "unauthorized" | "not-found" | null;
+
+const getTerminalError = (error: unknown): DeepStatusTerminalError => {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  if (error.kind === "expired" || error.kind === "unauthorized" || error.kind === "not-found") {
+    return error.kind;
+  }
+
+  return null;
+};
+
 export interface DeepSessionStatusResult {
+  terminalError: DeepStatusTerminalError;
   isExpired: boolean;
   isFailed: boolean;
   isPending: boolean;
   isReady: boolean;
+  refetch: () => Promise<unknown>;
   status: DeepSessionStatus | null;
 }
 
@@ -39,10 +55,12 @@ export function useDeepSessionStatus(sessionId: string): DeepSessionStatusResult
   });
 
   return {
+    terminalError: getTerminalError(query.error),
     isExpired: query.error instanceof ApiError && query.error.kind === "expired",
     isFailed: query.isError,
     isPending: query.isPending,
     isReady: isReady(query.data),
+    refetch: query.refetch,
     status: query.data ?? null,
   };
 }

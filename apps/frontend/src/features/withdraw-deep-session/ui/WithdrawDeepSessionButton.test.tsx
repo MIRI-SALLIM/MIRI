@@ -36,6 +36,7 @@ it("requires confirmation before closing a session and clears its public id", as
 
   await user.click(screen.getByRole("button", { name: "세션 나가기" }));
   expect(screen.getByRole("button", { name: "세션 닫기" })).toBeInTheDocument();
+  expect(screen.getByText(/상대도 이 세션에서 나가게 되고/)).toBeInTheDocument();
   expect(fetchMock).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "세션 닫기" }));
 

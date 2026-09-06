@@ -1,10 +1,7 @@
 export {
-  activeDeepSessionQueryKey,
-  ACTIVE_DEEP_SESSION_STORAGE_KEY,
   clearActiveDeepSessionId,
   createDeepSession,
   DEEP_ACTIVE_SESSION_STORAGE_KEY,
-  deepSessionQueryKey,
   deepSessionStatusQueryKey,
   fetchDeepSessionStatus,
   joinDeepSession,

@@ -1,12 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {
-  activeDeepSessionQueryKey,
-  createDeepSession,
-  saveActiveDeepSessionId,
-} from "@/entities/deep-session";
+import { createDeepSession, saveActiveDeepSessionId } from "@/entities/deep-session";
 import { ApiError, createIdempotencyKey } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 
@@ -24,7 +20,6 @@ function toMessage(error: unknown): string {
 
 export function StartDeepSessionButton() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const attemptKey = useRef<string | null>(null);
   const createMutation = useMutation({
     mutationFn: () => {
@@ -34,8 +29,9 @@ export function StartDeepSessionButton() {
     onSuccess: async (session) => {
       attemptKey.current = null;
       saveActiveDeepSessionId(session.id);
-      await queryClient.invalidateQueries({ queryKey: activeDeepSessionQueryKey });
-      navigate(`/deep/waiting/${encodeURIComponent(session.id)}?inviteCode=${encodeURIComponent(session.invitationCode)}`);
+      navigate(
+        `/deep/waiting/${encodeURIComponent(session.id)}?inviteCode=${encodeURIComponent(session.invitationCode)}&role=${session.role}`,
+      );
     },
   });
 

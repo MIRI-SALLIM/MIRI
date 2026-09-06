@@ -5,13 +5,9 @@ export type DeepSessionStatus = components["schemas"]["DeepStatusResponse"];
 export type ClosedDeepSession = components["schemas"]["ClosedDeepResponse"];
 
 export const DEEP_ACTIVE_SESSION_STORAGE_KEY = "deepActiveSessionId";
-// 라이트의 공개 상수명과 맞춘 별칭이다. 값은 세션 UUID 하나만 담는다.
-export const ACTIVE_DEEP_SESSION_STORAGE_KEY = DEEP_ACTIVE_SESSION_STORAGE_KEY;
 
-export const deepSessionQueryKey = (sessionId: string) => ["deep-session", sessionId] as const;
 export const deepSessionStatusQueryKey = (sessionId: string) =>
   ["deep-session", sessionId, "status"] as const;
-export const activeDeepSessionQueryKey = ["deep-session", "active"] as const;
 
 /** 딥 세션 생성은 빈 객체와 시도 단위 멱등 키만 보낸다. */
 export const createDeepSession = (idempotencyKey: string): Promise<SessionV3> =>
@@ -63,7 +59,11 @@ export const saveActiveDeepSessionId = (sessionId: string): void => {
     return;
   }
 
-  window.sessionStorage.setItem(DEEP_ACTIVE_SESSION_STORAGE_KEY, sessionId);
+  try {
+    window.sessionStorage.setItem(DEEP_ACTIVE_SESSION_STORAGE_KEY, sessionId);
+  } catch {
+    // A blocked sessionStorage should not turn a successful session into a failed mutation.
+  }
 };
 
 export const clearActiveDeepSessionId = (sessionId?: string): void => {

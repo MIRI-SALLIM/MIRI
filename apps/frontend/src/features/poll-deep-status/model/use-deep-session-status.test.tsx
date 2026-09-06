@@ -51,4 +51,28 @@ describe("useDeepSessionStatus", () => {
       vi.useRealTimers();
     }
   });
+
+  it("exposes an unauthorized terminal error for the session page", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: "UNAUTHORIZED" } }), {
+        headers: { "content-type": "application/json" },
+        status: 401,
+      }),
+    );
+
+    const { result } = renderHook(() => useDeepSessionStatus("deep-session-a"), { wrapper });
+    await waitFor(() => expect(result.current.terminalError).toBe("unauthorized"));
+  });
+
+  it("exposes a not-found terminal error for the session page", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: "SESSION_NOT_FOUND" } }), {
+        headers: { "content-type": "application/json" },
+        status: 404,
+      }),
+    );
+
+    const { result } = renderHook(() => useDeepSessionStatus("deep-session-a"), { wrapper });
+    await waitFor(() => expect(result.current.terminalError).toBe("not-found"));
+  });
 });

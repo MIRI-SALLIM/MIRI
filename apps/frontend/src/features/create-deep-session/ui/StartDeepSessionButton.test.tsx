@@ -54,10 +54,26 @@ it("creates a session, preserves the invitation in the URL, and stores only its 
   await user.click(screen.getByRole("button", { name: "딥 세션 시작하기" }));
 
   expect(await screen.findByTestId("waiting-location")).toHaveTextContent(
-    "/deep/waiting/deep-session-a?inviteCode=INV-DEEP-A",
+    "/deep/waiting/deep-session-a?inviteCode=INV-DEEP-A&role=A",
   );
   expect(sessionStorage).toHaveLength(1);
   expect(sessionStorage.getItem("deepActiveSessionId")).toBe(session.id);
   const request = fetchMock.mock.calls[0][0] as Request;
   expect(request.headers.get("Idempotency-Key")).toBeTruthy();
+});
+
+it("still opens the waiting page when session storage is blocked", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(JSON.stringify(session), { headers: { "content-type": "application/json" }, status: 201 }),
+  );
+  const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    throw new Error("storage blocked");
+  });
+  const user = userEvent.setup();
+  renderButton();
+
+  await user.click(screen.getByRole("button", { name: "딥 세션 시작하기" }));
+
+  expect(await screen.findByTestId("waiting-location")).toHaveTextContent("/deep/waiting/deep-session-a");
+  setItem.mockRestore();
 });

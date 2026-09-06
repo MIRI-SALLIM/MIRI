@@ -85,4 +85,15 @@ describe("active deep session storage", () => {
     clearActiveDeepSessionId("session-a");
     expect(readActiveDeepSessionId()).toBeNull();
   });
+
+  it("does not fail the successful session flow when storage is blocked", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage blocked");
+    });
+
+    expect(() => saveActiveDeepSessionId("session-a")).not.toThrow();
+    expect(readActiveDeepSessionId()).toBeNull();
+
+    setItem.mockRestore();
+  });
 });

@@ -31,7 +31,7 @@ function mockStatus(body: Record<string, unknown>) {
   });
 }
 
-function renderWaiting(search = "?inviteCode=INVITE-1") {
+function renderWaiting(search = "?inviteCode=INVITE-1&role=A") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return {
     user: userEvent.setup(),
@@ -81,5 +81,45 @@ describe("DeepWaitingPage", () => {
     renderWaiting();
 
     expect(await screen.findByText("내 제출은 끝났어요. 상대의 제출을 기다리고 있어요.")).toBeInTheDocument();
+  });
+
+  it("does not show an invitation card to the joined participant", async () => {
+    mockStatus(status());
+    renderWaiting("?inviteCode=INVITE-1&role=B");
+
+    expect(await screen.findByRole("heading", { name: "지금 시작할 수 있어요" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "상대를 초대해요" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("deep-invite-url")).not.toBeInTheDocument();
+  });
+
+  it("explains when the creator has no invitation URL to share", async () => {
+    mockStatus(status());
+    renderWaiting("?role=A");
+
+    expect(await screen.findByRole("heading", { name: "초대 링크를 다시 만들 수 없어요" })).toBeInTheDocument();
+    expect(screen.getByText(/현재 세션을 닫으면/)).toBeInTheDocument();
+  });
+
+  it("offers a login path when the status request is unauthorized", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: "UNAUTHORIZED" } }), {
+        headers: { "content-type": "application/json" },
+        status: 401,
+      }),
+    );
+    renderWaiting();
+
+    expect(await screen.findByRole("heading", { name: "로그인이 만료됐어요" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "로그인하기" })).toHaveAttribute("href", "/login");
+    expect(screen.queryByText(/자동으로 다시 확인/)).not.toBeInTheDocument();
+  });
+
+  it("offers a retry action for a recoverable status request failure", async () => {
+    fetchMock.mockRejectedValue(new TypeError("network failed"));
+    renderWaiting();
+
+    expect(await screen.findByRole("heading", { name: "세션 상태를 불러오지 못했어요" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "다시 확인하기" })).toBeInTheDocument();
+    expect(screen.queryByText(/자동으로 다시 확인/)).not.toBeInTheDocument();
   });
 });

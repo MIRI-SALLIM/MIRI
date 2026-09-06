@@ -17,5 +17,8 @@ export {
   deepConstraintScopeLabels,
   deepConstraintStrengthLabels,
   deepContributionFieldLabels,
+  deepContributionMeaningLabels,
   deepDiscussionStateLabels,
+  deepMeetingFactLabels,
+  deepMeetingIssueLabels,
 } from "./model/labels";

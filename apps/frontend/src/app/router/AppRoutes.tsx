@@ -42,9 +42,9 @@ const DeepResultPage = lazy(() =>
 const DeepAgreementsPage = lazy(() =>
   import("@/pages/deep-agreements").then(({ DeepAgreementsPage: page }) => ({ default: page })),
 );
-const DeepPlaceholderPage = lazy(async () => ({
-  default: (await import("@/pages/deep-placeholder")).DeepPlaceholderPage,
-}));
+const DeepMeetingPage = lazy(() =>
+  import("@/pages/deep-meeting").then(({ DeepMeetingPage: page }) => ({ default: page })),
+);
 
 function DeepRouteLayout() {
   return <Outlet />;
@@ -67,7 +67,7 @@ export function AppRoutes() {
             <Route path="waiting/:sessionId" element={<DeepWaitingPage />} />
             <Route path="result/:sessionId" element={<DeepResultPage />} />
             <Route path="agreements/:sessionId" element={<DeepAgreementsPage />} />
-            <Route path="meeting/:sessionId" element={<DeepPlaceholderPage />} />
+            <Route path="meeting/:sessionId" element={<DeepMeetingPage />} />
           </Route>
           <Route path="light/:step" element={<LightFormPage />} />
           <Route path="invite/:code" element={<InvitePage />} />

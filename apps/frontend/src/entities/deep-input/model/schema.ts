@@ -9,6 +9,7 @@ const STORAGE_AS_OF = "9999-12-31";
 const knowledgeSchema = z.enum(["known", "unknown", "withheld"]);
 const moneySchema = z.number().int().min(0).max(SAFE_MONEY);
 const fundingIdSchema = z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/);
+const V3_ID_MAX_LENGTH = 62;
 const monthSchema = z.string().regex(/^[1-9][0-9]{3}-(0[1-9]|1[0-2])$/);
 const questionIdSchema = z.enum(["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"]);
 const areaSchema = z.enum(["savings", "spending", "investment", "debt", "jointManagement"]);
@@ -181,6 +182,12 @@ const validateDeepInput = (
   const funding = input.funding;
   const sources = funding?.sources ?? [];
   const settlements = funding?.settlements ?? [];
+
+  // 서버는 재원·정산·부채 ID만 62자로 제한한다(v3_models.py의 V3_ID_TOO_LONG).
+  // 자산·제약 ID는 FundingId의 64자를 그대로 쓰므로 전역으로 좁히면 과잉 거부가 된다.
+  if ([...sources, ...settlements, ...debts].some((item) => item.id.length > V3_ID_MAX_LENGTH)) {
+    addCode(context, "V3_ID_TOO_LONG");
+  }
 
   for (const [items, status] of [
     [assets, input.assetsStatus],

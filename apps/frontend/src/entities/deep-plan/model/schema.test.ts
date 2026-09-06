@@ -64,6 +64,10 @@ describe("SharedPlanV3 request schema", () => {
     });
 
     expect(result.success).toBe(false);
+    if (!result.success) {
+      // 어느 키가 막혔는지 고정한다. 실패 여부만 보면 엉뚱한 이유로 통과할 수 있다.
+      expect(result.error.issues.map((issue) => issue.path.join("."))).toContain("commonExpenses.unknown");
+    }
   });
 
   it("emits UNSAFE_COMMON_BUDGET when common expenses exceed safe integer totals", () => {

@@ -39,6 +39,17 @@ function expectCode(input: Record<string, unknown>, code: string) {
   }
 }
 
+// 타입 수준으로 좁힌 필드는 서버 코드 문자열이 아니라 zod 기본 오류를 낸다.
+// 그 경우 어느 필드가 막혔는지를 고정해야 좁힘이 풀렸을 때 테스트가 잡는다.
+function expectPath(input: Record<string, unknown>, path: ReadonlyArray<string | number>) {
+  const result = deepInputV3Schema.safeParse(input);
+  expect(result.success).toBe(false);
+  if (!result.success) {
+    const paths = result.error.issues.map((issue) => issue.path.join("."));
+    expect(paths).toContain(path.join("."));
+  }
+}
+
 describe("DeepInputV3 request schema", () => {
   it.each([
     ["AMOUNT_STATUS_MISMATCH", { housingCost: amount(null, "known") }],
@@ -93,18 +104,21 @@ describe("DeepInputV3 request schema", () => {
   });
 
   it("rejects values outside the D1-D10 question set", () => {
-    const result = deepInputV3Schema.safeParse({ ...validInput(), values: { D11: 3 } });
-
-    expect(result.success).toBe(false);
+    expectPath({ ...validInput(), values: { D11: 3 } }, ["values", "D11"]);
   });
 
-  it("rejects asset allocations that v3 represents in funding sources", () => {
-    const result = deepInputV3Schema.safeParse({
-      ...validInput(),
-      assets: [{ id: "asset-a", kind: "cashSavings", balance: amount(100), housingAllocationWon: 101 }],
-    });
+  it("rejects a housing allocation on an asset, which v3 moves to funding sources", () => {
+    expectPath(
+      { ...validInput(), assets: [{ id: "asset-a", kind: "cashSavings", balance: amount(1_000), housingAllocationWon: 1 }] },
+      ["assets", 0, "housingAllocationWon"],
+    );
+  });
 
-    expect(result.success).toBe(false);
+  it("rejects a goal allocation on an asset for the same reason", () => {
+    expectPath(
+      { ...validInput(), assets: [{ id: "asset-a", kind: "cashSavings", balance: amount(1_000), goalAllocationWon: 1 }] },
+      ["assets", 0, "goalAllocationWon"],
+    );
   });
 
   it.each(["1.5", "0.035", 0.035, null] as const)("accepts a server-compatible annual rate %s", (annualRate) => {
@@ -119,14 +133,23 @@ describe("DeepInputV3 request schema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects allocation and settlement fields that v3 represents elsewhere", () => {
-    const result = deepInputV3Schema.safeParse({
-      ...validInput(),
-      assets: [{ id: "asset-a", kind: "cashSavings", balance: amount(1_000), housingAllocationWon: 1_000 }],
-      debts: [debt({ disposition: "settle" })],
-    });
+  it("rejects a settling debt, which v3 moves to funding settlements", () => {
+    expectPath({ ...validInput(), debts: [debt({ disposition: "settle" })] }, ["debts", 0, "disposition"]);
+  });
 
-    expect(result.success).toBe(false);
+  it("rejects a funding id over the v3 limit while leaving asset ids at the general limit", () => {
+    const long = "a".repeat(63);
+    expectCode({ ...validInput(), debts: [debt({ id: long })] }, "V3_ID_TOO_LONG");
+    expectCode(
+      { ...validInput(), funding: { sourcesStatus: "known", sources: [source({ id: long })], settlementsStatus: "unknown", settlements: [] } },
+      "V3_ID_TOO_LONG",
+    );
+    expect(
+      deepInputV3Schema.safeParse({
+        ...validInput(),
+        assets: [{ id: long, kind: "cashSavings", balance: amount(1_000) }],
+      }).success,
+    ).toBe(true);
   });
 
   it("accepts a future source on the storage date.max but rejects it for an actual preview date", () => {

@@ -93,7 +93,7 @@
 
 ### ⚠ 저장이 검증으로 실패한다 — 라이트와 다른 전제
 
-`v3_models.py:85`에서 `DeepInputV3`의 모델 검증자가 **끝에 `self.funding_request(date.max)`를 호출한다.** 즉 `FundingPreviewRequest`의 교차 검증자 8개가 **모든 `PATCH me/input`마다 실행된다.**
+`v3_models.py:85`에서 `DeepInputV3`의 모델 검증자가 **끝에 `self.funding_request(date.max)`를 호출한다.** 즉 `FundingPreviewRequest`에는 `validate_funding_links` 모델 검증자 하나가 있고, 그 안에 검사 조건 10개와 고유 오류 코드 9개가 있다. 이 검증 전체가 **모든 `PATCH me/input`마다 실행된다.**
 
 라이트의 "저장은 항상 성공하고 409만 처리하면 된다"는 전제가 여기서 깨진다. 정산을 재원보다 먼저 추가하면 `UNKNOWN_FUNDING_REFERENCE`, `sourcesStatus`를 `known`으로 올리기 전에 항목을 넣으면 `FUNDING_ITEMS_REQUIRE_KNOWN_COLLECTION`으로 **입력 중간 상태 자체가 저장 불가**다.
 

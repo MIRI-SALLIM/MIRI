@@ -1,6 +1,7 @@
 import type { DeepInputV3 } from "@/entities/deep-input";
 import { createFundingId } from "@/shared/lib";
 import { AmountField, type AmountValue } from "@/shared/ui/amount-field";
+import { fieldClassName } from "@/shared/ui/field";
 
 type Amount = AmountValue;
 type Debt = NonNullable<DeepInputV3["debts"]>[number];
@@ -37,8 +38,6 @@ const emptyAmount = (): Amount => ({ status: "unknown", value: null, precision: 
 
 const amountOrUnknown = (amount: Amount | undefined): Amount => amount ?? emptyAmount();
 
-const inputClassName = "min-h-11 w-full rounded-control border border-border-control bg-card px-3 py-2 outline-none focus:border-purple-strong focus:shadow-focus disabled:cursor-not-allowed disabled:bg-border-soft";
-
 function ChoiceField({
   label,
   name,
@@ -61,7 +60,7 @@ function ChoiceField({
       <legend className="text-sm font-semibold text-ink">{label}</legend>
       <div className="flex flex-wrap gap-3">
         {options.map((option) => (
-          <label className="flex min-h-11 items-center gap-2 rounded-control border border-border-control bg-card px-3 py-2 text-sm font-semibold" key={option.value}>
+          <label className={`${fieldClassName} flex items-center gap-2 text-sm font-semibold`} key={option.value}>
             <input
               checked={value === option.value}
               name={name}
@@ -141,11 +140,11 @@ function DebtCard({
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="space-y-2 text-sm font-semibold" htmlFor={`deep-debt-type-${index}`}>
           <span className="block">부채 종류</span>
-          <input className={inputClassName} disabled={disabled} id={`deep-debt-type-${index}`} onBlur={onBlur} onChange={(event) => update("type", event.currentTarget.value)} value={debt.type} />
+          <input className={fieldClassName} disabled={disabled} id={`deep-debt-type-${index}`} onBlur={onBlur} onChange={(event) => update("type", event.currentTarget.value)} value={debt.type} />
         </label>
         <label className="space-y-2 text-sm font-semibold" htmlFor={`deep-debt-repayment-${index}`}>
           <span className="block">상환 방식</span>
-          <select className={inputClassName} disabled={disabled} id={`deep-debt-repayment-${index}`} onBlur={onBlur} onChange={(event) => update("repaymentType", event.currentTarget.value as Debt["repaymentType"])} value={debt.repaymentType}>
+          <select className={fieldClassName} disabled={disabled} id={`deep-debt-repayment-${index}`} onBlur={onBlur} onChange={(event) => update("repaymentType", event.currentTarget.value as Debt["repaymentType"])} value={debt.repaymentType}>
             <option value="equalPayment">원리금균등</option>
             <option value="equalPrincipal">원금균등</option>
             <option value="bulletMaturity">만기일시</option>
@@ -156,11 +155,11 @@ function DebtCard({
         <AmountField disabled={disabled} label={`부채 ${index + 1} 월 납입액`} onBlur={onBlur} onChange={(value) => update("monthlyPayment", value)} value={amountOrUnknown(debt.monthlyPayment)} />
         <label className="space-y-2 text-sm font-semibold" htmlFor={`deep-debt-rate-${index}`}>
           <span className="block">연이율</span>
-          <input className={inputClassName} disabled={disabled} id={`deep-debt-rate-${index}`} inputMode="decimal" onBlur={onBlur} onChange={(event) => update("annualRate", event.currentTarget.value || null)} placeholder="입력하지 않아도 돼요" value={debt.annualRate ?? ""} />
+          <input className={fieldClassName} disabled={disabled} id={`deep-debt-rate-${index}`} inputMode="decimal" onBlur={onBlur} onChange={(event) => update("annualRate", event.currentTarget.value || null)} placeholder="입력하지 않아도 돼요" value={debt.annualRate ?? ""} />
         </label>
         <label className="space-y-2 text-sm font-semibold" htmlFor={`deep-debt-months-${index}`}>
           <span className="block">남은 개월</span>
-          <input className={inputClassName} disabled={disabled} id={`deep-debt-months-${index}`} inputMode="numeric" min={1} max={1200} onBlur={onBlur} onChange={(event) => update("remainingMonths", event.currentTarget.value === "" ? null : Number(event.currentTarget.value))} type="number" value={debt.remainingMonths ?? ""} />
+          <input className={fieldClassName} disabled={disabled} id={`deep-debt-months-${index}`} inputMode="numeric" min={1} max={1200} onBlur={onBlur} onChange={(event) => update("remainingMonths", event.currentTarget.value === "" ? null : Number(event.currentTarget.value))} type="number" value={debt.remainingMonths ?? ""} />
         </label>
       </div>
       <p className="text-sm leading-relaxed text-ink-muted">함께 살기 시작한 뒤에도 현재 부채는 유지하는 입력으로 저장돼요.</p>
@@ -202,13 +201,13 @@ function AssetCard({
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="space-y-2 text-sm font-semibold" htmlFor={`deep-asset-kind-${index}`}>
           <span className="block">자산 종류</span>
-          <select className={inputClassName} disabled={disabled} id={`deep-asset-kind-${index}`} onBlur={onBlur} onChange={(event) => update("kind", event.currentTarget.value as Asset["kind"])} value={asset.kind}>
+          <select className={fieldClassName} disabled={disabled} id={`deep-asset-kind-${index}`} onBlur={onBlur} onChange={(event) => update("kind", event.currentTarget.value as Asset["kind"])} value={asset.kind}>
             {assetKinds.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
         <label className="space-y-2 text-sm font-semibold" htmlFor={`deep-asset-date-${index}`}>
           <span className="block">사용 가능일</span>
-          <input className={inputClassName} disabled={disabled} id={`deep-asset-date-${index}`} onBlur={onBlur} onChange={(event) => update("availableOn", event.currentTarget.value || null)} type="date" value={asset.availableOn ?? ""} />
+          <input className={fieldClassName} disabled={disabled} id={`deep-asset-date-${index}`} onBlur={onBlur} onChange={(event) => update("availableOn", event.currentTarget.value || null)} type="date" value={asset.availableOn ?? ""} />
         </label>
         <div className="sm:col-span-2">
           <AmountField disabled={disabled} label={`자산 ${index + 1} 잔액 또는 평가액`} onBlur={onBlur} onChange={(value) => update("balance", value)} value={amountOrUnknown(asset.balance)} />
@@ -282,8 +281,8 @@ export function DeepInputForm({ disabled = false, onBlur, onChange, draft }: Dee
           value={income.bonusIncludedInMonthlyIncome ? "yes" : "no"}
         />
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="space-y-2 text-sm font-semibold" htmlFor="deep-bonus-month"><span className="block">상여금은 몇 월에 들어오나요?</span><select className={inputClassName} disabled={disabled} id="deep-bonus-month" onBlur={onBlur} onChange={(event) => updateIncome("bonusMonth", event.currentTarget.value === "" ? null : Number(event.currentTarget.value))} value={income.bonusMonth ?? ""}><option value="">아직 모르겠어요</option>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}월</option>)}</select></label>
-          <label className="space-y-2 text-sm font-semibold" htmlFor="deep-reference-month"><span className="block">소득 기준월</span><input className={inputClassName} disabled={disabled} id="deep-reference-month" onBlur={onBlur} onChange={(event) => updateIncome("referenceMonth", event.currentTarget.value || null)} type="month" value={income.referenceMonth ?? ""} /></label>
+          <label className="space-y-2 text-sm font-semibold" htmlFor="deep-bonus-month"><span className="block">상여금은 몇 월에 들어오나요?</span><select className={fieldClassName} disabled={disabled} id="deep-bonus-month" onBlur={onBlur} onChange={(event) => updateIncome("bonusMonth", event.currentTarget.value === "" ? null : Number(event.currentTarget.value))} value={income.bonusMonth ?? ""}><option value="">아직 모르겠어요</option>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}월</option>)}</select></label>
+          <label className="space-y-2 text-sm font-semibold" htmlFor="deep-reference-month"><span className="block">소득 기준월</span><input className={fieldClassName} disabled={disabled} id="deep-reference-month" onBlur={onBlur} onChange={(event) => updateIncome("referenceMonth", event.currentTarget.value || null)} type="month" value={income.referenceMonth ?? ""} /></label>
         </div>
       </section>
 
@@ -298,13 +297,13 @@ export function DeepInputForm({ disabled = false, onBlur, onChange, draft }: Dee
 
       <section className="space-y-5" aria-labelledby="deep-debt-heading">
         <div className="flex flex-wrap items-center justify-between gap-3"><div className="space-y-2"><h2 className="text-xl font-extrabold" id="deep-debt-heading">부채</h2><p className="text-sm leading-relaxed text-ink-muted">현재 갚아야 할 돈이 있다면 종류와 조건을 적어요.</p></div><button className="min-h-10 rounded-control border border-border px-4 py-2 text-sm font-bold hover:border-purple-strong disabled:opacity-50" disabled={disabled || debts.length >= 30} onClick={addDebt} type="button">부채 추가</button></div>
-        <label className="space-y-2 text-sm font-semibold" htmlFor="deep-debts-status"><span className="block">현재 갚아야 할 돈이 있나요?</span><select className={inputClassName} disabled={disabled} id="deep-debts-status" onBlur={onBlur} onChange={(event) => setDebtStatus(event.currentTarget.value as DeepInputV3["debtsStatus"])} value={draft.debtsStatus}><option value="known">있음·확인했어요</option><option value="unknown">모르겠어요</option><option value="withheld">공개하지 않을게요</option></select></label>
+        <label className="space-y-2 text-sm font-semibold" htmlFor="deep-debts-status"><span className="block">현재 갚아야 할 돈이 있나요?</span><select className={fieldClassName} disabled={disabled} id="deep-debts-status" onBlur={onBlur} onChange={(event) => setDebtStatus(event.currentTarget.value as DeepInputV3["debtsStatus"])} value={draft.debtsStatus}><option value="known">있음·확인했어요</option><option value="unknown">모르겠어요</option><option value="withheld">공개하지 않을게요</option></select></label>
         {debts.length === 0 ? <p className="text-sm text-ink-muted">등록한 부채가 없어요. 확인한 뒤 부채 추가를 눌러 주세요.</p> : <div className="flex flex-col gap-5">{debts.map((debt, index) => <DebtCard debt={debt} disabled={disabled} index={index} key={debt.id} onBlur={onBlur} onChange={(nextDebt) => updateDebt(index, nextDebt)} onRemove={() => removeDebt(index)} />)}</div>}
       </section>
 
       <section className="space-y-5" aria-labelledby="deep-assets-heading">
         <div className="flex flex-wrap items-center justify-between gap-3"><div className="space-y-2"><h2 className="text-xl font-extrabold" id="deep-assets-heading">자산</h2><p className="text-sm leading-relaxed text-ink-muted">현재 가진 자산의 잔액과 사용할 수 있는 날짜를 적어요. 이번 계획에 배분하는 내용은 다음 단계에서 다루지 않아요.</p></div><button className="min-h-10 rounded-control border border-border px-4 py-2 text-sm font-bold hover:border-purple-strong disabled:opacity-50" disabled={disabled || assets.length >= 100} onClick={addAsset} type="button">자산 추가</button></div>
-        <label className="space-y-2 text-sm font-semibold" htmlFor="deep-assets-status"><span className="block">현재 가진 자산을 확인했나요?</span><select className={inputClassName} disabled={disabled} id="deep-assets-status" onBlur={onBlur} onChange={(event) => setAssetStatus(event.currentTarget.value as DeepInputV3["assetsStatus"])} value={draft.assetsStatus}><option value="known">확인했어요</option><option value="unknown">모르겠어요</option><option value="withheld">공개하지 않을게요</option></select></label>
+        <label className="space-y-2 text-sm font-semibold" htmlFor="deep-assets-status"><span className="block">현재 가진 자산을 확인했나요?</span><select className={fieldClassName} disabled={disabled} id="deep-assets-status" onBlur={onBlur} onChange={(event) => setAssetStatus(event.currentTarget.value as DeepInputV3["assetsStatus"])} value={draft.assetsStatus}><option value="known">확인했어요</option><option value="unknown">모르겠어요</option><option value="withheld">공개하지 않을게요</option></select></label>
         {assets.length === 0 ? <p className="text-sm text-ink-muted">등록한 자산이 없어요. 확인한 뒤 자산 추가를 눌러 주세요.</p> : <div className="flex flex-col gap-5">{assets.map((asset, index) => <AssetCard asset={asset} disabled={disabled} index={index} key={asset.id} onBlur={onBlur} onChange={(nextAsset) => updateAsset(index, nextAsset)} onRemove={() => removeAsset(index)} />)}</div>}
       </section>
     </form>

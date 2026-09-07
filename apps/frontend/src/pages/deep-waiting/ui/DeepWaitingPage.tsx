@@ -6,6 +6,7 @@ import { useDeepInvitation } from "@/features/share-deep-invitation";
 import { WithdrawDeepSessionButton } from "@/features/withdraw-deep-session";
 import { readActiveDeepSessionRole } from "@/entities/deep-session";
 import { Button } from "@/shared/ui/button";
+import { NavigationLink } from "@/shared/ui/navigation-link";
 
 const cardClassName = "flex flex-col gap-4 rounded-card border border-border bg-card p-6 sm:p-8";
 
@@ -143,24 +144,24 @@ export function DeepWaitingPage() {
         <div className={cardClassName}>
           <h2 className="text-xl font-extrabold tracking-[-0.02em]">세션이 만료됐어요</h2>
           <p className="text-sm leading-relaxed text-ink-muted">새 세션을 시작하면 다시 초대할 수 있어요.</p>
-          <Link className="font-bold text-purple-strong underline" to="/deep">딥모드 첫 화면으로</Link>
+          <NavigationLink direction="back" to="/deep">딥모드 첫 화면으로</NavigationLink>
         </div>
       ) : status.terminalError === "unauthorized" ? (
         <div className={cardClassName}>
           <h2 className="text-xl font-extrabold tracking-[-0.02em]">로그인이 만료됐어요</h2>
           <p className="text-sm leading-relaxed text-ink-muted">다시 로그인하면 세션 상태를 확인할 수 있어요.</p>
-          <Link
-            className="font-bold text-purple-strong underline"
+          <NavigationLink
+            direction="forward"
             to={`/login?returnTo=${encodeURIComponent(waitingPath)}`}
           >
             로그인하기
-          </Link>
+          </NavigationLink>
         </div>
       ) : status.terminalError === "not-found" ? (
         <div className={cardClassName}>
           <h2 className="text-xl font-extrabold tracking-[-0.02em]">세션을 찾을 수 없어요</h2>
           <p className="text-sm leading-relaxed text-ink-muted">딥모드 첫 화면에서 새 세션을 시작할 수 있어요.</p>
-          <Link className="font-bold text-purple-strong underline" to="/deep">딥모드 첫 화면으로</Link>
+          <NavigationLink direction="back" to="/deep">딥모드 첫 화면으로</NavigationLink>
         </div>
       ) : status.isTimedOut ? (
         <div className={cardClassName}>

@@ -22,6 +22,7 @@
   --radius-control: 14px;
   --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
   --shadow-focus: 0 0 0 3px rgb(67 167 123 / 28%);
+  --shadow-focus-purple: 0 0 0 3px var(--color-purple-strong);
   --animate-fadeup: fadeup 420ms ease-out both;
   --font-sans: "Pretendard Variable", Pretendard, sans-serif;
 

@@ -34,7 +34,7 @@ export function SaveDeepPlanButton({ expectedVersion, onConflict, onSuccess, pla
 
   if (confirming) {
     return (
-      <div className="space-y-3 rounded-control border border-purple-200 bg-purple-tint p-4">
+      <div className="space-y-3 rounded-control border border-amber-300 bg-amber-50 p-4">
         <p className="text-sm leading-relaxed text-ink" role="alert">계획을 저장하면 두 사람의 확인이 풀려요. 저장할까요?</p>
         <div className="flex flex-wrap gap-3">
           <Button disabled={mutation.isPending} onClick={() => mutation.mutate()}>{mutation.isPending ? "저장하는 중이에요" : "저장할까요"}</Button>

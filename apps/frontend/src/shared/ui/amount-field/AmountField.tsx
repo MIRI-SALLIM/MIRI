@@ -1,6 +1,7 @@
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
 
 import type { components } from "@/shared/api";
+import { fieldClassName } from "@/shared/ui/field";
 import { PillToggle } from "@/shared/ui/pill-toggle";
 
 export type AmountValue = components["schemas"]["Amount"];
@@ -168,7 +169,7 @@ export function AmountField({
       <div className="relative">
         <input
           {...inputProps}
-          className={`min-h-12 w-full rounded-control border border-border-control bg-card px-4 py-3 pr-12 text-right text-base tabular-nums outline-none transition-[border-color,box-shadow] placeholder:text-ink-subtle focus:border-green-strong focus:shadow-focus disabled:cursor-not-allowed disabled:bg-border-soft ${className}`}
+          className={`${fieldClassName} pr-12 text-right tabular-nums placeholder:text-ink-subtle ${className}`}
           disabled={disabled || !canEnterKnownAmount || !hasStatusOptions}
           id={inputId}
           inputMode="numeric"

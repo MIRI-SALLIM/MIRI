@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import {
   completeMeeting,
@@ -30,9 +30,12 @@ import {
 import { useMeetingContext, useMeetingExplanation } from "@/features/poll-explanation";
 import { isApiErrorCode } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
+import { NavigationLink } from "@/shared/ui/navigation-link";
+import { PageLoading } from "@/shared/ui/page-loading";
+import { fieldClassName } from "@/shared/ui/field";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const cardClassName = "rounded-card border border-border bg-card p-6 sm:p-8";
-const fieldClassName = "min-h-12 w-full rounded-control border border-border-control bg-card px-4 text-base outline-none transition-[border-color,box-shadow] focus:border-purple-strong focus:shadow-focus";
 
 const formatWon = (valueWon: number): string => `${new Intl.NumberFormat("ko-KR").format(valueWon)}원`;
 
@@ -372,7 +375,7 @@ function meetingWaitingPage({
       <Button disabled={isRetrying} onClick={onRetry} variant="secondary">
         다시 확인하기
       </Button>
-      <Link className="w-fit font-bold text-purple-strong underline" to="/deep">딥모드 첫 화면으로</Link>
+      <NavigationLink direction="back" to="/deep">딥모드 첫 화면으로</NavigationLink>
     </section>
   );
 }
@@ -425,10 +428,35 @@ export function DeepMeetingPage() {
     guideQuery.data === undefined || ownQuery.data === undefined
   ) {
     return (
-      <section className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-5 px-5 py-16 sm:px-8">
-        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">우리 돈의 기준회의</h1>
-        <p aria-live="polite" className="text-ink-muted" role="status">기준회의에 필요한 내용을 확인하고 있어요.</p>
-      </section>
+      <PageLoading
+        className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-12 sm:px-8 sm:py-16"
+        eyebrow="15분 모드 · 우리 돈의 기준회의"
+        heading="우리 돈의 기준회의"
+        message="기준회의에 필요한 내용을 확인하고 있어요."
+      >
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-52" />
+          <Skeleton className="h-7 w-2/3" />
+          <Skeleton className="h-5 w-full" />
+        </div>
+        <div className="space-y-5 rounded-card border border-border bg-card p-6 sm:p-8">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+        <div className="space-y-5 rounded-card border border-border bg-card p-6 sm:p-8">
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+        <div className="space-y-4 rounded-card border border-border bg-card p-6 sm:p-8">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-4/5" />
+        </div>
+      </PageLoading>
     );
   }
   if (guideQuery.isError || ownQuery.isError || guideQuery.data.status !== "ready") {
@@ -483,7 +511,7 @@ export function DeepMeetingPage() {
       />
       {standards ? <Standards standards={standards} /> : null}
       {completeMutation.isError ? <p aria-live="polite" className="text-sm font-semibold text-red-700" role="alert">{completeErrorMessage(completeMutation.error)}</p> : null}
-      <Link className="w-fit font-bold text-purple-strong underline" to={`/deep/result/${encodedSessionId}`}>공동 리포트로 돌아가기</Link>
+      <NavigationLink direction="back" to={`/deep/result/${encodedSessionId}`}>공동 리포트로 돌아가기</NavigationLink>
     </section>
   );
 }

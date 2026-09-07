@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { deepInputQueryKey, fetchDeepInput } from "@/entities/deep-input";
 import { deepPlanQueryKey, fetchDeepPlan } from "@/entities/deep-plan";
@@ -9,6 +9,9 @@ import { submitDeepSession } from "@/entities/deep-session";
 import { useDeepInputStore } from "@/features/save-deep-input";
 import { isApiErrorCode } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
+import { NavigationLink } from "@/shared/ui/navigation-link";
+import { PageLoading } from "@/shared/ui/page-loading";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const cardClassName = "rounded-card border border-border bg-card p-6 sm:p-8";
 
@@ -96,10 +99,30 @@ export function DeepSubmitPage() {
     planQuery.isPending
   ) {
     return (
-      <section className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-5 px-5 py-16 sm:px-8">
-        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">제출 전 확인</h1>
-        <p aria-live="polite" className="text-ink-muted" role="status">제출에 필요한 최신 정보를 확인하고 있어요.</p>
-      </section>
+      <PageLoading
+        className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-12 sm:px-8 sm:py-16"
+        eyebrow="15분 모드 · 제출"
+        heading="제출 전 확인"
+        message="제출에 필요한 최신 정보를 확인하고 있어요."
+      >
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-7 w-2/3" />
+          <Skeleton className="h-5 w-full" />
+        </div>
+        <div className="space-y-4 rounded-card border border-border bg-card p-6 sm:p-8">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-4/5" />
+        </div>
+        <div className="space-y-5 rounded-card border border-border bg-card p-6 sm:p-8">
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-5 w-4/5" />
+        </div>
+      </PageLoading>
     );
   }
 
@@ -190,7 +213,7 @@ export function DeepSubmitPage() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link className="font-bold text-purple-strong underline" to={`/deep/questions/${encodeURIComponent(sessionId)}`}>질문으로 돌아가기</Link>
+        <NavigationLink direction="back" to={`/deep/questions/${encodeURIComponent(sessionId)}`}>질문으로 돌아가기</NavigationLink>
         <Button disabled={submitMutation.isPending} onClick={() => submitMutation.mutate()}>
           {submitMutation.isPending ? "제출하는 중이에요" : "제출하기"}
         </Button>

@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 import { deepInputQueryKey, fetchDeepInput } from "@/entities/deep-input";
 import { deepQuestionsQueryKey, getDeepQuestions } from "@/entities/deep-question";
 import { useDeepInputStore } from "@/features/save-deep-input";
 import { Button } from "@/shared/ui/button";
+import { NavigationLink } from "@/shared/ui/navigation-link";
+import { PageLoading } from "@/shared/ui/page-loading";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { DeepInputSyncNotice } from "@/widgets/deep-input-sync-notice";
 import { DeepQuestionsForm } from "@/widgets/deep-questions-form";
 
@@ -69,10 +72,31 @@ export function DeepQuestionsPage() {
 
   if (sessionId === "" || questionsQuery.isPending || inputQuery.isPending || questionsQuery.data === undefined || !isHydrated || draft === null) {
     return (
-      <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-5 px-5 py-16 sm:px-8">
-        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">가치관과 분담 질문</h1>
-        <p aria-live="polite" className="text-ink-muted" role="status">가치관과 분담 질문을 불러오고 있어요.</p>
-      </section>
+      <PageLoading
+        className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-12 sm:px-8 sm:py-16"
+        eyebrow="15분 모드 · 가치관과 분담"
+        heading="가치관과 분담 질문"
+        message="가치관과 분담 질문을 불러오고 있어요."
+      >
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-44" />
+          <Skeleton className="h-7 w-4/5" />
+          <Skeleton className="h-5 w-full" />
+        </div>
+        <div className="space-y-8 rounded-card border border-border bg-card p-6 sm:p-8">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </div>
+      </PageLoading>
     );
   }
 
@@ -111,10 +135,10 @@ export function DeepQuestionsPage() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link className="font-bold text-purple-strong underline" to={`/deep/input/${encodedSessionId}`}>재무 현황으로 돌아가기</Link>
+        <NavigationLink direction="back" to={`/deep/input/${encodedSessionId}`}>재무 현황으로 돌아가기</NavigationLink>
         <div className="flex flex-wrap gap-4">
-          <Link className="font-bold text-purple-strong underline" to={`/deep/submit/${encodedSessionId}`}>제출 전 확인하기</Link>
-          <Link className="font-bold text-purple-strong underline" to={`/deep/waiting/${encodedSessionId}`}>세션 상태 보기</Link>
+          <NavigationLink direction="forward" to={`/deep/submit/${encodedSessionId}`}>제출 전 확인하기</NavigationLink>
+          <NavigationLink direction="forward" to={`/deep/waiting/${encodedSessionId}`}>세션 상태 보기</NavigationLink>
         </div>
       </div>
     </section>

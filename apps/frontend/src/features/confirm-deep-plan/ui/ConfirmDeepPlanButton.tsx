@@ -28,7 +28,7 @@ export function ConfirmDeepPlanButton({ disabled = false, onConflict, onSuccess,
   });
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col items-start gap-3">
       <Button disabled={disabled || mutation.isPending} onClick={() => mutation.mutate()}>{mutation.isPending ? "확인하는 중이에요" : "이 계획 확인하기"}</Button>
       {mutation.isError ? <p aria-live="polite" className="text-sm font-semibold text-red-700" role="alert">{errorMessage(mutation.error)}</p> : null}
     </div>

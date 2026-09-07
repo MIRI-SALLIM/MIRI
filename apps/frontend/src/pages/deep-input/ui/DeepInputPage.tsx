@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import {
   deepInputQueryKey,
@@ -8,6 +8,9 @@ import {
 } from "@/entities/deep-input";
 import { useDeepInputStore } from "@/features/save-deep-input";
 import { Button } from "@/shared/ui/button";
+import { NavigationLink } from "@/shared/ui/navigation-link";
+import { PageLoading } from "@/shared/ui/page-loading";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { DeepInputSyncNotice } from "@/widgets/deep-input-sync-notice";
 import { DeepInputForm } from "@/widgets/deep-input-form";
 
@@ -51,10 +54,39 @@ export function DeepInputPage() {
 
   if (sessionId === "" || inputQuery.isPending || !isHydrated || draft === null) {
     return (
-      <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-5 px-5 py-16 sm:px-8">
-        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">각자의 재무 현황</h1>
-        <p aria-live="polite" className="text-ink-muted" role="status">내 재무 현황을 불러오고 있어요.</p>
-      </section>
+      <PageLoading
+        className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-12 sm:px-8 sm:py-16"
+        eyebrow="15분 모드 · 내 입력"
+        heading="각자의 재무 현황"
+        message="내 재무 현황을 불러오고 있어요."
+      >
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-4/5" />
+        </div>
+        <div className="space-y-8 rounded-card border border-border bg-card p-6 sm:p-8">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-28" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      </PageLoading>
     );
   }
 
@@ -78,10 +110,10 @@ export function DeepInputPage() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link className="font-bold text-purple-strong underline" to={`/deep/plan/${encodeURIComponent(sessionId)}`}>공동 계획으로 돌아가기</Link>
+        <NavigationLink direction="back" to={`/deep/plan/${encodeURIComponent(sessionId)}`}>공동 계획으로 돌아가기</NavigationLink>
         <div className="flex flex-wrap gap-4">
-          <Link className="font-bold text-purple-strong underline" to={`/deep/questions/${encodeURIComponent(sessionId)}`}>가치관과 분담 질문으로 가기</Link>
-          <Link className="font-bold text-purple-strong underline" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태 보기</Link>
+          <NavigationLink direction="forward" to={`/deep/questions/${encodeURIComponent(sessionId)}`}>가치관과 분담 질문으로 가기</NavigationLink>
+          <NavigationLink direction="forward" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태 보기</NavigationLink>
         </div>
       </div>
     </section>

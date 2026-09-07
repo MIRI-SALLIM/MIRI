@@ -12,6 +12,7 @@ import {
   deepCommonCategoryLabels,
 } from "@/entities/deep-question";
 import { Button } from "@/shared/ui/button";
+import { fieldClassName } from "@/shared/ui/field";
 
 type AgreementTopic = DecisionTerms["topic"];
 type AgreementOwner = DecisionTerms["owner"];
@@ -44,8 +45,6 @@ interface FormValues {
   text: string;
   topic: AgreementTopic;
 }
-
-const fieldClassName = "min-h-11 w-full rounded-control border border-border-control bg-card px-3 py-2 outline-none focus:border-purple-strong focus:shadow-focus disabled:cursor-not-allowed disabled:bg-border-soft";
 
 const defaultFormValues: FormValues = {
   commonScope: [],

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import {
   deepPlanQueryKey,
@@ -10,6 +10,9 @@ import {
 } from "@/entities/deep-plan";
 import { ConfirmDeepPlanButton } from "@/features/confirm-deep-plan";
 import { SaveDeepPlanButton } from "@/features/save-deep-plan";
+import { NavigationLink } from "@/shared/ui/navigation-link";
+import { PageLoading } from "@/shared/ui/page-loading";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { DeepPlanForm } from "@/widgets/deep-plan-form";
 
 const cardClassName = "flex flex-col gap-4 rounded-card border border-border bg-card p-6 sm:p-8";
@@ -47,10 +50,41 @@ export function DeepPlanPage() {
 
   if (sessionId === "" || planQuery.isPending) {
     return (
-      <section className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-5 px-5 py-16 sm:px-8">
-        <h1 className="text-2xl font-extrabold">함께 계산할 공동 계획</h1>
-        <p aria-live="polite" className="text-ink-muted" role="status">공동 계획을 불러오고 있어요.</p>
-      </section>
+      <PageLoading
+        className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-12 sm:px-8 sm:py-16"
+        eyebrow="15분 모드 · 공동 계획"
+        heading="함께 계산할 공동 계획"
+        message="공동 계획을 불러오고 있어요."
+      >
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-4/5" />
+        </div>
+        <div className="space-y-8 rounded-card border border-border bg-card p-6 sm:p-8">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-40" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-48" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+          <div className="border-t border-border-soft pt-5">
+            <Skeleton className="h-12 w-32" />
+          </div>
+        </div>
+      </PageLoading>
     );
   }
 
@@ -84,7 +118,7 @@ export function DeepPlanPage() {
         {locked ? <p className="text-sm leading-relaxed text-ink-muted">계획이 잠겨 읽기 전용이에요.</p> : null}
         <DeepPlanForm disabled={locked} onChange={setDraft} plan={draft} />
         {!locked ? (
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border-soft pt-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-t border-border-soft pt-5">
             <SaveDeepPlanButton
               expectedVersion={version}
               onConflict={refreshAfterConflict}
@@ -92,8 +126,8 @@ export function DeepPlanPage() {
               plan={draft}
               sessionId={sessionId}
             />
-            <div className="flex flex-col items-start gap-2 sm:items-end">
-              {myConfirmed ? <p className="text-sm font-semibold text-purple-strong">내가 이 계획을 확인했어요.</p> : <ConfirmDeepPlanButton disabled={isDirty} onConflict={refreshAfterConflict} onSuccess={applyResponse} planVersion={version} sessionId={sessionId} />}
+            {myConfirmed ? <p className="text-sm font-semibold text-purple-strong">내가 이 계획을 확인했어요.</p> : <ConfirmDeepPlanButton disabled={isDirty} onConflict={refreshAfterConflict} onSuccess={applyResponse} planVersion={version} sessionId={sessionId} />}
+            <div className="flex basis-full flex-col items-start gap-2 sm:items-end">
               {isDirty ? <p className="text-sm text-ink-muted">저장한 뒤 이 계획을 확인할 수 있어요.</p> : null}
               <p className="text-sm text-ink-muted">{partnerConfirmed ? "상대도 이 버전을 확인했어요." : "상대의 확인을 기다리고 있어요."}</p>
             </div>
@@ -119,11 +153,11 @@ export function DeepPlanPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         {myConfirmed ? (
-          <Link className="font-bold text-purple-strong underline" to={`/deep/input/${encodeURIComponent(sessionId)}`}>내 재무 현황으로 가기</Link>
+          <NavigationLink direction="forward" to={`/deep/input/${encodeURIComponent(sessionId)}`}>내 재무 현황으로 가기</NavigationLink>
         ) : (
           <p className="text-sm text-ink-muted">이 계획을 확인하면 내 재무 현황을 입력할 수 있어요.</p>
         )}
-        <Link className="font-bold text-purple-strong underline" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태로 돌아가기</Link>
+        <NavigationLink direction="back" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태로 돌아가기</NavigationLink>
       </div>
     </section>
   );

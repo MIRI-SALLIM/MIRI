@@ -1,0 +1,1 @@
+export const fieldClassName = "min-h-12 w-full rounded-control border border-border-control bg-card px-4 py-3 text-base outline-none transition-[border-color,box-shadow] focus:border-purple-strong focus:shadow-focus-purple disabled:cursor-not-allowed disabled:bg-border-soft";

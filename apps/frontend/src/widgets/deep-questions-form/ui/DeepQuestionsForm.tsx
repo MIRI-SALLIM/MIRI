@@ -15,6 +15,7 @@ import {
 } from "@/entities/deep-question";
 import { createFundingId } from "@/shared/lib";
 import { AmountField, type AmountValue } from "@/shared/ui/amount-field";
+import { fieldClassName } from "@/shared/ui/field";
 import { PillToggle } from "@/shared/ui/pill-toggle";
 
 type Constraint = NonNullable<DeepInputV3["constraints"]>[number];
@@ -23,7 +24,6 @@ type Contribution = NonNullable<DeepInputV3["contribution"]>;
 type ContributionAmountKey = Exclude<keyof Contribution, "discussionState">;
 
 const cardClassName = "rounded-card border border-border-soft bg-card p-5 sm:p-6";
-const fieldClassName = "min-h-11 w-full rounded-control border border-border-control bg-card px-3 py-2 outline-none focus:border-purple-strong focus:shadow-focus disabled:cursor-not-allowed disabled:bg-border-soft";
 const contributionAmountKeys = new Set<ContributionAmountKey>([
   "ownMonthly",
   "expectedPartnerMonthly",
@@ -47,6 +47,40 @@ const amountStatusesFromOptions = (options: string[]): Array<AmountValue["status
 
 const toSkippedQuestionId = (questionId: string): SkippedQuestionId => questionId as SkippedQuestionId;
 
+const scaleSizeClasses = ["size-12", "size-10", "size-9", "size-10", "size-12"] as const;
+
+function ScaleToggle({
+  answer,
+  disabled,
+  label,
+  onAnswer,
+  pressed,
+  questionId,
+}: {
+  answer: number;
+  disabled: boolean;
+  label: string;
+  onAnswer: (answer: number) => void;
+  pressed: boolean;
+  questionId: string;
+}) {
+  return (
+    <button
+      aria-label={`${questionId} ${label}`}
+      aria-pressed={pressed}
+      className="inline-flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:shadow-focus-purple disabled:cursor-not-allowed disabled:opacity-50"
+      disabled={disabled}
+      onClick={() => onAnswer(answer)}
+      title={label}
+      type="button"
+    >
+      <span aria-hidden="true" className={`inline-flex items-center justify-center rounded-full border-2 transition-colors duration-[160ms] ease-smooth ${scaleSizeClasses[answer - 1]} ${pressed ? "border-purple-strong bg-purple-strong" : "border-border bg-card hover:border-purple"}`}>
+        <span className={`rounded-full ${pressed ? "size-3 bg-white" : "size-2 bg-purple/40"}`} />
+      </span>
+    </button>
+  );
+}
+
 function ValueQuestionCard({
   disabled,
   note,
@@ -69,6 +103,7 @@ function ValueQuestionCard({
   value: number | null;
 }) {
   const label = areaLabel(question.area);
+  const selectedScaleLabel = value === null ? null : scaleLabels[value - 1] ?? `${value}점`;
 
   return (
     <article className={`${cardClassName} space-y-5`} aria-labelledby={`deep-value-heading-${question.id}`}>
@@ -76,27 +111,25 @@ function ValueQuestionCard({
         {label ? <p className="text-sm font-semibold text-purple-strong">{label}</p> : null}
         <h3 className="text-lg font-extrabold" id={`deep-value-heading-${question.id}`} tabIndex={-1}>{question.text}</h3>
       </div>
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+      <div className="space-y-3">
         <p className="text-sm leading-relaxed text-ink-muted">{question.left}</p>
-        <div className="flex flex-wrap justify-center gap-2" role="group" aria-label={`${question.id} 척도`}>
+        <div className="flex flex-nowrap items-center justify-center gap-2" role="group" aria-label={`${question.id} 척도`}>
           {scaleLabels.slice(0, 5).map((label, index) => {
             const answer = index + 1;
             return (
-              <PillToggle
-                aria-label={`${question.id} ${label}`}
+              <ScaleToggle
+                answer={answer}
                 disabled={disabled}
                 key={`${question.id}-${answer}`}
-                onPressedChange={() => onAnswer(answer)}
+                label={label}
+                onAnswer={onAnswer}
                 pressed={value === answer}
-                size="sm"
-                tone="purple"
-              >
-                {label}
-              </PillToggle>
+                questionId={question.id}
+              />
             );
           })}
         </div>
-        <p className="text-sm leading-relaxed text-right text-ink-muted">{question.right}</p>
+        <p className="text-right text-sm leading-relaxed text-ink-muted">{question.right}</p>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
@@ -108,7 +141,7 @@ function ValueQuestionCard({
         >
           {skipped ? "건너뛰기 해제" : "건너뛰기"}
         </button>
-        <span className="text-sm text-ink-muted">{skipped ? "이 문항은 건너뛰었어요." : value === null ? "아직 선택하지 않았어요." : `${value}/5`}</span>
+        <span className="text-right text-sm text-ink-muted">{skipped ? "이 문항은 건너뛰었어요." : selectedScaleLabel === null ? "아직 선택하지 않았어요." : `${selectedScaleLabel} · ${value}/5`}</span>
       </div>
       <label className="space-y-2 text-sm font-semibold" htmlFor={`deep-value-note-${question.id}`}>
         <span className="block">메모</span>

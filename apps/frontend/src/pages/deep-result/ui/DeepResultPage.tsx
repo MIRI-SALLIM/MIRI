@@ -1,9 +1,12 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import {
   useDeepSessionResult,
 } from "@/features/poll-deep-status";
 import { Button } from "@/shared/ui/button";
+import { NavigationLink } from "@/shared/ui/navigation-link";
+import { PageLoading } from "@/shared/ui/page-loading";
+import { Skeleton } from "@/shared/ui/skeleton";
 import type { DeepCalculationBlock, DeepReportRecord, DeepReadyResult } from "@/entities/deep-report";
 
 const cardClassName = "rounded-card border border-border bg-card p-6 sm:p-8";
@@ -125,10 +128,10 @@ function ReportContent({ result, sessionId }: { result: DeepReadyResult; session
         ))}
       </section>
       <div className="flex flex-wrap gap-4">
-        <Link className="font-bold text-purple-strong underline" to={`/deep/agreements/${encodeURIComponent(sessionId)}`}>우리 돈의 기준표</Link>
-        <Link className="font-bold text-purple-strong underline" to={`/deep/questions/${encodeURIComponent(sessionId)}`}>질문 다시 보기</Link>
-        <Link className="font-bold text-purple-strong underline" to={`/deep/meeting/${encodeURIComponent(sessionId)}`}>우리 돈의 기준회의 시작하기</Link>
-        <Link className="font-bold text-purple-strong underline" to="/">처음으로 돌아가기</Link>
+        <NavigationLink direction="forward" to={`/deep/agreements/${encodeURIComponent(sessionId)}`}>우리 돈의 기준표</NavigationLink>
+        <NavigationLink direction="back" to={`/deep/questions/${encodeURIComponent(sessionId)}`}>질문 다시 보기</NavigationLink>
+        <NavigationLink direction="forward" to={`/deep/meeting/${encodeURIComponent(sessionId)}`}>우리 돈의 기준회의 시작하기</NavigationLink>
+        <NavigationLink direction="back" to="/">처음으로 돌아가기</NavigationLink>
       </div>
     </>
   );
@@ -140,10 +143,25 @@ export function DeepResultPage() {
 
   if (result.isPending) {
     return (
-      <section className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-5 px-5 py-16 sm:px-8">
-        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">공동 리포트</h1>
-        <p aria-live="polite" className="text-ink-muted" role="status">공동 리포트를 확인하고 있어요.</p>
-      </section>
+      <PageLoading
+        className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-12 sm:px-8 sm:py-16"
+        eyebrow="15분 모드 · 공동 결과"
+        heading="공동 리포트"
+        message="공동 리포트를 확인하고 있어요."
+      >
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-7 w-2/3" />
+          <Skeleton className="h-5 w-full" />
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-4 rounded-card border border-border bg-card p-6 sm:p-8"><Skeleton className="h-6 w-32" /><Skeleton className="h-10 w-44" /><Skeleton className="h-4 w-full" /></div>
+          <div className="space-y-4 rounded-card border border-border bg-card p-6 sm:p-8"><Skeleton className="h-6 w-24" /><Skeleton className="h-10 w-40" /><Skeleton className="h-4 w-4/5" /></div>
+          <div className="space-y-4 rounded-card border border-border bg-card p-6 sm:p-8"><Skeleton className="h-6 w-20" /><Skeleton className="h-10 w-36" /><Skeleton className="h-4 w-full" /></div>
+          <div className="space-y-4 rounded-card border border-border bg-card p-6 sm:p-8"><Skeleton className="h-6 w-28" /><Skeleton className="h-10 w-48" /><Skeleton className="h-4 w-4/5" /></div>
+          <div className="space-y-4 rounded-card border border-border bg-card p-6 sm:p-8 sm:col-span-2"><Skeleton className="h-6 w-32" /><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-3/4" /></div>
+        </div>
+      </PageLoading>
     );
   }
 
@@ -184,7 +202,7 @@ export function DeepResultPage() {
             {result.result.partnerCompleted ? "상대의 제출 여부를 확인했어요." : "상대의 제출을 기다리고 있어요."}
           </p>
         </div>
-        <Link className="w-fit font-bold text-purple-strong underline" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태 보기</Link>
+        <NavigationLink direction="back" to={`/deep/waiting/${encodeURIComponent(sessionId)}`}>세션 상태 보기</NavigationLink>
       </section>
     );
   }
